@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="Raveera event placeholder">
+  <rect width="1600" height="1000" fill="#020202"/>
+  <path d="M0 760C250 680 428 810 676 702C934 590 1128 596 1600 462V1000H0V760Z" fill="#030303"/>
+  <g opacity="0.35">
+    <path d="M0 200H1600M0 400H1600M0 600H1600M0 800H1600M200 0V1000M400 0V1000M600 0V1000M800 0V1000M1000 0V1000M1200 0V1000M1400 0V1000" stroke="#ffffff" stroke-width="1" opacity="0.09"/>
+  </g>
+  <circle cx="1160" cy="310" r="180" fill="#00FF88" opacity="0.08"/>
+  <circle cx="1160" cy="310" r="72" fill="#00FF88" opacity="0.11"/>
+  <text x="96" y="820" fill="#00FF88" font-family="monospace" font-size="34" letter-spacing="8">RAVEERA / EVENT SYSTEM</text>
+  <text x="96" y="884" fill="#ffffff" opacity="0.58" font-family="monospace" font-size="22" letter-spacing="5">IMAGE FALLBACK ACTIVE</text>
+</svg>
