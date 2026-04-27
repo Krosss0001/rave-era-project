@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { notFound } from "next/navigation";
 import { CalendarDays, MapPin, Tags, Users } from "lucide-react";
 import { organizer } from "@/data/organizers";
-import { formatEventDate, formatPrice, getCapacityPercent } from "@/lib/format";
+import { formatEventDate, getCapacityPercent } from "@/lib/format";
 import { getPublicEventBySlugWithFallback } from "@/lib/supabase/events";
 import { TelegramCta } from "@/components/events/telegram-cta";
 import { EventRegistrationForm } from "@/components/events/event-registration-form";
@@ -11,6 +11,7 @@ import { WalletPlaceholder } from "@/components/events/wallet-placeholder";
 import { LiveEventSignals } from "@/components/events/live-event-signals";
 import { SafeEventImage } from "@/components/events/safe-event-image";
 import { LocalizedText } from "@/components/shared/localized-text";
+import { LocalizedPrice } from "@/components/shared/localized-price";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -50,20 +51,21 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
 
   return (
     <div className="bg-[#000000]">
-      <section className="group relative min-h-[90vh] overflow-hidden border-b border-white/[0.05]">
+      <section className="group relative min-h-[calc(100svh-4rem)] overflow-hidden border-b border-white/[0.05] lg:min-h-[86vh]">
         <SafeEventImage
           src={event.image}
           alt={`${event.title} atmosphere`}
           priority
-          className="object-cover opacity-45 grayscale motion-safe:transition-[transform,opacity,filter] motion-safe:duration-500 motion-safe:ease-out group-hover:scale-[1.02] group-hover:opacity-65 group-hover:grayscale-0"
+          className="object-cover object-center opacity-42 grayscale motion-safe:transition-[transform,opacity,filter] motion-safe:duration-500 motion-safe:ease-out group-hover:scale-[1.01] group-hover:opacity-58 group-hover:grayscale-0"
           sizes="100vw"
         />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.018)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.018)_1px,transparent_1px)] bg-[size:80px_80px] opacity-60" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#000000] via-[#000000]/88 to-[#000000]/58" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.92)_0%,rgba(0,0,0,0.76)_42%,rgba(0,0,0,0.38)_100%)]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#000000] via-[#000000]/58 to-[#000000]/36" />
         <div className="absolute right-[-14%] top-[10%] h-[45vw] w-[45vw] bg-[#00FF88]/10 blur-[160px] motion-safe:animate-[orbDrift_10s_cubic-bezier(0.16,1,0.3,1)_infinite_alternate]" />
         <div className="absolute inset-0 opacity-[0.055] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:4px_4px]" />
-        <div className="relative mx-auto flex min-h-[90vh] max-w-7xl items-end px-4 pb-14 pt-32 sm:px-6 md:px-10 lg:px-12 2xl:max-w-[1500px]">
-          <div className="max-w-4xl">
+        <div className="relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl items-end px-4 pb-10 pt-28 sm:px-6 md:px-10 lg:min-h-[86vh] lg:px-12 2xl:max-w-[1500px]">
+          <div className="max-w-[min(54rem,100%)]">
             <span className="inline-flex min-h-8 items-center border border-[#00FF88]/40 bg-[#00FF88]/5 px-4 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.24em] text-[#00FF88]">
               {event.status === "limited" ? "Limited capacity" : event.status === "live" ? "Tickets live" : "Coming soon"}
             </span>
@@ -72,15 +74,8 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
                 Ref {referralCode}
               </span>
             ) : null}
-            <h1 className="drop-reveal mt-8 max-w-5xl text-[clamp(3.25rem,18vw,12rem)] font-black uppercase leading-[0.82] text-white sm:leading-[0.78]">
-              {event.title.split(" ").map((word, index, words) => (
-                <span
-                  key={word}
-                  className={index === words.length - 1 ? "block text-[#00FF88] [text-shadow:0_0_90px_rgba(0,255,136,0.25)]" : "block"}
-                >
-                  {word}
-                </span>
-              ))}
+            <h1 className="drop-reveal mt-6 max-w-[min(100%,19rem)] break-normal whitespace-normal text-[clamp(2.25rem,11vw,4.5rem)] font-black uppercase leading-[0.92] tracking-normal text-white [hyphens:none] [overflow-wrap:normal] [text-wrap:balance] [word-break:normal] sm:max-w-[min(100%,36rem)] sm:text-[clamp(3rem,8vw,6rem)] lg:max-w-[min(100%,52rem)] lg:text-[clamp(4.25rem,7vw,7.25rem)]">
+              {event.title}
             </h1>
             <p className="drop-reveal mt-7 max-w-2xl text-lg font-light leading-8 text-white/60">{event.subtitle}</p>
             <p className="mt-5 inline-flex border-l border-[#00FF88] pl-4 font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-[#00FF88] motion-safe:animate-[signalPulse_1.8s_ease-out_infinite]">
@@ -172,7 +167,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           <section className="relative border border-[#00FF88]/20 bg-[#020202] p-5 shadow-[0_0_90px_rgba(0,255,136,0.07)]">
             <span className="absolute left-0 top-0 h-px w-full bg-[#00FF88]" aria-hidden="true" />
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/35">Ticket wave</p>
-            <p className="mt-3 font-mono text-4xl font-semibold text-white">{formatPrice(event.price, event.currency)}</p>
+            <p className="mt-3 font-mono text-4xl font-semibold text-white"><LocalizedPrice price={event.price} currency={event.currency} /></p>
             {urgent ? (
               <p className="mt-3 border border-[#00FF88]/25 bg-[#00FF88]/[0.035] px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#00FF88] motion-safe:animate-[signalPulse_1.8s_ease-out_infinite]">
                 Last wave active
@@ -220,10 +215,10 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
               ))}
             </div>
           </section>
-          <EventRegistrationForm eventId={event.id} eventSlug={event.slug} referralCode={referralCode} />
           <TelegramCta eventSlug={event.slug} referralCode={referralCode} />
           <ReferralBox path={`/events/${event.slug}`} activeReferral={referralCode} />
           <WalletPlaceholder />
+          <EventRegistrationForm eventId={event.id} eventSlug={event.slug} eventPrice={event.price} referralCode={referralCode} />
         </aside>
       </section>
       <style

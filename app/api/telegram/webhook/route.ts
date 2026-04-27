@@ -11,6 +11,7 @@ import {
   type BotLanguage
 } from "@/lib/telegram/messages";
 import {
+  confirmFreeRegistrationAndTicket,
   createPendingRegistrationAndTicket,
   getEventBySlug,
   getLatestSession,
@@ -118,16 +119,27 @@ async function getLanguage(userId: string): Promise<BotLanguage> {
   return language ?? "uk";
 }
 
-function isValidTelegramImageUrl(value: string | null | undefined) {
+function normalizeTelegramImageUrl(value: string | null | undefined) {
   if (!value) {
-    return false;
+    return null;
   }
 
   try {
-    const url = new URL(value);
-    return url.protocol === "https:" && url.hostname.includes(".") && !url.hostname.includes("_");
+    const url = new URL(value.trim());
+
+    if (
+      url.protocol !== "https:" ||
+      !url.hostname.includes(".") ||
+      url.hostname.includes("_") ||
+      url.hostname === "localhost" ||
+      url.hostname.endsWith(".local")
+    ) {
+      return null;
+    }
+
+    return url.toString();
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -144,15 +156,20 @@ async function sendEventPreview(chatId: string, event: EventRow, language: BotLa
         [{ text: copy.openOnSite, url: eventUrl }]
       ];
 
-  if (isValidTelegramImageUrl(event.image_url)) {
+  const imageUrl = normalizeTelegramImageUrl(event.image_url);
+
+  if (imageUrl) {
     try {
-      await sendTelegramPhoto(chatId, event.image_url!, {
+      await sendTelegramPhoto(chatId, imageUrl, {
         caption: text,
         inlineKeyboard
       });
       return;
-    } catch {
-      // Telegram may reject an otherwise valid HTTPS asset. Text fallback keeps the webhook non-fatal.
+    } catch (error) {
+      console.error("telegram image send failed", {
+        slug: event.slug,
+        reason: error instanceof Error ? error.message : "unknown"
+      });
     }
   }
 
@@ -179,6 +196,7 @@ async function askForEventConfirmation(
 
 async function sendSummary(chatId: string, session: TelegramSession, event: EventRow, language: BotLanguage) {
   const copy = getTelegramCopy(language);
+  const isFreeEvent = Number(event.price) <= 0;
 
   await sendTelegramMessage(
     chatId,
@@ -196,7 +214,7 @@ async function sendSummary(chatId: string, session: TelegramSession, event: Even
     ),
     {
       inlineKeyboard: [
-        [{ text: copy.payLaterButton, callback_data: "payment_pending" }],
+        [{ text: isFreeEvent ? copy.confirmFreeButton : copy.payLaterButton, callback_data: "payment_pending" }],
         [{ text: copy.restartButton, callback_data: "restart" }]
       ],
       removeKeyboard: true
@@ -235,7 +253,10 @@ async function sendMyTickets(
 
   if (ticketRows.length === 0) {
     await sendTelegramMessage(chatId, copy.ticketsMissing, {
-      inlineKeyboard: [[{ text: copy.openSite, url: `${getAppUrl()}/events` }]]
+      inlineKeyboard: [
+        [{ text: copy.search, callback_data: "search_events" }],
+        [{ text: copy.openSite, url: `${getAppUrl()}/events` }]
+      ]
     });
     return;
   }
@@ -270,15 +291,21 @@ async function sendMyTickets(
 
 async function finishPaymentStub(chatId: string, session: TelegramSession, language: BotLanguage) {
   const copy = getTelegramCopy(language);
-  const { ticket } = await createPendingRegistrationAndTicket(getTelegramSupabaseClient(), session);
+  const supabase = getTelegramSupabaseClient();
+  const event = session.event_slug ? await getEventBySlug(supabase, session.event_slug) : null;
+  const isFreeEvent = Number(event?.price ?? 0) <= 0;
+  const { ticket } = isFreeEvent
+    ? await confirmFreeRegistrationAndTicket(supabase, session)
+    : await createPendingRegistrationAndTicket(supabase, session);
 
   await sendTelegramMessage(
     chatId,
     [
-      copy.paymentPending,
+      isFreeEvent ? copy.freeConfirmed : copy.paymentPending,
       "",
       `ticket_code: ${escapeHtml(ticket.ticket_code)}`,
-      `payment_status: ${escapeHtml(ticket.payment_status)}`
+      `payment_status: ${escapeHtml(ticket.payment_status)}`,
+      `${copy.qrPayload}: ${escapeHtml(ticket.qr_payload || ticket.ticket_code)}`
     ].join("\n"),
     {
       inlineKeyboard: [
@@ -352,6 +379,11 @@ async function handleCallback(callbackQuery: TelegramCallbackQuery) {
 
   if (data === "my_tickets") {
     await sendMyTickets(user.chatId, user.telegramUserId, user.telegramUsername, language);
+    return;
+  }
+
+  if (data === "search_events") {
+    await sendEventsSearch(user.chatId, language);
     return;
   }
 
@@ -441,23 +473,30 @@ async function handleConversationMessage(message: TelegramMessage) {
   const copy = getTelegramCopy(language);
   const otherCopy = getTelegramCopy(language === "uk" ? "en" : "uk");
   const text = message.text?.trim();
+  const legacySearch: string[] = ["🔍 Пошук", "🔍 Search"];
+  const legacyOpenApp: string[] = ["📱 Перейти у додаток", "📱 Open app"];
+  const legacyOpenSite: string[] = ["🌐 Перейти на сайт", "🌐 Open website"];
+  const searchCommands: string[] = [copy.search, otherCopy.search, ...legacySearch];
+  const ticketCommands: string[] = [copy.myTickets, otherCopy.myTickets];
+  const appCommands: string[] = [copy.openApp, otherCopy.openApp, ...legacyOpenApp];
+  const siteCommands: string[] = [copy.openSite, otherCopy.openSite, ...legacyOpenSite];
 
-  if (text === copy.search || text === otherCopy.search) {
+  if (text && searchCommands.includes(text)) {
     await sendEventsSearch(user.chatId, language);
     return;
   }
 
-  if (text === copy.myTickets || text === otherCopy.myTickets) {
+  if (text && ticketCommands.includes(text)) {
     await sendMyTickets(user.chatId, user.telegramUserId, user.telegramUsername, language);
     return;
   }
 
-  if (text === copy.openApp || text === otherCopy.openApp) {
+  if (text && appCommands.includes(text)) {
     await sendTelegramMessage(user.chatId, copy.appSoon, mainMenuKeyboard(language));
     return;
   }
 
-  if (text === copy.openSite || text === otherCopy.openSite) {
+  if (text && siteCommands.includes(text)) {
     await sendTelegramMessage(user.chatId, `${getAppUrl()}/events`, {
       inlineKeyboard: [[{ text: copy.openSite, url: `${getAppUrl()}/events` }]]
     });
@@ -514,7 +553,10 @@ async function handleConversationMessage(message: TelegramMessage) {
     }
 
     await sendSummary(user.chatId, updated, event, language);
+    return;
   }
+
+  await sendTelegramMessage(user.chatId, copy.unknownCommand, mainMenuKeyboard(language));
 }
 
 export async function POST(request: Request) {

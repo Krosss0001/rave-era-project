@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { CheckCircle2, ExternalLink, UserPlus } from "lucide-react";
+import { CheckCircle2, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { isFreePrice } from "@/lib/format";
 import { buildQrPayload, generateTicketCode } from "@/lib/tickets";
 import { buildTelegramUrl } from "@/lib/telegram";
 import type { Database } from "@/lib/supabase/types";
@@ -12,6 +13,7 @@ import type { Database } from "@/lib/supabase/types";
 type EventRegistrationFormProps = {
   eventId: string;
   eventSlug: string;
+  eventPrice: number;
   referralCode?: string | null;
 };
 
@@ -60,8 +62,9 @@ function getCleanErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
-export function EventRegistrationForm({ eventId, eventSlug, referralCode }: EventRegistrationFormProps) {
+export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referralCode }: EventRegistrationFormProps) {
   const { dictionary } = useLanguage();
+  const isFreeEvent = isFreePrice(eventPrice);
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const telegramUrl = useMemo(() => buildTelegramUrl(eventSlug, referralCode), [eventSlug, referralCode]);
   const [open, setOpen] = useState(false);
@@ -186,6 +189,19 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
     const existingTicket = await getTicketForRegistration(registration.id);
 
     if (existingTicket) {
+      if (isFreeEvent && (existingTicket.status !== "active" || existingTicket.payment_status !== "paid")) {
+        const { data, error } = await supabase
+          .from("tickets")
+          .update({ status: "active", payment_status: "paid" })
+          .eq("registration_id", registration.id)
+          .select("ticket_code,status,payment_status")
+          .single();
+
+        if (!error && data) {
+          return data;
+        }
+      }
+
       return existingTicket;
     }
 
@@ -201,8 +217,8 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
           user_id: currentUserId,
           ticket_code: nextTicketCode,
           qr_payload: buildQrPayload(nextTicketCode, registration.event_id, currentUserId),
-          status: "reserved",
-          payment_status: "pending"
+          status: isFreeEvent ? "active" : "reserved",
+          payment_status: isFreeEvent ? "paid" : "pending"
         })
         .select("ticket_code,status,payment_status")
         .single();
@@ -272,6 +288,13 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
       const existingRegistration = await getExistingRegistration(userId);
 
       if (existingRegistration) {
+        if (isFreeEvent && existingRegistration.status !== "confirmed") {
+          await supabase
+            .from("registrations")
+            .update({ status: "confirmed" })
+            .eq("id", existingRegistration.id);
+        }
+
         const existingTicket = await createTicketForRegistration(existingRegistration, userId);
 
         setTicket(existingTicket);
@@ -289,7 +312,7 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
           name,
           email,
           telegram_username: telegramUsername || null,
-          status: "pending"
+          status: isFreeEvent ? "confirmed" : "pending"
         })
         .select("id,event_id,user_id,status")
         .single();
@@ -331,19 +354,18 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
   }
 
   return (
-    <section className="group relative border border-[#00FF88]/20 bg-[#020202] p-5 shadow-[0_0_90px_rgba(0,255,136,0.07)]">
+    <section className="group relative border border-white/[0.08] bg-[#020202] p-5 shadow-[0_0_60px_rgba(0,255,136,0.035)]">
       <span className="absolute left-0 top-0 h-px w-full bg-[#00FF88]" aria-hidden="true" />
-      <div className="flex items-start gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center border border-[#00FF88]/30 bg-[#030303] text-[#00FF88]">
-          <UserPlus className="h-5 w-5" aria-hidden="true" />
-        </span>
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#00FF88]">{dictionary.events.registration}</p>
-          <h2 className="mt-2 text-2xl font-black uppercase leading-none">{dictionary.events.reserveAccess}</h2>
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#00FF88]">{dictionary.events.registerWeb}</p>
           <p className="mt-2 text-sm leading-6 text-white/45">
-            {dictionary.events.submitDetails}
+            {isFreeEvent ? dictionary.common.freeConfirmed : dictionary.common.paymentComing}
           </p>
         </div>
+        <span className="shrink-0 border border-white/[0.06] bg-[#030303] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.16em] text-white/35">
+          Web
+        </span>
       </div>
 
       {ticket ? (

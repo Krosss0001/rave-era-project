@@ -1,47 +1,112 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { ArrowRight, Bot, ChartNoAxesCombined, Sparkles, WalletCards } from "lucide-react";
 import { featuredEvent } from "@/data/events";
-import { formatPrice, getCapacityPercent } from "@/lib/format";
+import { getCapacityPercent } from "@/lib/format";
 import { SafeEventImage } from "@/components/events/safe-event-image";
 import { LocalizedText } from "@/components/shared/localized-text";
+import { LocalizedPrice } from "@/components/shared/localized-price";
 
 const platformCards = [
   {
     icon: Sparkles,
-    title: "Event Discovery",
-    copy: "Premium event pages and a public discovery surface built to make demand visible."
+    title: { ua: "Пошук подій", en: "Event Discovery" },
+    copy: {
+      ua: "Преміальні сторінки подій і публічна вітрина, що допомагають перетворювати інтерес на попит.",
+      en: "Premium event pages and a public discovery surface built to make demand visible."
+    }
   },
   {
     icon: Bot,
-    title: "Telegram Execution",
-    copy: "Registration state, payment context, and confirmations continue inside the channel people use."
+    title: { ua: "Telegram-супровід", en: "Telegram Execution" },
+    copy: {
+      ua: "Реєстрації, статуси оплат і підтвердження продовжуються в каналі, яким аудиторія вже користується.",
+      en: "Registration state, payment context, and confirmations continue inside the channel people use."
+    }
   },
   {
     icon: ChartNoAxesCombined,
-    title: "Referral Growth",
-    copy: "Every attendee can become distribution through tracked shares, source signals, and conversion loops."
+    title: { ua: "Реферальне зростання", en: "Referral Growth" },
+    copy: {
+      ua: "Кожен учасник може стати каналом дистрибуції через відстежувані посилання та джерела конверсій.",
+      en: "Every attendee can become distribution through tracked shares, source signals, and conversion loops."
+    }
   },
   {
     icon: WalletCards,
-    title: "Solana-ready Access",
-    copy: "Wallet-ready architecture for gated access, collector passes, and future reward mechanics."
+    title: { ua: "Solana-ready доступ", en: "Solana-ready Access" },
+    copy: {
+      ua: "Архітектура, готова до wallet-доступу, колекційних перепусток і майбутніх механік винагород.",
+      en: "Wallet-ready architecture for gated access, collector passes, and future reward mechanics."
+    }
   }
 ];
 
 const growthCards = [
-  ["Not just ticketing", "Rave'era treats the event page as a conversion surface, not a checkout link."],
-  ["Referral loops", "Each registration can create measurable distribution before the doors open."],
-  ["Telegram confirmation layer", "The operational handoff stays close to the audience instead of buried in email."],
-  ["Organizer growth analytics", "Capacity, source, and attendee signals shape the next announcement."],
-  ["Future wallet rewards", "Solana-ready access keeps room for loyalty, collector passes, and gated event utility."]
+  {
+    title: { ua: "Не просто квитки", en: "Not just ticketing" },
+    copy: {
+      ua: "Rave'era сприймає сторінку події як поверхню конверсії, а не просто кнопку оплати.",
+      en: "Rave'era treats the event page as a conversion surface, not a checkout link."
+    }
+  },
+  {
+    title: { ua: "Реферальні петлі", en: "Referral loops" },
+    copy: {
+      ua: "Кожна реєстрація може створювати вимірюване охоплення ще до відкриття дверей.",
+      en: "Each registration can create measurable distribution before the doors open."
+    }
+  },
+  {
+    title: { ua: "Telegram-підтвердження", en: "Telegram confirmation layer" },
+    copy: {
+      ua: "Операційний супровід залишається поруч з аудиторією, а не губиться в email.",
+      en: "The operational handoff stays close to the audience instead of buried in email."
+    }
+  },
+  {
+    title: { ua: "Аналітика організатора", en: "Organizer growth analytics" },
+    copy: {
+      ua: "Місткість, джерела й сигнали учасників допомагають планувати наступний анонс.",
+      en: "Capacity, source, and attendee signals shape the next announcement."
+    }
+  },
+  {
+    title: { ua: "Майбутні wallet-нагороди", en: "Future wallet rewards" },
+    copy: {
+      ua: "Solana-ready доступ залишає простір для лояльності, колекційних перепусток і gated utility.",
+      en: "Solana-ready access keeps room for loyalty, collector passes, and gated event utility."
+    }
+  }
 ];
 
 const demoSteps = [
-  ["Discover", "Browse the curated public event page."],
-  ["Register on web", "Commit through the lightweight web flow."],
-  ["Continue in Telegram", "Receive status and confirmation where the community already lives."],
-  ["Share referral", "Invite trusted friends through a tracked link."],
-  ["Unlock access", "Arrive with verified status today and wallet-ready access later."]
+  {
+    title: { ua: "Знайти", en: "Discover" },
+    copy: { ua: "Перегляньте публічну сторінку події.", en: "Browse the curated public event page." }
+  },
+  {
+    title: { ua: "Зареєструватися", en: "Register on web" },
+    copy: { ua: "Залиште заявку через легкий веб-флоу.", en: "Commit through the lightweight web flow." }
+  },
+  {
+    title: { ua: "Продовжити в Telegram", en: "Continue in Telegram" },
+    copy: {
+      ua: "Отримайте статус і підтвердження там, де вже живе ком'юніті.",
+      en: "Receive status and confirmation where the community already lives."
+    }
+  },
+  {
+    title: { ua: "Поділитися", en: "Share referral" },
+    copy: { ua: "Запросіть друзів через відстежуване посилання.", en: "Invite trusted friends through a tracked link." }
+  },
+  {
+    title: { ua: "Отримати доступ", en: "Unlock access" },
+    copy: {
+      ua: "Приходьте з підтвердженим статусом сьогодні та wallet-ready доступом у наступних етапах.",
+      en: "Arrive with verified status today and wallet-ready access later."
+    }
+  }
 ];
 
 const partners = [
@@ -62,7 +127,7 @@ const partners = [
   "VYAVA"
 ];
 
-function SectionLabel({ index, label }: { index: string; label: string }) {
+function SectionLabel({ index, label }: { index: string; label: ReactNode }) {
   return (
     <p className="scroll-reveal mb-5 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.24em] text-[#00FF88]/90">
       <span className="text-white/20">{index}</span>
@@ -87,6 +152,16 @@ const revealStyle = (index: number) => ({
 
 export default function HomePage() {
   const capacityPercent = getCapacityPercent(featuredEvent.registered, featuredEvent.capacity);
+  const heroLines = [
+    { ua: "СТВОРЮЄМО", en: "WE BUILD" },
+    { ua: "ПОДІЇ", en: "EVENTS" },
+    { ua: "ЩО ПРОДАЮТЬ", en: "THAT SELL" }
+  ];
+  const heroStats = [
+    { value: "8.4K", label: { ua: "охоплення спільноти", en: "community reach" } },
+    { value: "74%", label: { ua: "заповненість Noir Signal", en: "Noir Signal capacity" } },
+    { value: "76", label: { ua: "реферальних реєстрацій", en: "referral registrations" } }
+  ];
 
   return (
     <div className="relative overflow-hidden">
@@ -102,22 +177,35 @@ export default function HomePage() {
               <span className="whitespace-nowrap">Rave<span className="text-[#00FF88]">&apos;</span>era</span> Group <span className="text-[#00FF88]" aria-hidden="true">{"\u00B7"}</span> Concerts <span className="text-[#00FF88]">&amp;</span> Marketing Agency
             </p>
             <h1 className="mt-8 text-[clamp(3rem,16vw,10.5rem)] font-black uppercase leading-[0.78] text-white sm:text-[clamp(4.5rem,9.6vw,10.5rem)]">
-              {["WE BUILD", "EVENTS", "THAT SELL"].map((line, index) => (
+              {heroLines.map((line, index) => (
                 <span
-                  key={line}
+                  key={line.en}
                   className={`block motion-safe:animate-[revealLine_700ms_cubic-bezier(0.16,1,0.3,1)_both] ${
                     index === 2 ? "text-[#00FF88] [text-shadow:0_0_80px_rgba(0,255,136,0.28)]" : ""
                   }`}
                   style={revealStyle(index)}
                 >
-                  {line}
+                  <LocalizedText ua={line.ua} en={line.en} />
                 </span>
               ))}
             </h1>
             <p className="mt-8 max-w-xl text-lg font-semibold uppercase leading-[1.08] text-white motion-safe:animate-[fadeUp_520ms_cubic-bezier(0.16,1,0.3,1)_360ms_both] md:text-3xl">
-              We don&apos;t just run events.
-              <br />
-              We scale them.
+              <LocalizedText
+                ua={
+                  <>
+                    Ми не просто проводимо події.
+                    <br />
+                    Ми масштабуємо їх.
+                  </>
+                }
+                en={
+                  <>
+                    We don&apos;t just run events.
+                    <br />
+                    We scale them.
+                  </>
+                }
+              />
             </p>
             <div className="mt-10 flex flex-col gap-3 motion-safe:animate-[fadeUp_520ms_cubic-bezier(0.16,1,0.3,1)_460ms_both] sm:flex-row">
               <Link
@@ -126,7 +214,7 @@ export default function HomePage() {
               >
                 <span className="absolute inset-0 -translate-x-full bg-[#00FF88] transition-transform duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0" aria-hidden="true" />
                 <span className="relative z-10 inline-flex items-center">
-                  <LocalizedText ua="Переглянути події" en="Web version" />
+                  <LocalizedText ua="Переглянути події" en="Browse events" />
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-500 group-hover:translate-x-1" aria-hidden="true" />
                 </span>
               </Link>
@@ -139,19 +227,17 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="mt-10 grid gap-4 sm:grid-cols-3">
-              {[
-                ["8.4K", "community reach"],
-                ["74%", "Noir Signal capacity"],
-                ["76", "referral registrations"]
-              ].map(([value, label], index) => (
+              {heroStats.map(({ value, label }, index) => (
                 <div
-                  key={label}
+                  key={label.en}
                   className="group relative overflow-hidden border border-white/[0.05] bg-[#020202] p-4 motion-safe:animate-[fadeUp_520ms_cubic-bezier(0.16,1,0.3,1)_both] transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-[#00FF88]/30 hover:bg-[#00FF88]/[0.02]"
                   style={revealStyle(index + 6)}
                 >
                   <span className="absolute left-0 top-0 h-px w-0 bg-[#00FF88] motion-safe:transition-[width] motion-safe:duration-500 motion-safe:ease-out group-hover:w-full" aria-hidden="true" />
                   <p className="font-mono text-2xl font-semibold text-white">{value}</p>
-                  <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">{label}</p>
+                  <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">
+                    <LocalizedText ua={label.ua} en={label.en} />
+                  </p>
                 </div>
               ))}
             </div>
@@ -164,14 +250,14 @@ export default function HomePage() {
                   src={featuredEvent.image}
                   alt="Rave'era featured event audience"
                   priority
-                  className="object-cover opacity-70 grayscale transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 group-hover:opacity-100 group-hover:grayscale-0"
+                  className="object-cover object-center opacity-70 grayscale transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.02] group-hover:opacity-100 group-hover:grayscale-0"
                   sizes="(min-width: 1024px) 42vw, 100vw"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 h-32 bg-[#00FF88]/[0.035] blur-2xl opacity-0 motion-safe:transition-opacity motion-safe:duration-500 group-hover:opacity-100" />
                 <div className="absolute bottom-0 left-0 right-0 p-6">
                   <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#00FF88]">
-                    Featured event
+                    <LocalizedText ua="Подія у фокусі" en="Featured event" />
                   </p>
                   <h2 className="mt-2 text-3xl font-black uppercase tracking-tight">{featuredEvent.title}</h2>
                   <p className="mt-2 text-sm leading-6 text-white/45">{featuredEvent.subtitle}</p>
@@ -186,9 +272,11 @@ export default function HomePage() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,255,136,0.05),transparent_62%)]" />
         <div className="relative z-10 mx-auto mb-8 flex max-w-7xl flex-col justify-between gap-4 px-4 sm:px-6 md:flex-row md:items-end md:px-10 lg:px-12 2xl:max-w-[1500px]">
           <div>
-            <p className="scroll-reveal font-mono text-[10px] uppercase tracking-[0.24em] text-[#00FF88]">Trusted By</p>
+            <p className="scroll-reveal font-mono text-[10px] uppercase tracking-[0.24em] text-[#00FF88]">
+              <LocalizedText ua="Нам довіряють" en="Trusted by" />
+            </p>
             <h2 className="scroll-reveal mt-3 text-3xl font-black uppercase leading-[0.9] text-white md:text-6xl">
-              15+ Brands &amp; Partners
+              <LocalizedText ua="15+ брендів і партнерів" en="15+ Brands & Partners" />
             </h2>
           </div>
           <p className="max-w-sm text-sm leading-6 text-white/35">
@@ -215,14 +303,14 @@ export default function HomePage() {
       <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#000000] px-4 py-28 sm:px-6 md:px-10 md:py-40 lg:px-12 2xl:max-w-[1500px]">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
-            <SectionLabel index="01" label="Platform System" />
+            <SectionLabel index="01" label={<LocalizedText ua="Система платформи" en="Platform System" />} />
             <h2 className="scroll-reveal mt-4 max-w-3xl text-4xl font-black uppercase leading-[0.88] text-white md:text-7xl">
               <LocalizedText ua="Єдина система для попиту на події" en="One system for event demand" />
             </h2>
           </div>
           <p className="max-w-lg text-sm leading-6 text-white/45">
             <LocalizedText
-              ua="Rave'era поєднує discovery, реєстрації, Telegram-підтвердження, реферали та майбутній wallet-доступ без відчуття generic ticketing software."
+              ua="Rave'era поєднує пошук подій, реєстрації, Telegram-підтвердження, реферали та майбутній wallet-доступ без відчуття generic ticketing software."
               en="Rave'era connects discovery, registration, Telegram execution, referral growth, and Solana-ready access without turning the experience into generic ticketing software."
             />
           </p>
@@ -230,7 +318,7 @@ export default function HomePage() {
         <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {platformCards.map((card, index) => (
             <article
-              key={card.title}
+              key={card.title.en}
               className="scroll-card group relative border border-white/[0.05] bg-[#020202] p-5 transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-[#00FF88]/30 hover:bg-[#00FF88]/[0.02]"
               style={revealStyle(index)}
             >
@@ -243,9 +331,11 @@ export default function HomePage() {
                 <card.icon className="h-5 w-5" aria-hidden="true" />
               </div>
               <h3 className="mt-6 text-[11px] font-black uppercase tracking-[0.08em] text-white transition group-hover:text-[#00FF88]">
-                {card.title}
+                <LocalizedText ua={card.title.ua} en={card.title.en} />
               </h3>
-              <p className="mt-3 text-xs leading-6 text-white/35">{card.copy}</p>
+              <p className="mt-3 text-xs leading-6 text-white/35">
+                <LocalizedText ua={card.copy.ua} en={card.copy.en} />
+              </p>
             </article>
           ))}
         </div>
@@ -254,20 +344,22 @@ export default function HomePage() {
       <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#020202] px-4 py-28 sm:px-6 md:px-10 md:py-40 lg:px-12 2xl:max-w-[1500px]">
         <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
           <div>
-            <SectionLabel index="02" label="Featured Event" />
+            <SectionLabel index="02" label={<LocalizedText ua="Подія у фокусі" en="Featured Event" />} />
             <h2 className="scroll-reveal mt-4 text-4xl font-black uppercase leading-[0.88] text-white md:text-7xl">
-              Event pages as product proof
+              <LocalizedText ua="Сторінки подій як доказ продукту" en="Event pages as product proof" />
             </h2>
             <p className="mt-5 max-w-md text-sm leading-6 text-white/45">
-              The featured event shows the platform loop in one place: discovery page, conversion
-              mechanics, capacity signals, Telegram continuation, and organizer-ready attribution.
+              <LocalizedText
+                ua="Подія у фокусі показує платформений цикл в одному місці: сторінка пошуку, конверсія, сигнали місткості, продовження в Telegram і атрибуція для організатора."
+                en="The featured event shows the platform loop in one place: discovery page, conversion mechanics, capacity signals, Telegram continuation, and organizer-ready attribution."
+              />
             </p>
             <div className="mt-8">
               <Link
                 href={`/events/${featuredEvent.slug}`}
                 className="focus-ring inline-flex font-mono text-[11px] font-bold uppercase tracking-widest text-white/55 underline decoration-white/20 underline-offset-8 transition hover:text-[#00FF88] hover:decoration-[#00FF88]"
               >
-                View event page
+                <LocalizedText ua="Відкрити сторінку події" en="View event page" />
               </Link>
             </div>
           </div>
@@ -281,7 +373,7 @@ export default function HomePage() {
               <SafeEventImage
                 src={featuredEvent.image}
                 alt={`${featuredEvent.title} event crowd`}
-                className="object-cover opacity-70 grayscale transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 group-hover:opacity-100 group-hover:grayscale-0"
+                className="object-cover object-center opacity-70 grayscale transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.02] group-hover:opacity-100 group-hover:grayscale-0"
                 sizes="(min-width: 1024px) 42vw, 100vw"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
@@ -301,10 +393,10 @@ export default function HomePage() {
               </div>
               <div className="mt-8 grid grid-cols-3 gap-3 border-t border-white/[0.05] pt-5">
                 {[
-                  [capacityPercent + "%", "capacity"],
-                  [formatPrice(featuredEvent.price, featuredEvent.currency), "price"],
-                  [featuredEvent.city, "city"]
-                ].map(([value, label]) => (
+                  { value: capacityPercent + "%", label: "capacity" },
+                  { value: <LocalizedPrice price={featuredEvent.price} currency={featuredEvent.currency} />, label: "price" },
+                  { value: featuredEvent.city, label: "city" }
+                ].map(({ value, label }) => (
                   <div key={label} className="border border-white/[0.05] bg-[#020202] p-3">
                     <p className="font-mono text-sm font-semibold uppercase text-white">{value}</p>
                     <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.18em] text-white/35">{label}</p>
@@ -319,19 +411,21 @@ export default function HomePage() {
       <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#000000] px-4 py-28 sm:px-6 md:px-10 md:py-40 lg:px-12 2xl:max-w-[1500px]">
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
           <div>
-            <SectionLabel index="03" label="Growth Engine" />
+            <SectionLabel index="03" label={<LocalizedText ua="Двигун зростання" en="Growth Engine" />} />
               <h2 className="scroll-reveal mt-4 text-4xl font-black uppercase leading-[0.88] text-white md:text-6xl">
-              Built beyond ticketing
+              <LocalizedText ua="Більше, ніж квитки" en="Built beyond ticketing" />
             </h2>
             <p className="mt-5 max-w-lg text-sm leading-6 text-white/45">
-              Rave&apos;era keeps the premium event surface intact while adding the operating layers an
-              organizer needs to grow: distribution, confirmation, analytics, and future wallet utility.
+              <LocalizedText
+                ua="Rave'era зберігає преміальну подієву поверхню та додає операційні шари для зростання: дистрибуцію, підтвердження, аналітику й майбутню wallet-утиліту."
+                en="Rave'era keeps the premium event surface intact while adding the operating layers an organizer needs to grow: distribution, confirmation, analytics, and future wallet utility."
+              />
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            {growthCards.map(([title, copy], index) => (
+            {growthCards.map((card, index) => (
               <article
-                key={title}
+                key={card.title.en}
                 className={index === 0 ? "scroll-card group relative overflow-hidden border border-white/[0.05] bg-[#030303] p-5 transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-[#00FF88]/30 hover:bg-[#00FF88]/[0.02] md:col-span-2" : "scroll-card group relative overflow-hidden border border-white/[0.05] bg-[#020202] p-5 transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-[#00FF88]/30 hover:bg-[#00FF88]/[0.02]"}
                 style={revealStyle(index)}
               >
@@ -339,13 +433,15 @@ export default function HomePage() {
                 <span className="absolute left-0 top-0 h-px w-0 bg-[#00FF88] motion-safe:transition-[width] motion-safe:duration-500 motion-safe:ease-out group-hover:w-full" aria-hidden="true" />
                 <div className="flex items-start justify-between gap-4">
                   <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-white transition group-hover:text-[#00FF88]">
-                    {title}
+                    <LocalizedText ua={card.title.ua} en={card.title.en} />
                   </h3>
                   <span className="font-mono text-[10px] text-white/20 transition group-hover:text-[#00FF88]">
                     {String(index + 1).padStart(2, "0")}
                   </span>
                 </div>
-                <p className="mt-4 text-sm leading-6 text-white/45">{copy}</p>
+                <p className="mt-4 text-sm leading-6 text-white/45">
+                  <LocalizedText ua={card.copy.ua} en={card.copy.en} />
+                </p>
               </article>
             ))}
           </div>
@@ -355,19 +451,22 @@ export default function HomePage() {
       <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#020202] px-4 py-28 sm:px-6 md:px-10 md:py-40 lg:px-12 2xl:max-w-[1500px]">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
-            <SectionLabel index="04" label="Demo Flow" />
+            <SectionLabel index="04" label={<LocalizedText ua="Демо-флоу" en="Demo Flow" />} />
             <h2 className="scroll-reveal mt-4 max-w-4xl text-4xl font-black uppercase leading-[0.88] text-white md:text-7xl">
-              From discovery to access
+              <LocalizedText ua="Від пошуку до доступу" en="From discovery to access" />
             </h2>
           </div>
           <p className="max-w-md text-sm leading-6 text-white/45">
-            The MVP demonstrates the complete audience path without changing the routes behind it.
+            <LocalizedText
+              ua="MVP демонструє повний шлях аудиторії без зміни робочих маршрутів продукту."
+              en="The MVP demonstrates the complete audience path without changing the routes behind it."
+            />
           </p>
         </div>
         <div className="mt-12 grid gap-3">
-          {demoSteps.map(([title, copy], index) => (
+          {demoSteps.map((step, index) => (
             <article
-              key={title}
+              key={step.title.en}
               className="scroll-card group relative grid gap-4 overflow-hidden border border-white/[0.05] bg-[#030303] p-5 transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-[#00FF88]/30 hover:bg-[#00FF88]/[0.02] md:grid-cols-[120px_0.7fr_1fr] md:items-center"
               style={revealStyle(index)}
             >
@@ -377,9 +476,11 @@ export default function HomePage() {
                 {String(index + 1).padStart(2, "0")}
               </span>
               <h3 className="text-2xl font-black uppercase leading-none text-white md:text-4xl">
-                {title}
+                <LocalizedText ua={step.title.ua} en={step.title.en} />
               </h3>
-              <p className="text-sm leading-6 text-white/45">{copy}</p>
+              <p className="text-sm leading-6 text-white/45">
+                <LocalizedText ua={step.copy.ua} en={step.copy.en} />
+              </p>
             </article>
           ))}
         </div>

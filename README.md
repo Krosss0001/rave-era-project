@@ -10,6 +10,17 @@ Deploy URL:
 https://rave-era-project.vercel.app
 ```
 
+## Current Features
+
+- Public event discovery with Supabase data and mock fallback
+- Event detail pages with responsive hero, safe image fallback, web registration, Telegram continuation, referrals, and organizer details
+- UA/EN website language toggle with localStorage persistence
+- UA/EN Telegram bot menu, search, event deep links, registration flow, and My Tickets
+- Ticket creation with QR payload placeholder
+- Free-event path that confirms registration without payment
+- Paid-event path that reserves tickets with payment pending
+- Organizer event creation and role-gated dashboards
+
 ## Stack
 
 - Next.js App Router
@@ -70,6 +81,28 @@ supabase/patches/008_telegram_language_and_polish.sql
 
 Patch `006` creates server-managed Telegram registration sessions. Patch `007` adds Telegram identity linking plus `registrations.telegram_user_id`. Patch `008` stores bot language preferences on `telegram_users` and `telegram_registration_sessions`.
 
+## Payment And QR Behavior
+
+Free events:
+
+- Website shows `FREE` / `БЕЗКОШТОВНО` instead of `0 UAH`.
+- Telegram shows `FREE` / `БЕЗКОШТОВНО`.
+- Telegram confirmation creates or reuses a registration, sets it to `confirmed`, sets ticket status to `active`, sets payment status to `paid`, and shows the QR payload placeholder.
+
+Paid events:
+
+- Payment provider is intentionally not connected yet.
+- Registration remains `pending`.
+- Ticket remains `reserved`.
+- Ticket `payment_status` remains `pending`.
+
+Telegram images:
+
+- The bot uses the original Supabase `events.image_url`.
+- Only direct HTTPS URLs are attempted with `sendPhoto`.
+- Invalid URLs, localhost URLs, blocked hosts, or Telegram send failures fall back to text-only previews.
+- Server logs include event slug and error message only, never secrets.
+
 ## Telegram Webhook Setup
 
 Set the webhook to the deployed route:
@@ -96,7 +129,7 @@ Event deep link:
 https://t.me/your_bot_username?start=event_noir-signal
 ```
 
-Expected: event preview, safe image if `image_url` is valid HTTPS, text fallback if image fails, then confirmation buttons.
+Expected: event preview, direct Supabase `image_url` photo if it is valid HTTPS, text fallback if Telegram rejects the image, then confirmation buttons.
 
 Search:
 
@@ -123,9 +156,19 @@ Registration flow:
 5. Enter position and company.
 6. Enter industry/company activity.
 7. Confirm summary.
-8. Tap payment stub.
+8. Tap payment/confirmation button.
 
-Expected: registration and reserved ticket are created or reused, with `ticket_code`, `qr_payload`, and `payment_status: pending`.
+Expected for paid events: registration and reserved ticket are created or reused, with `ticket_code`, `qr_payload`, and `payment_status: pending`.
+
+Expected for free events: registration is confirmed, ticket status is active, payment status is paid, and QR payload is shown immediately.
+
+Event detail conversion order:
+
+1. Ticket wave / price / capacity.
+2. Telegram execution layer.
+3. Referral growth loop.
+4. Solana-ready access placeholder.
+5. Compact web registration fallback for users who prefer not to use Telegram.
 
 ## Demo Flow
 

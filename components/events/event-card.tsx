@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { RaveeraEvent } from "@/data/events";
-import { formatEventDate, formatPrice, getCapacityPercent } from "@/lib/format";
+import { formatEventDate, getCapacityPercent } from "@/lib/format";
 import { SafeEventImage } from "@/components/events/safe-event-image";
+import { LocalizedPrice } from "@/components/shared/localized-price";
 
 type EventCardProps = {
   event: RaveeraEvent;
@@ -35,14 +36,14 @@ export function EventCard({ event, featured = false }: EventCardProps) {
       <span className="pointer-events-none absolute left-3 top-3 z-20 h-4 w-4 border-l border-t border-[#00FF88]/45 opacity-0 motion-safe:transition-opacity motion-safe:duration-500 group-hover:opacity-100" aria-hidden="true" />
       <span className="pointer-events-none absolute bottom-3 right-3 z-20 h-4 w-4 border-b border-r border-[#00FF88]/45 opacity-0 motion-safe:transition-opacity motion-safe:duration-500 group-hover:opacity-100" aria-hidden="true" />
 
-      <div className={`relative overflow-hidden ${featured ? "min-h-[420px]" : "aspect-[16/11]"}`}>
+      <div className={`relative overflow-hidden bg-[#050505] ${featured ? "aspect-[4/3] min-h-[320px] lg:aspect-auto lg:min-h-[420px]" : "aspect-[4/3] sm:aspect-[16/10]"}`}>
         <SafeEventImage
           src={event.image}
           alt={`${event.title} event crowd`}
-          className="object-cover opacity-70 grayscale motion-safe:transition-[transform,opacity,filter] motion-safe:duration-500 motion-safe:ease-out group-hover:scale-[1.025] group-hover:opacity-100 group-hover:grayscale-0"
+          className="object-cover object-center opacity-78 grayscale motion-safe:transition-[transform,opacity,filter] motion-safe:duration-500 motion-safe:ease-out group-hover:scale-[1.02] group-hover:opacity-100 group-hover:grayscale-0"
           sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/15 to-transparent" />
         <p className={`absolute left-4 top-4 border bg-[#020202]/95 px-3 py-1 font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-[#00FF88] ${
           urgent ? "border-[#00FF88]/40 shadow-[0_0_24px_rgba(0,255,136,0.12)] motion-safe:animate-[signalPulse_1.8s_ease-out_infinite]" : "border-white/[0.05]"
         }`}>
@@ -54,7 +55,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-white/55">
             {formatEventDate(event.date)} / {event.city} / <span className="text-[#00FF88]">{statusLabel}</span>
           </p>
-          <h3 className={`mt-3 font-black uppercase leading-[0.86] text-white [text-shadow:0_0_40px_rgba(255,255,255,0.06)] ${featured ? "text-5xl md:text-7xl" : "text-3xl md:text-4xl"}`}>
+          <h3 className={`mt-3 break-words font-black uppercase leading-[0.9] text-white [text-shadow:0_0_40px_rgba(255,255,255,0.06)] ${featured ? "text-[clamp(2.25rem,7vw,5.5rem)]" : "text-[clamp(1.75rem,5vw,2.75rem)]"}`}>
             {event.title}
           </h3>
           <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/45">
@@ -67,10 +68,10 @@ export function EventCard({ event, featured = false }: EventCardProps) {
         </div>
         <div className="mt-7 grid grid-cols-3 gap-2 border-t border-white/[0.05] pt-5">
           {[
-            [event.city, "city"],
-            [formatPrice(event.price, event.currency), "price"],
-            [event.time, "time"]
-          ].map(([value, label]) => (
+            { value: event.city, label: "city" },
+            { value: <LocalizedPrice price={event.price} currency={event.currency} />, label: "price" },
+            { value: event.time, label: "time" }
+          ].map(({ value, label }) => (
             <div key={label} className="border border-white/[0.05] bg-[#030303] p-3 motion-safe:transition-colors motion-safe:duration-500 group-hover:border-white/[0.08]">
               <p className="font-mono text-xs font-semibold uppercase text-white">{value}</p>
               <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.18em] text-white/35">{label}</p>

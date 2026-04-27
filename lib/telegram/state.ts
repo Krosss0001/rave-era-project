@@ -358,7 +358,7 @@ async function getRegistrationForSession(supabase: SupabaseClient<Database>, ses
 async function getTicketForRegistration(supabase: SupabaseClient<Database>, registrationId: string) {
   const { data, error } = await supabase
     .from("tickets")
-    .select("id,ticket_code,status,payment_status")
+    .select("id,ticket_code,qr_payload,status,payment_status")
     .eq("registration_id", registrationId)
     .maybeSingle();
 
@@ -391,7 +391,7 @@ async function createTicket(supabase: SupabaseClient<Database>, registrationId: 
         status: "reserved",
         payment_status: "pending"
       })
-      .select("id,ticket_code,status,payment_status")
+      .select("id,ticket_code,qr_payload,status,payment_status")
       .single();
 
     if (!error && data) {
@@ -435,6 +435,41 @@ export async function createPendingRegistrationAndTicket(
   });
 
   return { registration, ticket };
+}
+
+export async function confirmFreeRegistrationAndTicket(
+  supabase: SupabaseClient<Database>,
+  session: TelegramSession
+) {
+  const { registration, ticket } = await createPendingRegistrationAndTicket(supabase, session);
+
+  const [registrationResult, ticketResult] = await Promise.all([
+    supabase
+      .from("registrations")
+      .update({ status: "confirmed" })
+      .eq("id", registration.id)
+      .select("id,event_id,user_id,status")
+      .single(),
+    supabase
+      .from("tickets")
+      .update({ status: "active", payment_status: "paid" })
+      .eq("id", ticket.id)
+      .select("id,ticket_code,qr_payload,status,payment_status")
+      .single()
+  ]);
+
+  if (registrationResult.error) {
+    throw registrationResult.error;
+  }
+
+  if (ticketResult.error || !ticketResult.data) {
+    throw ticketResult.error || new Error("Ticket could not be confirmed.");
+  }
+
+  return {
+    registration: registrationResult.data,
+    ticket: ticketResult.data
+  };
 }
 
 async function insertRegistration(supabase: SupabaseClient<Database>, session: TelegramSession) {

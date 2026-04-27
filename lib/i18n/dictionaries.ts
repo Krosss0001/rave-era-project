@@ -23,6 +23,7 @@ export const dictionaries = {
       openDashboard: "Мої квитки",
       retry: "Спробувати ще раз",
       paymentComing: "Оплата буде підключена наступним етапом",
+      freeConfirmed: "Безкоштовна подія: квиток підтверджується одразу.",
       demoReady: "Готово для демо"
     },
     home: {
@@ -150,6 +151,7 @@ export const dictionaries = {
       openDashboard: "My dashboard",
       retry: "Try again",
       paymentComing: "Payment will be connected next",
+      freeConfirmed: "Free event: ticket is confirmed immediately.",
       demoReady: "Demo-ready"
     },
     home: {

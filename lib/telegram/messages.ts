@@ -14,6 +14,7 @@ type EventRow = Pick<
   | "address"
   | "price"
   | "currency"
+  | "status"
 >;
 
 type SummaryInput = {
@@ -31,47 +32,50 @@ export const TELEGRAM_COPY = {
     chooseLanguage: "Оберіть мову / Choose language:",
     languageSaved: "Мову збережено.",
     welcome:
-      "Привіт! Це твій друг бот Rave'era Group Concerts & Marketing Agency, який допоможе вам обрати найкрутіший івент та зареєструватись на нього.\n\nОберіть дію:",
-    search: "🔍 Пошук",
+      "Привіт! Я бот Rave'era Group Concerts & Marketing Agency.\nДопоможу знайти подію, зареєструватися та зберегти квиток.\n\nОберіть дію:",
+    search: "🔍 Знайти подію",
     myTickets: "🎟 Мої квитки",
-    openApp: "📱 Перейти у додаток",
-    openSite: "🌐 Перейти на сайт",
+    openSite: "🌐 Відкрити сайт",
+    openApp: "📱 Додаток",
     appSoon: "Додаток Rave'era скоро буде доступний. Поки що ви можете користуватись сайтом.",
     noEvents: "Поки що немає доступних подій. Перевірте сайт трохи пізніше.",
     registerButton: "Зареєструватись",
     openOnSite: "Відкрити на сайті",
     showQr: "Показати QR",
-    confirmEvent: "Це той захід, на який ви хочете зареєструватися?",
+    confirmEvent: "Це та подія, на яку ви хочете зареєструватися?",
     yes: "Так",
     cancel: "Скасувати",
-    askName: "Як вас звати?",
-    askPhone: "Вкажіть, будь ласка, номер телефону",
+    askName: "Крок 1/4\nЯк вас звати?",
+    askPhone: "Крок 2/4\nВкажіть номер телефону.",
     shareContact: "Надати контакт",
-    askPositionCompany: "Вкажіть вашу посаду та компанію",
-    askIndustry: "У якій галузі/сфері ви працюєте? Чим займається ваша компанія?",
-    summaryQuestion: "Зберегти відповіді та продовжити?",
-    payLaterButton: "Перейти до оплати",
-    restartButton: "Почати спочатку",
+    askPositionCompany: "Крок 3/4\nВкажіть вашу посаду та компанію.",
+    askIndustry: "Крок 4/4\nУ якій сфері ви працюєте? Чим займається ваша компанія?",
+    summaryQuestion: "Перевірте дані перед підтвердженням:",
+    payLaterButton: "Все правильно",
+    confirmFreeButton: "Все правильно",
+    restartButton: "🔁 Почати спочатку",
     paymentPending: "Реєстрацію створено. Оплата буде підключена наступним етапом.",
-    cancelled: "Реєстрацію скасовано. Ви можете почати знову зі сторінки події або з меню бота.",
+    freeConfirmed: "Ця подія безкоштовна. Вашу реєстрацію підтверджено.",
+    cancelled: "Реєстрацію скасовано. Можете почати знову зі сторінки події або меню бота.",
     eventMissing: "Не вдалося знайти подію. Перевірте посилання або відкрийте список подій на сайті.",
     soldOut: "На цю подію вже немає вільних місць.",
     genericError: "Не вдалося обробити запит. Спробуйте ще раз трохи пізніше.",
-    ticketsMissing: "Здається, ви ще не зареєстровані на жодний захід або скасували свою участь 👀",
+    ticketsMissing: "Поки що у вас немає квитків. Знайдіть подію та зареєструйтесь за кілька кроків.",
+    unknownCommand: "Я не зовсім зрозумів команду. Оберіть дію з меню.",
+    free: "БЕЗКОШТОВНО",
     qrPayload: "QR payload",
     eventFallback: "Подія",
     locationFallback: "Локація уточнюється",
     dateFallback: "Дата уточнюється",
-    descriptionFallback: "Опис події буде уточнено організатором.",
+    descriptionFallback: "Організатор скоро додасть більше деталей події.",
     dateLabel: "Дата і час",
     locationLabel: "Місто / місце",
     priceLabel: "Вартість",
+    statusLabel: "Статус",
     pageLabel: "Сторінка події",
     ticketLabel: "Квиток",
-    statusLabel: "Статус",
     paymentLabel: "Оплата",
-    summaryTitle: "Чи все вірно? 💪",
-    summaryAnswers: "Ваші відповіді:",
+    summaryTitle: "Ваші відповіді:",
     eventLabel: "Подія",
     nameLabel: "Ім'я",
     phoneLabel: "Телефон",
@@ -83,11 +87,11 @@ export const TELEGRAM_COPY = {
     chooseLanguage: "Оберіть мову / Choose language:",
     languageSaved: "Language saved.",
     welcome:
-      "Hi! I'm your Rave'era Group Concerts & Marketing Agency bot. I'll help you find the right event and register for it.\n\nChoose an action:",
-    search: "🔍 Search",
+      "Hi! I'm the Rave'era Group Concerts & Marketing Agency bot.\nI can help you find events, register, and keep your ticket.\n\nChoose an action:",
+    search: "🔍 Find event",
     myTickets: "🎟 My tickets",
-    openApp: "📱 Open app",
     openSite: "🌐 Open website",
+    openApp: "📱 App",
     appSoon: "The Rave'era app is coming soon. For now, you can use the website.",
     noEvents: "No public events are available yet. Check the website a little later.",
     registerButton: "Register",
@@ -96,20 +100,24 @@ export const TELEGRAM_COPY = {
     confirmEvent: "Is this the event you want to register for?",
     yes: "Yes",
     cancel: "Cancel",
-    askName: "What is your name?",
-    askPhone: "Please enter your phone number",
+    askName: "Step 1/4\nWhat is your name?",
+    askPhone: "Step 2/4\nEnter your phone number.",
     shareContact: "Share contact",
-    askPositionCompany: "Please enter your role and company",
-    askIndustry: "What industry do you work in? What does your company do?",
-    summaryQuestion: "Save answers and continue?",
-    payLaterButton: "Continue to payment",
-    restartButton: "Start over",
+    askPositionCompany: "Step 3/4\nEnter your role and company.",
+    askIndustry: "Step 4/4\nWhat industry do you work in? What does your company do?",
+    summaryQuestion: "Review your details before confirmation:",
+    payLaterButton: "Looks good",
+    confirmFreeButton: "Looks good",
+    restartButton: "🔁 Start over",
     paymentPending: "Registration created. Payment will be connected in the next phase.",
+    freeConfirmed: "This event is free. Your registration is confirmed.",
     cancelled: "Registration cancelled. You can start again from the event page or bot menu.",
     eventMissing: "Event could not be found. Check the link or open the event list on the website.",
     soldOut: "This event has no available spots left.",
     genericError: "The request could not be processed. Try again a little later.",
-    ticketsMissing: "Looks like you do not have any event registrations yet 👀",
+    ticketsMissing: "You do not have tickets yet. Find an event and register in a few steps.",
+    unknownCommand: "I didn't quite understand that. Please choose an action from the menu.",
+    free: "FREE",
     qrPayload: "QR payload",
     eventFallback: "Event",
     locationFallback: "Location TBA",
@@ -118,12 +126,11 @@ export const TELEGRAM_COPY = {
     dateLabel: "Date and time",
     locationLabel: "City / venue",
     priceLabel: "Price",
+    statusLabel: "Status",
     pageLabel: "Event page",
     ticketLabel: "Ticket",
-    statusLabel: "Status",
     paymentLabel: "Payment",
-    summaryTitle: "Does everything look correct? 💪",
-    summaryAnswers: "Your answers:",
+    summaryTitle: "Your answers:",
     eventLabel: "Event",
     nameLabel: "Name",
     phoneLabel: "Phone",
@@ -145,6 +152,12 @@ export function escapeHtml(value: string | null | undefined) {
 }
 
 export function formatTelegramPrice(price: number, currency: string | null, language: BotLanguage) {
+  const copy = getTelegramCopy(language);
+
+  if (Number.isFinite(price) && price <= 0) {
+    return copy.free;
+  }
+
   const locale = language === "uk" ? "uk-UA" : "en-US";
   return `${new Intl.NumberFormat(locale).format(Number.isFinite(price) ? price : 0)} ${currency || "UAH"}`;
 }
@@ -168,6 +181,27 @@ export function formatTelegramDate(value: string | null, language: BotLanguage) 
   }).format(parsed);
 }
 
+function formatStatus(status: string | null, language: BotLanguage) {
+  const labels: Record<BotLanguage, Record<string, string>> = {
+    uk: {
+      live: "Квитки доступні",
+      limited: "Місця обмежені",
+      soon: "Скоро",
+      draft: "Чернетка",
+      archived: "Архів"
+    },
+    en: {
+      live: "Tickets live",
+      limited: "Limited capacity",
+      soon: "Coming soon",
+      draft: "Draft",
+      archived: "Archived"
+    }
+  };
+
+  return labels[language][status || ""] || status || labels[language].soon;
+}
+
 export function buildEventCardMessage(event: EventRow, eventUrl: string, language: BotLanguage) {
   const copy = getTelegramCopy(language);
   const description = event.description || event.subtitle || copy.descriptionFallback;
@@ -179,6 +213,7 @@ export function buildEventCardMessage(event: EventRow, eventUrl: string, languag
     `${copy.dateLabel}: ${escapeHtml(formatTelegramDate(event.date, language))}`,
     `${copy.locationLabel}: ${escapeHtml(location)}`,
     `${copy.priceLabel}: ${escapeHtml(formatTelegramPrice(Number(event.price), event.currency, language))}`,
+    `${copy.statusLabel}: ${escapeHtml(formatStatus(event.status, language))}`,
     "",
     escapeHtml(description),
     "",
@@ -195,17 +230,15 @@ export function buildSummaryMessage(input: SummaryInput, language: BotLanguage) 
   const copy = getTelegramCopy(language);
 
   return [
-    copy.summaryTitle,
-    copy.summaryAnswers,
+    copy.summaryQuestion,
     "",
+    copy.summaryTitle,
     `${copy.eventLabel}: ${escapeHtml(input.eventTitle)}`,
     `${copy.nameLabel}: ${escapeHtml(input.name)}`,
     `${copy.phoneLabel}: ${escapeHtml(input.phone)}`,
     `${copy.positionLabel}: ${escapeHtml(input.positionCompany)}`,
     `${copy.industryLabel}: ${escapeHtml(input.industry)}`,
     `Telegram: ${escapeHtml(input.telegramUsername || copy.notProvided)}`,
-    `${copy.priceLabel}: ${escapeHtml(input.price)}`,
-    "",
-    copy.summaryQuestion
+    `${copy.priceLabel}: ${escapeHtml(input.price)}`
   ].join("\n");
 }
