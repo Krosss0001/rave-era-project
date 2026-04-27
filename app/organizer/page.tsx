@@ -11,6 +11,7 @@ import {
   TelegramStatusPanel
 } from "@/components/organizer/dashboard-panels";
 import { RoleGate } from "@/components/shared/role-gate";
+import { LocalizedText } from "@/components/shared/localized-text";
 
 export default function OrganizerPage() {
   return (
@@ -20,13 +21,16 @@ export default function OrganizerPage() {
         <div className="border-b border-white/[0.05] pb-16">
           <div className="max-w-5xl">
             <p className="org-reveal font-mono text-xs uppercase tracking-[0.28em] text-primary">
-              01. / Organizer System
+              <LocalizedText ua="01. / Система організатора" en="01. / Organizer System" />
             </p>
-            <h1 className="org-reveal mt-7 text-6xl font-black uppercase leading-[0.82] text-white sm:text-7xl md:text-8xl lg:text-[8.5rem]">
+            <h1 className="org-reveal mt-7 text-5xl font-black uppercase leading-[0.88] text-white sm:text-7xl md:text-8xl lg:text-[8.5rem]">
               {organizer.name}
             </h1>
             <p className="org-reveal mt-8 max-w-2xl text-lg font-light leading-8 text-white/[0.55]">
-              Premium growth control for ticket velocity, community signals, Telegram execution, and on-chain readiness.
+              <LocalizedText
+                ua="Преміальна панель для продажу квитків, реєстрацій, Telegram-підтверджень, рефералів і аналітики."
+                en="Premium growth control for ticket velocity, community signals, Telegram execution, and on-chain readiness."
+              />
             </p>
             <div className="mt-10 flex flex-wrap gap-x-10 gap-y-5 border-t border-white/[0.05] pt-6">
               {[

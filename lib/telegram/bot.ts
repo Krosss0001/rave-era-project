@@ -15,6 +15,10 @@ type SendMessageOptions = {
   removeKeyboard?: boolean;
 };
 
+type SendPhotoOptions = SendMessageOptions & {
+  caption?: string;
+};
+
 function getBotToken() {
   return process.env.TELEGRAM_BOT_TOKEN;
 }
@@ -68,6 +72,16 @@ export async function sendTelegramMessage(chatId: string, text: string, options:
     text,
     parse_mode: "HTML",
     disable_web_page_preview: true,
+    reply_markup: getReplyMarkup(options)
+  });
+}
+
+export async function sendTelegramPhoto(chatId: string, photoUrl: string, options: SendPhotoOptions = {}) {
+  return telegramApi("sendPhoto", {
+    chat_id: chatId,
+    photo: photoUrl,
+    caption: options.caption,
+    parse_mode: "HTML",
     reply_markup: getReplyMarkup(options)
   });
 }

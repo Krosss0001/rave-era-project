@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { events as mockEvents, type RaveeraEvent } from "@/data/events";
 import { getCurrentRole } from "@/lib/auth/get-role";
 import { canManagePlatform } from "@/lib/auth/roles";
+import { useLanguage } from "@/lib/i18n/use-language";
 import { formatEventDate, getCapacityPercent } from "@/lib/format";
 import { slugify } from "@/lib/slugify";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -49,6 +51,7 @@ const initialForm = {
 };
 
 export function OrganizerEventPortfolio() {
+  const { dictionary } = useLanguage();
   const router = useRouter();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [events, setEvents] = useState<OrganizerEvent[]>(mockEvents);
@@ -59,6 +62,7 @@ export function OrganizerEventPortfolio() {
   const [form, setForm] = useState(initialForm);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [createdSlug, setCreatedSlug] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -140,7 +144,7 @@ export function OrganizerEventPortfolio() {
     setMessage(null);
 
     if (!supabase || !currentUserId) {
-      setMessage({ type: "error", text: "Supabase session is not ready. Sign in again and retry." });
+      setMessage({ type: "error", text: dictionary.organizer.sessionMissing });
       return;
     }
 
@@ -150,27 +154,27 @@ export function OrganizerEventPortfolio() {
     const price = Number(form.price || 0);
 
     if (!title) {
-      setMessage({ type: "error", text: "Title is required." });
+      setMessage({ type: "error", text: dictionary.organizer.titleRequired });
       return;
     }
 
     if (!form.date) {
-      setMessage({ type: "error", text: "Date is required." });
+      setMessage({ type: "error", text: dictionary.organizer.dateRequired });
       return;
     }
 
     if (!slug) {
-      setMessage({ type: "error", text: "Slug could not be generated. Add a clearer title." });
+      setMessage({ type: "error", text: dictionary.organizer.slugRequired });
       return;
     }
 
     if (!Number.isFinite(capacity) || capacity <= 0) {
-      setMessage({ type: "error", text: "Capacity must be greater than 0." });
+      setMessage({ type: "error", text: dictionary.organizer.capacityRequired });
       return;
     }
 
     if (!Number.isFinite(price) || price < 0) {
-      setMessage({ type: "error", text: "Price must be 0 or higher." });
+      setMessage({ type: "error", text: dictionary.organizer.priceInvalid });
       return;
     }
 
@@ -229,9 +233,10 @@ export function OrganizerEventPortfolio() {
       setEvents((current) => [createdEvent, ...current]);
       setForm(initialForm);
       setFormOpen(false);
+      setCreatedSlug(createdRow.slug);
       setMessage({
         type: "success",
-        text: createdRow.status === "draft" ? "Draft saved. It stays private until moved to live, limited, or soon." : "Event saved. Public event pages will pick it up from Supabase."
+        text: createdRow.status === "draft" ? dictionary.organizer.draftSaved : dictionary.organizer.eventSaved
       });
       router.refresh();
     }
@@ -241,8 +246,8 @@ export function OrganizerEventPortfolio() {
     <section className="org-reveal border-y border-white/[0.05] bg-[#020202] py-8">
       <div className="flex flex-col justify-between gap-5 px-1 sm:flex-row sm:items-end">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">Event portfolio</p>
-          <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white md:text-5xl">Active events</h2>
+          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.organizer.eventPortfolio}</p>
+          <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white md:text-5xl">{dictionary.organizer.activeEvents}</h2>
         </div>
         <button
           type="button"
@@ -250,22 +255,28 @@ export function OrganizerEventPortfolio() {
           aria-expanded={formOpen}
           className="focus-ring min-h-11 border border-primary px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-widest text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-primary hover:text-black active:scale-[0.98]"
         >
-          {formOpen ? "Close form" : "Create event"}
+          {formOpen ? dictionary.organizer.closeForm : dictionary.organizer.createEvent}
         </button>
       </div>
 
       {message ? (
-        <p
+        <div
           className={message.type === "error" ? "mt-6 border border-red-400/25 bg-red-400/[0.035] px-4 py-3 text-sm leading-6 text-red-100" : "mt-6 border border-primary/25 bg-primary/[0.03] px-4 py-3 text-sm leading-6 text-white/65"}
           aria-live="polite"
         >
-          {message.text}
-        </p>
+          <p>{message.text}</p>
+          {message.type === "success" && createdSlug ? (
+            <Link href={`/events/${createdSlug}`} className="focus-ring mt-3 inline-flex min-h-10 items-center border border-primary px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary hover:text-black">
+              {dictionary.organizer.openCreatedEvent}
+            </Link>
+          ) : null}
+        </div>
       ) : null}
 
       {formOpen ? (
         <form onSubmit={createEvent} className="mt-8 border-y border-white/[0.05] bg-[#030303] px-1 py-6">
-          <p className="mb-5 font-mono text-[10px] uppercase tracking-[0.24em] text-primary">Basic event profile</p>
+          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.24em] text-primary">{dictionary.organizer.basicProfile}</p>
+          <p className="mb-5 text-sm leading-6 text-white/45">{dictionary.organizer.publicHint}</p>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block">
               <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Title</span>
@@ -518,7 +529,7 @@ export function OrganizerEventPortfolio() {
             disabled={saving}
             className="focus-ring mt-5 min-h-11 bg-primary px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-500 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
           >
-            {saving ? "Saving event" : "Save to Supabase"}
+            {saving ? dictionary.organizer.saving : dictionary.organizer.saveSupabase}
           </button>
         </form>
       ) : null}

@@ -3,6 +3,7 @@ import { ArrowRight, Bot, ChartNoAxesCombined, Sparkles, WalletCards } from "luc
 import { featuredEvent } from "@/data/events";
 import { formatPrice, getCapacityPercent } from "@/lib/format";
 import { SafeEventImage } from "@/components/events/safe-event-image";
+import { LocalizedText } from "@/components/shared/localized-text";
 
 const platformCards = [
   {
@@ -28,7 +29,7 @@ const platformCards = [
 ];
 
 const growthCards = [
-  ["Not just ticketing", "Raveera treats the event page as a conversion surface, not a checkout link."],
+  ["Not just ticketing", "Rave'era treats the event page as a conversion surface, not a checkout link."],
   ["Referral loops", "Each registration can create measurable distribution before the doors open."],
   ["Telegram confirmation layer", "The operational handoff stays close to the audience instead of buried in email."],
   ["Organizer growth analytics", "Capacity, source, and attendee signals shape the next announcement."],
@@ -100,7 +101,7 @@ export default function HomePage() {
               <span className="h-1.5 w-1.5 rounded-full bg-[#00FF88] shadow-[0_0_16px_rgba(0,255,136,0.75)] motion-safe:animate-[softPulse_2.2s_ease-out_infinite]" aria-hidden="true" />
               <span className="whitespace-nowrap">Rave<span className="text-[#00FF88]">&apos;</span>era</span> Group <span className="text-[#00FF88]" aria-hidden="true">{"\u00B7"}</span> Concerts <span className="text-[#00FF88]">&amp;</span> Marketing Agency
             </p>
-            <h1 className="mt-8 text-[clamp(4.5rem,9.6vw,10.5rem)] font-black uppercase leading-[0.76] text-white">
+            <h1 className="mt-8 text-[clamp(3rem,16vw,10.5rem)] font-black uppercase leading-[0.78] text-white sm:text-[clamp(4.5rem,9.6vw,10.5rem)]">
               {["WE BUILD", "EVENTS", "THAT SELL"].map((line, index) => (
                 <span
                   key={line}
@@ -113,7 +114,7 @@ export default function HomePage() {
                 </span>
               ))}
             </h1>
-            <p className="mt-8 max-w-xl text-xl font-semibold uppercase leading-[1.05] text-white motion-safe:animate-[fadeUp_520ms_cubic-bezier(0.16,1,0.3,1)_360ms_both] md:text-3xl">
+            <p className="mt-8 max-w-xl text-lg font-semibold uppercase leading-[1.08] text-white motion-safe:animate-[fadeUp_520ms_cubic-bezier(0.16,1,0.3,1)_360ms_both] md:text-3xl">
               We don&apos;t just run events.
               <br />
               We scale them.
@@ -125,7 +126,7 @@ export default function HomePage() {
               >
                 <span className="absolute inset-0 -translate-x-full bg-[#00FF88] transition-transform duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0" aria-hidden="true" />
                 <span className="relative z-10 inline-flex items-center">
-                  Web version
+                  <LocalizedText ua="Переглянути події" en="Web version" />
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-500 group-hover:translate-x-1" aria-hidden="true" />
                 </span>
               </Link>
@@ -134,7 +135,7 @@ export default function HomePage() {
                 className="focus-ring group relative inline-flex min-h-11 items-center justify-center overflow-hidden bg-[#00FF88] px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-black transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_0_30px_rgba(0,255,136,0.14)] active:scale-[0.98]"
               >
                 <span className="absolute inset-0 -translate-x-full bg-white transition-transform duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0" aria-hidden="true" />
-                <span className="relative z-10">Organizer OS</span>
+                <span className="relative z-10"><LocalizedText ua="Панель організатора" en="Organizer OS" /></span>
               </Link>
             </div>
             <div className="mt-10 grid gap-4 sm:grid-cols-3">
@@ -186,12 +187,15 @@ export default function HomePage() {
         <div className="relative z-10 mx-auto mb-8 flex max-w-7xl flex-col justify-between gap-4 px-4 sm:px-6 md:flex-row md:items-end md:px-10 lg:px-12 2xl:max-w-[1500px]">
           <div>
             <p className="scroll-reveal font-mono text-[10px] uppercase tracking-[0.24em] text-[#00FF88]">Trusted By</p>
-            <h2 className="scroll-reveal mt-3 text-4xl font-black uppercase leading-[0.86] text-white md:text-6xl">
+            <h2 className="scroll-reveal mt-3 text-3xl font-black uppercase leading-[0.9] text-white md:text-6xl">
               15+ Brands &amp; Partners
             </h2>
           </div>
           <p className="max-w-sm text-sm leading-6 text-white/35">
-            Culture, commerce, music, corporate, and crypto audiences already orbit the Raveera network.
+            <LocalizedText
+              ua="Культура, бізнес, музика, корпоративні та crypto-аудиторії вже працюють з мережею Rave'era."
+              en="Culture, commerce, music, corporate, and crypto audiences already orbit the Rave'era network."
+            />
           </p>
         </div>
         <div className="relative z-10 flex overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_12%,black_88%,transparent)]">
@@ -212,13 +216,15 @@ export default function HomePage() {
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <SectionLabel index="01" label="Platform System" />
-            <h2 className="scroll-reveal mt-4 max-w-3xl text-5xl font-black uppercase leading-[0.82] text-white md:text-7xl">
-              One system for event demand
+            <h2 className="scroll-reveal mt-4 max-w-3xl text-4xl font-black uppercase leading-[0.88] text-white md:text-7xl">
+              <LocalizedText ua="Єдина система для попиту на події" en="One system for event demand" />
             </h2>
           </div>
           <p className="max-w-lg text-sm leading-6 text-white/45">
-            Raveera connects discovery, registration, Telegram execution, referral growth, and
-            Solana-ready access without turning the experience into generic ticketing software.
+            <LocalizedText
+              ua="Rave'era поєднує discovery, реєстрації, Telegram-підтвердження, реферали та майбутній wallet-доступ без відчуття generic ticketing software."
+              en="Rave'era connects discovery, registration, Telegram execution, referral growth, and Solana-ready access without turning the experience into generic ticketing software."
+            />
           </p>
         </div>
         <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -249,7 +255,7 @@ export default function HomePage() {
         <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
           <div>
             <SectionLabel index="02" label="Featured Event" />
-            <h2 className="scroll-reveal mt-4 text-5xl font-black uppercase leading-[0.82] text-white md:text-7xl">
+            <h2 className="scroll-reveal mt-4 text-4xl font-black uppercase leading-[0.88] text-white md:text-7xl">
               Event pages as product proof
             </h2>
             <p className="mt-5 max-w-md text-sm leading-6 text-white/45">
@@ -288,7 +294,7 @@ export default function HomePage() {
                 <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-[#00FF88]">
                   {featuredEvent.city} / {featuredEvent.venue}
                 </p>
-                <h3 className="mt-4 text-4xl font-black uppercase leading-[0.86] text-white md:text-5xl">
+                <h3 className="mt-4 text-3xl font-black uppercase leading-[0.9] text-white md:text-5xl">
                   {featuredEvent.title}
                 </h3>
                 <p className="mt-4 text-sm leading-6 text-white/45">{featuredEvent.subtitle}</p>
@@ -314,11 +320,11 @@ export default function HomePage() {
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
           <div>
             <SectionLabel index="03" label="Growth Engine" />
-            <h2 className="scroll-reveal mt-4 text-5xl font-black uppercase leading-[0.82] text-white md:text-6xl">
+              <h2 className="scroll-reveal mt-4 text-4xl font-black uppercase leading-[0.88] text-white md:text-6xl">
               Built beyond ticketing
             </h2>
             <p className="mt-5 max-w-lg text-sm leading-6 text-white/45">
-              Raveera keeps the premium event surface intact while adding the operating layers an
+              Rave&apos;era keeps the premium event surface intact while adding the operating layers an
               organizer needs to grow: distribution, confirmation, analytics, and future wallet utility.
             </p>
           </div>
@@ -350,7 +356,7 @@ export default function HomePage() {
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <SectionLabel index="04" label="Demo Flow" />
-            <h2 className="scroll-reveal mt-4 max-w-4xl text-5xl font-black uppercase leading-[0.82] text-white md:text-7xl">
+            <h2 className="scroll-reveal mt-4 max-w-4xl text-4xl font-black uppercase leading-[0.88] text-white md:text-7xl">
               From discovery to access
             </h2>
           </div>

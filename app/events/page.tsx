@@ -1,6 +1,7 @@
 import { SlidersHorizontal } from "lucide-react";
 import { EventCard } from "@/components/events/event-card";
 import { EventGrid } from "@/components/events/event-grid";
+import { LocalizedText } from "@/components/shared/localized-text";
 import { getPublicEventsWithFallback } from "@/lib/supabase/events";
 
 export const dynamic = "force-dynamic";
@@ -31,16 +32,19 @@ export default async function EventsPage() {
         <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
           <div className="max-w-3xl">
             <SectionLabel index="00" label="Event Discovery" />
-            <h1 className="event-reveal mt-5 text-[clamp(4rem,9vw,9rem)] font-black uppercase leading-[0.78] text-white">
-              Curated Rave<span className="text-[#00FF88] [text-shadow:0_0_70px_rgba(0,255,136,0.26)]">&apos;</span>era events
+            <h1 className="event-reveal mt-5 text-[clamp(3rem,15vw,9rem)] font-black uppercase leading-[0.82] text-white sm:leading-[0.78]">
+              <LocalizedText ua="Події Rave'era" en="Curated Rave'era events" />
             </h1>
             <p className="event-reveal mt-7 max-w-2xl text-base font-light leading-7 text-white/55 md:text-lg">
-              Concerts, festivals, conferences, corporate events, and cultural programs built for ticket sales, audience growth, and Telegram-supported confirmation.
+              <LocalizedText
+                ua="Концерти, фестивалі, конференції, корпоративні та культурні події для продажу квитків, зростання аудиторії й Telegram-підтверджень."
+                en="Concerts, festivals, conferences, corporate events, and cultural programs built for ticket sales, audience growth, and Telegram-supported confirmation."
+              />
             </p>
           </div>
           <div className="flex min-h-11 items-center gap-3 border border-white/[0.05] bg-[#020202] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">
             <SlidersHorizontal className="h-4 w-4 text-[#00FF88]" aria-hidden="true" />
-            Filters mocked for MVP
+            <LocalizedText ua="Фільтри в demo-режимі" en="Filters mocked for MVP" />
           </div>
         </div>
 
@@ -73,13 +77,15 @@ export default async function EventsPage() {
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <SectionLabel index="02" label="Upcoming Events" />
-            <h2 className="event-reveal mt-4 text-5xl font-black uppercase leading-[0.82] text-white md:text-7xl">
-              Next on the calendar
+            <h2 className="event-reveal mt-4 text-4xl font-black uppercase leading-[0.88] text-white md:text-7xl">
+              <LocalizedText ua="Наступне в календарі" en="Next on the calendar" />
             </h2>
           </div>
           <p className="max-w-md text-sm leading-6 text-white/45">
-            Every upcoming event keeps the same operating layer: event page, referral momentum,
-            Telegram handoff, and future wallet-ready access.
+            <LocalizedText
+              ua="Кожна подія має операційний шар: сторінка події, реферальна дистрибуція, Telegram handoff і майбутній доступ через wallet."
+              en="Every upcoming event keeps the same operating layer: event page, referral momentum, Telegram handoff, and future wallet-ready access."
+            />
           </p>
         </div>
         <div className="mt-10 grid gap-5 md:grid-cols-2">

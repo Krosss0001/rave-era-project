@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database, UserRole } from "@/lib/supabase/types";
 
@@ -19,6 +20,7 @@ function nextRole(role: UserRole): UserRole | null {
 }
 
 export function AdminPanel() {
+  const { dictionary } = useLanguage();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,9 +38,9 @@ export function AdminPanel() {
       .order("created_at", { ascending: false });
 
     setProfiles(data ?? []);
-    setMessage(error ? "Profiles are protected by RLS. Sign in as admin or superadmin." : "");
+    setMessage(error ? dictionary.admin.noProfiles : "");
     setLoading(false);
-  }, [supabase]);
+  }, [dictionary.admin.noProfiles, supabase]);
 
   useEffect(() => {
     loadProfiles();
@@ -68,13 +70,13 @@ export function AdminPanel() {
     <section className="border-y border-white/[0.05] bg-[#020202] py-8">
       <div className="flex flex-col justify-between gap-5 px-1 sm:flex-row sm:items-end">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">Profiles</p>
+          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.admin.profiles}</p>
           <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white md:text-5xl">
-            Role control
+            {dictionary.admin.roleControl}
           </h2>
         </div>
         <span className="border border-white/[0.05] bg-[#030303] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">
-          RLS protected
+          {dictionary.admin.protected}
         </span>
       </div>
 
@@ -137,7 +139,7 @@ export function AdminPanel() {
             ) : (
               <tr>
                 <td colSpan={5} className="py-10 text-white/45">
-                  No profiles visible. Admin RLS policies must allow the current role to read profiles.
+                  {dictionary.admin.noProfiles}
                 </td>
               </tr>
             )}

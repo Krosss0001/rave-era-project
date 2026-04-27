@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getCurrentRole } from "@/lib/auth/get-role";
 import { canManageEvents, canManagePlatform } from "@/lib/auth/roles";
+import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/supabase/types";
 
 export function RoleNav() {
+  const { dictionary } = useLanguage();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [role, setRole] = useState<UserRole | null>(null);
   const [signedIn, setSignedIn] = useState(false);
@@ -47,10 +49,10 @@ export function RoleNav() {
   }
 
   const items = [
-    { href: "/dashboard", label: "Dashboard", show: true },
-    { href: "/organizer", label: "Organizer", show: canManageEvents(role) },
-    { href: "/admin", label: "Admin", show: canManagePlatform(role) },
-    { href: "/superadmin", label: "Superadmin", show: role === "superadmin" }
+    { href: "/dashboard", label: dictionary.nav.dashboard, show: true },
+    { href: "/organizer", label: dictionary.nav.organizer, show: canManageEvents(role) },
+    { href: "/admin", label: dictionary.nav.admin, show: canManagePlatform(role) },
+    { href: "/superadmin", label: dictionary.nav.superadmin, show: role === "superadmin" }
   ];
 
   return (
@@ -59,7 +61,7 @@ export function RoleNav() {
         <Link
           key={item.href}
           href={item.href}
-          className="focus-ring group relative min-h-10 px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-white/35 motion-safe:transition-colors motion-safe:duration-500 hover:text-primary"
+          className="focus-ring group relative min-h-10 shrink-0 px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35 motion-safe:transition-colors motion-safe:duration-500 hover:text-primary md:tracking-[0.22em]"
         >
           <span className="absolute left-3 right-3 top-0 h-px scale-x-0 bg-primary motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out group-hover:scale-x-100" aria-hidden="true" />
           {item.label}

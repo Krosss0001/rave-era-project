@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, CircleDot, RadioTower, WalletCards } from "lucide-react";
 import { metrics, referrals, registrations } from "@/data/dashboard";
+import { useLanguage } from "@/lib/i18n/use-language";
 
 function CountUpValue({ value }: { value: string }) {
   const target = useMemo(() => Number(value.replace(/[^0-9.]/g, "")) || 0, [value]);
@@ -55,11 +56,12 @@ function CountUpValue({ value }: { value: string }) {
 }
 
 export function MetricGrid() {
+  const { language } = useLanguage();
   const items = [
-    ["Revenue", metrics.revenue],
-    ["Registrations", metrics.registrations.toString()],
-    ["Conversion", metrics.conversionRate],
-    ["Telegram confirmations", metrics.telegramConfirmations.toString()]
+    [language === "ua" ? "Дохід" : "Revenue", metrics.revenue],
+    [language === "ua" ? "Реєстрації" : "Registrations", metrics.registrations.toString()],
+    [language === "ua" ? "Конверсія" : "Conversion", metrics.conversionRate],
+    [language === "ua" ? "Telegram підтвердження" : "Telegram confirmations", metrics.telegramConfirmations.toString()]
   ];
 
   return (
@@ -84,10 +86,11 @@ export function MetricGrid() {
 }
 
 export function SystemStatusRow() {
+  const { language } = useLanguage();
   const items = [
     ["Telegram", "connected"],
-    ["Payments", "standby"],
-    ["Referral system", "active"]
+    [language === "ua" ? "Оплати" : "Payments", "standby"],
+    [language === "ua" ? "Реферали" : "Referral system", "active"]
   ];
 
   return (
@@ -106,15 +109,18 @@ export function SystemStatusRow() {
 }
 
 export function RegistrationTable() {
+  const { language } = useLanguage();
   return (
     <section className="border-y border-white/[0.05] bg-[#020202] py-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">Registrations</p>
-          <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white md:text-5xl">Attendee operations</h2>
+          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{language === "ua" ? "Реєстрації" : "Registrations"}</p>
+          <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white md:text-5xl">
+            {language === "ua" ? "Операції з гостями" : "Attendee operations"}
+          </h2>
         </div>
         <span className="border border-white/[0.05] bg-[#030303] px-3 py-1.5 font-mono text-xs uppercase tracking-[0.18em] text-white/[0.35]">
-          Mock data
+          {language === "ua" ? "Demo дані" : "Demo data"}
         </span>
       </div>
       <div className="mt-10 overflow-x-auto border-t border-white/[0.05]">
@@ -122,11 +128,11 @@ export function RegistrationTable() {
           <thead className="font-mono text-xs uppercase tracking-[0.18em] text-white/[0.34]">
             <tr>
               <th className="w-px py-4 font-medium" aria-label="Row indicator" />
-              <th className="py-4 font-medium">Name</th>
+              <th className="py-4 font-medium">{language === "ua" ? "Ім'я" : "Name"}</th>
               <th className="py-4 font-medium">Telegram</th>
-              <th className="py-4 font-medium">Event</th>
-              <th className="py-4 font-medium">Source</th>
-              <th className="py-4 font-medium">Status</th>
+              <th className="py-4 font-medium">{language === "ua" ? "Подія" : "Event"}</th>
+              <th className="py-4 font-medium">{language === "ua" ? "Джерело" : "Source"}</th>
+              <th className="py-4 font-medium">{language === "ua" ? "Статус" : "Status"}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.05]">
@@ -154,14 +160,15 @@ export function RegistrationTable() {
 }
 
 export function ReferralPanel() {
+  const { language } = useLanguage();
   const topReferral = referrals.reduce((top, referral) => (referral.confirmed > top.confirmed ? referral : top), referrals[0]);
 
   return (
     <section className="border-y border-white/[0.05] bg-[#020202] py-8">
-      <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">Referral engine</p>
-      <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white">Top growth sources</h2>
+      <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{language === "ua" ? "Реферальний рушій" : "Referral engine"}</p>
+      <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white">{language === "ua" ? "Топ джерела зростання" : "Top growth sources"}</h2>
       <div className="mt-8 border border-primary/25 bg-[#030303] p-5">
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-primary">Best performer</p>
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-primary">{language === "ua" ? "Найкращий результат" : "Best performer"}</p>
         <div className="mt-4 flex items-end justify-between gap-4">
           <div>
             <p className="text-2xl font-black uppercase text-white">{topReferral.ownerName}</p>
@@ -194,6 +201,11 @@ export function ReferralPanel() {
 }
 
 export function TelegramStatusPanel() {
+  const { language } = useLanguage();
+  const items = language === "ua"
+    ? ["Telegram handoff активний", "Оплата в demo-режимі", "Підтвердження готові"]
+    : ["Registration handoff active", "Payment status mocked", "Confirmation messages ready"];
+
   return (
     <section className="border-y border-white/[0.05] bg-[#020202] py-8">
       <div className="flex items-start gap-3">
@@ -201,12 +213,12 @@ export function TelegramStatusPanel() {
           <RadioTower className="h-5 w-5" aria-hidden="true" />
         </span>
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">Support layer</p>
+          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{language === "ua" ? "Шар підтримки" : "Support layer"}</p>
           <h2 className="mt-2 text-3xl font-black uppercase leading-none text-white">Telegram execution</h2>
         </div>
       </div>
       <div className="mt-7 border-y border-white/[0.05]">
-        {["Registration handoff active", "Payment status mocked", "Confirmation messages ready"].map((item, index) => (
+        {items.map((item, index) => (
           <div
             key={item}
             className="flex min-h-12 items-center gap-3 border-b border-white/[0.05] bg-[#020202] py-3 font-mono text-sm text-white/[0.58] motion-safe:animate-[logFade_420ms_cubic-bezier(0.16,1,0.3,1)_both] last:border-b-0"
@@ -236,6 +248,11 @@ export function TelegramStatusPanel() {
 }
 
 export function SolanaReadinessPanel() {
+  const { language } = useLanguage();
+  const items = language === "ua"
+    ? ["Phantom connect placeholder", "NFT pass заплановано", "Token-gated події заплановано", "On-chain attendance proof заплановано"]
+    : ["Phantom connect placeholder", "NFT pass support planned", "Token-gated events planned", "On-chain attendance proof planned"];
+
   return (
     <section className="border-y border-white/[0.05] bg-[#020202] py-8">
       <div className="flex items-start gap-3">
@@ -244,11 +261,13 @@ export function SolanaReadinessPanel() {
         </span>
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">Solana-ready</p>
-          <h2 className="mt-2 text-3xl font-black uppercase leading-none text-white">Future utility path</h2>
+          <h2 className="mt-2 text-3xl font-black uppercase leading-none text-white">
+            {language === "ua" ? "Майбутня utility логіка" : "Future utility path"}
+          </h2>
         </div>
       </div>
       <div className="mt-8 grid gap-0 border-l border-primary/[0.35] text-sm">
-        {["Phantom connect placeholder", "NFT pass support planned", "Token-gated events planned", "On-chain attendance proof planned"].map(
+        {items.map(
           (item, index) => (
             <div key={item} className="relative border-b border-white/[0.05] bg-[#020202] py-4 pl-6 last:border-b-0">
               <CircleDot className="absolute -left-2 top-4 h-4 w-4 bg-[#020202] text-primary" aria-hidden="true" />

@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
 export function SuperadminPanel() {
+  const { dictionary } = useLanguage();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,13 +53,12 @@ export function SuperadminPanel() {
   return (
     <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
       <section className="border-y border-white/[0.05] bg-[#020202] py-8">
-        <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">Role architecture</p>
+          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.superadmin.roleArchitecture}</p>
         <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white md:text-5xl">
-          Platform control
+          {dictionary.superadmin.platformControl}
         </h2>
         <p className="mt-5 max-w-xl text-sm leading-6 text-white/45">
-          Superadmin is the only role intended to manage the full hierarchy. The current MVP keeps
-          this as a protected concept surface until server-side audit logs and admin actions are added.
+          {dictionary.superadmin.roleMeaning}
         </p>
         <div className="mt-8 grid gap-3">
           {["user", "organizer", "admin", "superadmin"].map((role) => (
@@ -73,10 +74,10 @@ export function SuperadminPanel() {
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">Prepared actions</p>
-            <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white md:text-5xl">Superadmin queue</h2>
+            <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white md:text-5xl">{dictionary.superadmin.queue}</h2>
           </div>
           <span className="border border-primary/25 bg-primary/[0.03] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
-            Server actions later
+            {dictionary.superadmin.serverActionsLater}
           </span>
         </div>
         {message ? (

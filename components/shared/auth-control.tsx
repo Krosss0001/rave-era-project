@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 export function AuthControl() {
+  const { dictionary } = useLanguage();
   const configured = isSupabaseConfigured();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [session, setSession] = useState<Session | null>(null);
@@ -83,7 +85,7 @@ export function AuthControl() {
           onClick={signOut}
           className="focus-ring min-h-10 border border-white/[0.05] px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45 motion-safe:transition-[color,border-color,transform] motion-safe:duration-500 motion-safe:ease-out hover:border-primary/30 hover:text-primary active:scale-[0.98]"
         >
-          Sign out
+          {dictionary.nav.signOut}
         </button>
       </div>
     );
@@ -96,7 +98,7 @@ export function AuthControl() {
         onClick={() => setOpen((value) => !value)}
         className="focus-ring min-h-10 border border-primary/30 px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary motion-safe:transition-[background-color,box-shadow,transform] motion-safe:duration-500 motion-safe:ease-out hover:bg-primary/[0.04] hover:shadow-[0_0_24px_rgba(0,255,136,0.08)] active:scale-[0.98]"
       >
-        Sign in
+        {dictionary.nav.signIn}
       </button>
       {open ? (
         <form

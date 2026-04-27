@@ -10,6 +10,7 @@ import { ReferralBox } from "@/components/events/referral-box";
 import { WalletPlaceholder } from "@/components/events/wallet-placeholder";
 import { LiveEventSignals } from "@/components/events/live-event-signals";
 import { SafeEventImage } from "@/components/events/safe-event-image";
+import { LocalizedText } from "@/components/shared/localized-text";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -71,7 +72,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
                 Ref {referralCode}
               </span>
             ) : null}
-            <h1 className="drop-reveal mt-8 max-w-5xl text-[clamp(5rem,12vw,12rem)] font-black uppercase leading-[0.78] text-white">
+            <h1 className="drop-reveal mt-8 max-w-5xl text-[clamp(3.25rem,18vw,12rem)] font-black uppercase leading-[0.82] text-white sm:leading-[0.78]">
               {event.title.split(" ").map((word, index, words) => (
                 <span
                   key={word}
@@ -109,9 +110,11 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
             <p className="drop-reveal flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.24em] text-[#00FF88]">
               <span className="text-white/20">01</span>
               <span className="drop-line h-px w-7 origin-left bg-white/20" aria-hidden="true" />
-              Event profile
+              <LocalizedText ua="Профіль події" en="Event profile" />
             </p>
-            <h2 className="drop-reveal mt-5 text-5xl font-black uppercase leading-[0.82] text-white md:text-7xl">Premium event, controlled entry</h2>
+            <h2 className="drop-reveal mt-5 text-4xl font-black uppercase leading-[0.88] text-white md:text-7xl">
+              <LocalizedText ua="Преміальна подія, контрольований доступ" en="Premium event, controlled entry" />
+            </h2>
             <p className="mt-7 max-w-3xl text-base leading-8 text-white/60">{event.description}</p>
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
               {[
@@ -155,7 +158,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
             <p className="drop-reveal flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.24em] text-[#00FF88]">
               <span className="text-white/20">03</span>
               <span className="drop-line h-px w-7 origin-left bg-white/20" aria-hidden="true" />
-              Organizer
+              <LocalizedText ua="Організатор" en="Organizer" />
             </p>
             <h2 className="mt-5 text-3xl font-black uppercase text-white">{event.organizerName || organizer.name}</h2>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-white/60">{event.organizerDescription || organizer.description}</p>

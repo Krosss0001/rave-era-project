@@ -1,19 +1,28 @@
 import { NextResponse } from "next/server";
-import { answerCallbackQuery, sendTelegramMessage } from "@/lib/telegram/bot";
+import { answerCallbackQuery, sendTelegramMessage, sendTelegramPhoto } from "@/lib/telegram/bot";
 import {
-  TELEGRAM_COPY,
+  buildEventCardMessage,
   buildEventConfirmationMessage,
   buildSummaryMessage,
-  formatTelegramPrice
+  escapeHtml,
+  formatTelegramDate,
+  formatTelegramPrice,
+  getTelegramCopy,
+  type BotLanguage
 } from "@/lib/telegram/messages";
 import {
   createPendingRegistrationAndTicket,
   getEventBySlug,
   getLatestSession,
+  getPublicTelegramEvents,
   getTelegramSupabaseClient,
+  getTelegramUserLanguage,
+  getTicketsForTelegramUser,
   parseStartPayload,
+  setTelegramUserLanguage,
   startSession,
   updateSession,
+  upsertTelegramUser,
   type EventRow,
   type TelegramSession
 } from "@/lib/telegram/state";
@@ -24,6 +33,8 @@ export const runtime = "nodejs";
 type TelegramUser = {
   id: number;
   username?: string;
+  first_name?: string;
+  last_name?: string;
 };
 
 type TelegramMessage = {
@@ -66,44 +77,213 @@ function getTelegramUser(input: TelegramMessage | TelegramCallbackQuery) {
   return {
     telegramUserId: String(from.id),
     chatId: String(chatId),
-    telegramUsername: from.username ? `@${from.username}` : null
+    telegramUsername: from.username ? `@${from.username}` : null,
+    firstName: from.first_name ?? null,
+    lastName: from.last_name ?? null
   };
 }
 
 function getAppUrl() {
-  return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
+  return (process.env.NEXT_PUBLIC_APP_URL || "https://rave-era-project.vercel.app").replace(/\/+$/, "");
 }
 
 function getEventUrl(eventSlug: string) {
   return `${getAppUrl()}/events/${eventSlug}`;
 }
 
-async function askForEventConfirmation(chatId: string, session: TelegramSession, event: EventRow) {
-  await sendTelegramMessage(chatId, buildEventConfirmationMessage(event, getEventUrl(event.slug)), {
+function languageKeyboard() {
+  return {
     inlineKeyboard: [
-      [{ text: TELEGRAM_COPY.yes, callback_data: "confirm_yes" }],
-      [{ text: TELEGRAM_COPY.cancel, callback_data: "cancel" }]
+      [
+        { text: "🇺🇦 Українська", callback_data: "lang:uk" },
+        { text: "🇬🇧 English", callback_data: "lang:en" }
+      ]
     ]
-  });
-  await updateSession(getTelegramSupabaseClient(), session.id, { step: "confirm_event" });
+  };
 }
 
-async function sendSummary(chatId: string, session: TelegramSession, event: EventRow) {
+function mainMenuKeyboard(language: BotLanguage) {
+  const copy = getTelegramCopy(language);
+
+  return {
+    replyKeyboard: [
+      [{ text: copy.search }, { text: copy.myTickets }],
+      [{ text: copy.openApp }, { text: copy.openSite }]
+    ]
+  };
+}
+
+async function getLanguage(userId: string): Promise<BotLanguage> {
+  const language = await getTelegramUserLanguage(getTelegramSupabaseClient(), userId);
+  return language ?? "uk";
+}
+
+function isValidTelegramImageUrl(value: string | null | undefined) {
+  if (!value) {
+    return false;
+  }
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname.includes(".") && !url.hostname.includes("_");
+  } catch {
+    return false;
+  }
+}
+
+async function sendEventPreview(chatId: string, event: EventRow, language: BotLanguage, askConfirm = false) {
+  const copy = getTelegramCopy(language);
+  const eventUrl = getEventUrl(event.slug);
+  const text = askConfirm
+    ? buildEventConfirmationMessage(event, eventUrl, language)
+    : buildEventCardMessage(event, eventUrl, language);
+  const inlineKeyboard = askConfirm
+    ? [[{ text: copy.yes, callback_data: "confirm_yes" }], [{ text: copy.cancel, callback_data: "cancel" }]]
+    : [
+        [{ text: copy.registerButton, callback_data: `register:${event.slug}` }],
+        [{ text: copy.openOnSite, url: eventUrl }]
+      ];
+
+  if (isValidTelegramImageUrl(event.image_url)) {
+    try {
+      await sendTelegramPhoto(chatId, event.image_url!, {
+        caption: text,
+        inlineKeyboard
+      });
+      return;
+    } catch {
+      // Telegram may reject an otherwise valid HTTPS asset. Text fallback keeps the webhook non-fatal.
+    }
+  }
+
+  await sendTelegramMessage(chatId, text, { inlineKeyboard });
+}
+
+async function showLanguageChoice(chatId: string) {
+  await sendTelegramMessage(chatId, getTelegramCopy("uk").chooseLanguage, languageKeyboard());
+}
+
+async function showMainMenu(chatId: string, language: BotLanguage) {
+  await sendTelegramMessage(chatId, getTelegramCopy(language).welcome, mainMenuKeyboard(language));
+}
+
+async function askForEventConfirmation(
+  chatId: string,
+  session: TelegramSession,
+  event: EventRow,
+  language: BotLanguage
+) {
+  await sendEventPreview(chatId, event, language, true);
+  await updateSession(getTelegramSupabaseClient(), session.id, { step: "confirm_event", language });
+}
+
+async function sendSummary(chatId: string, session: TelegramSession, event: EventRow, language: BotLanguage) {
+  const copy = getTelegramCopy(language);
+
   await sendTelegramMessage(
     chatId,
-    buildSummaryMessage({
-      eventTitle: event.title,
-      name: session.name,
-      phone: session.phone,
-      positionCompany: session.position_company,
-      industry: session.industry,
-      telegramUsername: session.telegram_username,
-      price: formatTelegramPrice(Number(event.price), event.currency)
-    }),
+    buildSummaryMessage(
+      {
+        eventTitle: event.title,
+        name: session.name,
+        phone: session.phone,
+        positionCompany: session.position_company,
+        industry: session.industry,
+        telegramUsername: session.telegram_username,
+        price: formatTelegramPrice(Number(event.price), event.currency, language)
+      },
+      language
+    ),
     {
       inlineKeyboard: [
-        [{ text: TELEGRAM_COPY.payLaterButton, callback_data: "payment_pending" }],
-        [{ text: TELEGRAM_COPY.restartButton, callback_data: "restart" }]
+        [{ text: copy.payLaterButton, callback_data: "payment_pending" }],
+        [{ text: copy.restartButton, callback_data: "restart" }]
+      ],
+      removeKeyboard: true
+    }
+  );
+}
+
+async function sendEventsSearch(chatId: string, language: BotLanguage) {
+  const copy = getTelegramCopy(language);
+  const events = await getPublicTelegramEvents(getTelegramSupabaseClient());
+
+  if (events.length === 0) {
+    await sendTelegramMessage(chatId, copy.noEvents, {
+      inlineKeyboard: [[{ text: copy.openSite, url: `${getAppUrl()}/events` }]]
+    });
+    return;
+  }
+
+  for (const event of events) {
+    await sendEventPreview(chatId, event as EventRow, language);
+  }
+}
+
+async function sendMyTickets(
+  chatId: string,
+  telegramUserId: string,
+  telegramUsername: string | null,
+  language: BotLanguage
+) {
+  const copy = getTelegramCopy(language);
+  const rows = await getTicketsForTelegramUser(getTelegramSupabaseClient(), telegramUserId, telegramUsername);
+  const ticketRows = rows.flatMap((row) => {
+    const tickets = Array.isArray(row.tickets) ? row.tickets : row.tickets ? [row.tickets] : [];
+    return tickets.map((ticket) => ({ registration: row, ticket }));
+  });
+
+  if (ticketRows.length === 0) {
+    await sendTelegramMessage(chatId, copy.ticketsMissing, {
+      inlineKeyboard: [[{ text: copy.openSite, url: `${getAppUrl()}/events` }]]
+    });
+    return;
+  }
+
+  for (const item of ticketRows) {
+    const event = Array.isArray(item.registration.events) ? item.registration.events[0] : item.registration.events;
+    const eventTitle = event?.title || copy.eventFallback;
+    const location = [event?.city, event?.venue].filter(Boolean).join(" / ") || copy.locationFallback;
+    const qrPayload = item.ticket.qr_payload || item.ticket.ticket_code;
+
+    await sendTelegramMessage(
+      chatId,
+      [
+        `<b>${escapeHtml(eventTitle)}</b>`,
+        `${copy.dateLabel}: ${escapeHtml(formatTelegramDate(event?.date ?? null, language))}`,
+        `${copy.locationLabel}: ${escapeHtml(location)}`,
+        `${copy.ticketLabel}: ${escapeHtml(item.ticket.ticket_code)}`,
+        `${copy.statusLabel}: ${escapeHtml(item.ticket.status)}`,
+        `${copy.paymentLabel}: ${escapeHtml(item.ticket.payment_status)}`,
+        "",
+        `${copy.qrPayload}: ${escapeHtml(qrPayload)}`
+      ].join("\n"),
+      {
+        inlineKeyboard: [
+          [{ text: copy.showQr, callback_data: `qr:${item.ticket.ticket_code}` }],
+          ...(event?.slug ? [[{ text: copy.openOnSite, url: getEventUrl(event.slug) }]] : [])
+        ]
+      }
+    );
+  }
+}
+
+async function finishPaymentStub(chatId: string, session: TelegramSession, language: BotLanguage) {
+  const copy = getTelegramCopy(language);
+  const { ticket } = await createPendingRegistrationAndTicket(getTelegramSupabaseClient(), session);
+
+  await sendTelegramMessage(
+    chatId,
+    [
+      copy.paymentPending,
+      "",
+      `ticket_code: ${escapeHtml(ticket.ticket_code)}`,
+      `payment_status: ${escapeHtml(ticket.payment_status)}`
+    ].join("\n"),
+    {
+      inlineKeyboard: [
+        [{ text: copy.myTickets, callback_data: "my_tickets" }],
+        [{ text: copy.openSite, url: `${getAppUrl()}/events` }]
       ],
       removeKeyboard: true
     }
@@ -112,23 +292,38 @@ async function sendSummary(chatId: string, session: TelegramSession, event: Even
 
 async function handleStart(message: TelegramMessage, payload: string | undefined) {
   const user = getTelegramUser(message);
-  const eventSlug = parseStartPayload(payload);
 
-  if (!user || !eventSlug) {
-    await sendTelegramMessage(String(message.chat.id), TELEGRAM_COPY.eventMissing);
+  if (!user) {
     return;
   }
 
   const supabase = getTelegramSupabaseClient();
-  const session = await startSession(supabase, user, eventSlug);
+  await upsertTelegramUser(supabase, user);
+  const storedLanguage = await getTelegramUserLanguage(supabase, user.telegramUserId);
+  const language = storedLanguage ?? "uk";
+  const eventSlug = parseStartPayload(payload);
 
-  await sendTelegramMessage(user.chatId, TELEGRAM_COPY.welcome, {
-    inlineKeyboard: [[{ text: TELEGRAM_COPY.registerButton, callback_data: "register" }]]
-  });
+  if (!eventSlug) {
+    if (!storedLanguage) {
+      await showLanguageChoice(user.chatId);
+    }
 
-  if (!session.event_id) {
-    await sendTelegramMessage(user.chatId, TELEGRAM_COPY.eventMissing);
+    await showMainMenu(user.chatId, language);
+    return;
   }
+
+  const session = await startSession(supabase, { ...user, language }, eventSlug);
+  const event = await getEventBySlug(supabase, eventSlug);
+
+  if (!event || !session.event_id) {
+    const copy = getTelegramCopy(language);
+    await sendTelegramMessage(user.chatId, copy.eventMissing, {
+      inlineKeyboard: [[{ text: copy.openSite, url: `${getAppUrl()}/events` }]]
+    });
+    return;
+  }
+
+  await askForEventConfirmation(user.chatId, session, event, language);
 }
 
 async function handleCallback(callbackQuery: TelegramCallbackQuery) {
@@ -142,61 +337,92 @@ async function handleCallback(callbackQuery: TelegramCallbackQuery) {
   }
 
   const supabase = getTelegramSupabaseClient();
+  await upsertTelegramUser(supabase, user);
+
+  if (data === "lang:uk" || data === "lang:en") {
+    const language = data.endsWith("en") ? "en" : "uk";
+    await setTelegramUserLanguage(supabase, user.telegramUserId, language);
+    await sendTelegramMessage(user.chatId, getTelegramCopy(language).languageSaved);
+    await showMainMenu(user.chatId, language);
+    return;
+  }
+
+  const language = await getLanguage(user.telegramUserId);
+  const copy = getTelegramCopy(language);
+
+  if (data === "my_tickets") {
+    await sendMyTickets(user.chatId, user.telegramUserId, user.telegramUsername, language);
+    return;
+  }
+
+  if (data.startsWith("qr:")) {
+    const code = data.slice("qr:".length);
+    await sendTelegramMessage(user.chatId, `${copy.qrPayload}: ${escapeHtml(code)}`);
+    return;
+  }
+
+  if (data.startsWith("register:")) {
+    const slug = data.slice("register:".length);
+    const session = await startSession(supabase, { ...user, language }, slug);
+    const event = await getEventBySlug(supabase, slug);
+
+    if (!event) {
+      await sendTelegramMessage(user.chatId, copy.eventMissing);
+      return;
+    }
+
+    await askForEventConfirmation(user.chatId, session, event, language);
+    return;
+  }
+
   const session = await getLatestSession(supabase, user.telegramUserId, user.chatId);
 
   if (!session) {
-    await sendTelegramMessage(user.chatId, TELEGRAM_COPY.eventMissing);
+    await showMainMenu(user.chatId, language);
     return;
   }
 
   if (data === "cancel") {
-    await updateSession(supabase, session.id, { step: "cancelled" });
-    await sendTelegramMessage(user.chatId, TELEGRAM_COPY.cancelled, { removeKeyboard: true });
+    await updateSession(supabase, session.id, { step: "cancelled", language });
+    await sendTelegramMessage(user.chatId, copy.cancelled, { removeKeyboard: true });
     return;
   }
 
   if (data === "restart") {
     await updateSession(supabase, session.id, {
-      step: "started",
+      step: "ask_name",
       name: null,
       phone: null,
       position_company: null,
       industry: null,
       registration_id: null,
-      ticket_id: null
+      ticket_id: null,
+      language
     });
-    await sendTelegramMessage(user.chatId, TELEGRAM_COPY.welcome, {
-      inlineKeyboard: [[{ text: TELEGRAM_COPY.registerButton, callback_data: "register" }]]
-    });
+    await sendTelegramMessage(user.chatId, copy.askName);
     return;
   }
 
   const event = session.event_slug ? await getEventBySlug(supabase, session.event_slug) : null;
 
   if (!event) {
-    await sendTelegramMessage(user.chatId, TELEGRAM_COPY.eventMissing);
-    return;
-  }
-
-  if (data === "register") {
-    await askForEventConfirmation(user.chatId, session, event);
+    await sendTelegramMessage(user.chatId, copy.eventMissing);
     return;
   }
 
   if (data === "confirm_yes") {
-    await updateSession(supabase, session.id, { step: "ask_name" });
-    await sendTelegramMessage(user.chatId, TELEGRAM_COPY.askName);
+    await updateSession(supabase, session.id, { step: "ask_name", language });
+    await sendTelegramMessage(user.chatId, copy.askName);
     return;
   }
 
   if (data === "payment_pending") {
     try {
-      await createPendingRegistrationAndTicket(supabase, session);
-      await sendTelegramMessage(user.chatId, TELEGRAM_COPY.paymentPending, { removeKeyboard: true });
+      await finishPaymentStub(user.chatId, session, language);
     } catch (error) {
       const message = error instanceof Error && error.message.toLowerCase().includes("sold out")
-        ? TELEGRAM_COPY.soldOut
-        : TELEGRAM_COPY.genericError;
+        ? copy.soldOut
+        : copy.genericError;
       await sendTelegramMessage(user.chatId, message);
     }
   }
@@ -210,27 +436,53 @@ async function handleConversationMessage(message: TelegramMessage) {
   }
 
   const supabase = getTelegramSupabaseClient();
-  const session = await getLatestSession(supabase, user.telegramUserId, user.chatId);
+  await upsertTelegramUser(supabase, user);
+  const language = await getLanguage(user.telegramUserId);
+  const copy = getTelegramCopy(language);
+  const otherCopy = getTelegramCopy(language === "uk" ? "en" : "uk");
+  const text = message.text?.trim();
 
-  if (!session) {
-    await sendTelegramMessage(user.chatId, TELEGRAM_COPY.eventMissing);
+  if (text === copy.search || text === otherCopy.search) {
+    await sendEventsSearch(user.chatId, language);
     return;
   }
 
-  const text = message.text?.trim();
+  if (text === copy.myTickets || text === otherCopy.myTickets) {
+    await sendMyTickets(user.chatId, user.telegramUserId, user.telegramUsername, language);
+    return;
+  }
 
-  if (text === TELEGRAM_COPY.cancel) {
-    await updateSession(supabase, session.id, { step: "cancelled" });
-    await sendTelegramMessage(user.chatId, TELEGRAM_COPY.cancelled, { removeKeyboard: true });
+  if (text === copy.openApp || text === otherCopy.openApp) {
+    await sendTelegramMessage(user.chatId, copy.appSoon, mainMenuKeyboard(language));
+    return;
+  }
+
+  if (text === copy.openSite || text === otherCopy.openSite) {
+    await sendTelegramMessage(user.chatId, `${getAppUrl()}/events`, {
+      inlineKeyboard: [[{ text: copy.openSite, url: `${getAppUrl()}/events` }]]
+    });
+    return;
+  }
+
+  const session = await getLatestSession(supabase, user.telegramUserId, user.chatId);
+
+  if (!session) {
+    await showMainMenu(user.chatId, language);
+    return;
+  }
+
+  if (text === copy.cancel || text === otherCopy.cancel) {
+    await updateSession(supabase, session.id, { step: "cancelled", language });
+    await sendTelegramMessage(user.chatId, copy.cancelled, { removeKeyboard: true });
     return;
   }
 
   if (session.step === "ask_name" && text) {
-    await updateSession(supabase, session.id, { name: text, step: "ask_phone" });
-    await sendTelegramMessage(user.chatId, TELEGRAM_COPY.askPhone, {
+    await updateSession(supabase, session.id, { name: text, step: "ask_phone", language });
+    await sendTelegramMessage(user.chatId, copy.askPhone, {
       replyKeyboard: [
-        [{ text: TELEGRAM_COPY.shareContact, request_contact: true }],
-        [{ text: TELEGRAM_COPY.cancel }]
+        [{ text: copy.shareContact, request_contact: true }],
+        [{ text: copy.cancel }]
       ]
     });
     return;
@@ -240,28 +492,28 @@ async function handleConversationMessage(message: TelegramMessage) {
     const phone = message.contact?.phone_number || text;
 
     if (phone) {
-      await updateSession(supabase, session.id, { phone, step: "ask_position_company" });
-      await sendTelegramMessage(user.chatId, TELEGRAM_COPY.askPositionCompany, { removeKeyboard: true });
+      await updateSession(supabase, session.id, { phone, step: "ask_position_company", language });
+      await sendTelegramMessage(user.chatId, copy.askPositionCompany, { removeKeyboard: true });
     }
     return;
   }
 
   if (session.step === "ask_position_company" && text) {
-    await updateSession(supabase, session.id, { position_company: text, step: "ask_industry" });
-    await sendTelegramMessage(user.chatId, TELEGRAM_COPY.askIndustry);
+    await updateSession(supabase, session.id, { position_company: text, step: "ask_industry", language });
+    await sendTelegramMessage(user.chatId, copy.askIndustry);
     return;
   }
 
   if (session.step === "ask_industry" && text) {
-    const updated = await updateSession(supabase, session.id, { industry: text, step: "summary" });
+    const updated = await updateSession(supabase, session.id, { industry: text, step: "summary", language });
     const event = updated.event_slug ? await getEventBySlug(supabase, updated.event_slug) : null;
 
     if (!event) {
-      await sendTelegramMessage(user.chatId, TELEGRAM_COPY.eventMissing);
+      await sendTelegramMessage(user.chatId, copy.eventMissing);
       return;
     }
 
-    await sendSummary(user.chatId, updated, event);
+    await sendSummary(user.chatId, updated, event, language);
   }
 }
 

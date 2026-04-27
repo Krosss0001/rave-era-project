@@ -1,49 +1,45 @@
-# Rave'era Web MVP
+# Rave'era Platform
 
-Premium event platform demo for Rave'era Group.
+Rave'era is a premium event platform for creating events, promoting events, selling tickets, managing registrations, Telegram confirmation, referrals, organizer analytics, and future QR/check-in/payment flow.
 
-Raveera helps organizers create, promote, sell, and scale events. The platform is designed for concerts, festivals, conferences, corporate events, cultural events, ticketing, audience growth, Telegram confirmation, referral growth, and organizer analytics. Raves and concerts are one supported use case, not the whole product.
+It supports concerts and nightlife, but the product language is broader: conferences, festivals, cultural events, corporate events, ticketing operations, audience growth, and event operations.
 
-Built with:
+Deploy URL:
+
+```text
+https://rave-era-project.vercel.app
+```
+
+## Stack
 
 - Next.js App Router
 - TypeScript
 - Tailwind CSS
-- Mock fallback data for the MVP surface
-- Supabase auth and database foundation
-- Telegram registration handoff foundation
-- Solana-ready wallet placeholder
-- Server webhook foundation for Telegram Bot API
-- No real payments yet
-- No real Solana wallet adapter yet
+- Supabase auth and database
+- Telegram Bot API webhook
+- Lightweight UA/EN website language foundation
+- UA/EN Telegram bot flows
+- Mock fallback data for public pages
+- No real payment provider yet
 
 ## Routes
 
-- `/` - premium product landing page
-- `/events` - event discovery and ticketing surface
-- `/events/[slug]` - event detail, referral support, Telegram CTA, wallet placeholder
-- `/dashboard` - signed-in user dashboard for registrations, tickets, and referral state
-- `/organizer` - organizer tools, event creation, registrations, referrals, Telegram status, analytics
-- `/admin` - admin profile and role-management foundation
-- `/superadmin` - superadmin-only platform control foundation
+- `/` - product positioning and premium event platform overview
+- `/events` - public event discovery
+- `/events/[slug]` - event detail, web registration, referral support, Telegram deep link
+- `/dashboard` - registrations, tickets, and referrals for signed-in users
+- `/organizer` - organizer event creation and operating panels
+- `/admin` - admin role-management foundation
+- `/superadmin` - superadmin control foundation
+- `/api/telegram/webhook` - Telegram webhook
 
-## Setup
-
-```bash
-npm install
-cp .env.local.example .env.local
-npm run dev
-```
-
-Open `http://localhost:3000`.
-
-## Environment
+## Environment Variables
 
 Public frontend variables:
 
 ```bash
-NEXT_PUBLIC_TELEGRAM_BOT_URL=https://t.me/RaveeraBot
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=https://rave-era-project.vercel.app
+NEXT_PUBLIC_TELEGRAM_BOT_URL=https://t.me/your_bot_username
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_public_anon_key
 ```
@@ -55,134 +51,126 @@ TELEGRAM_BOT_TOKEN=your_private_bot_token
 SUPABASE_SERVICE_ROLE_KEY=your_private_service_role_key
 ```
 
-Security notes:
+Never expose `TELEGRAM_BOT_TOKEN` or `SUPABASE_SERVICE_ROLE_KEY` in client code or with a `NEXT_PUBLIC_` prefix.
 
-- Private Telegram bot tokens must only live in `.env.local` or the deployment provider's server environment.
-- Do not hardcode tokens and do not expose `TELEGRAM_BOT_TOKEN` to the browser.
-- Supabase service-role keys must never be prefixed with `NEXT_PUBLIC_` or shipped to the browser.
+## Supabase Patch Order
 
-## Supabase Schema
+Run these in Supabase SQL Editor in order:
 
-Database foundation:
-
-```bash
+```text
 supabase/schema.sql
-```
-
-Event field patches:
-
-```bash
 supabase/patches/002_expand_events.sql
 supabase/patches/003_quality_alignment.sql
 supabase/patches/004_ticket_insert_policy.sql
 supabase/patches/005_registration_ticket_reliability.sql
 supabase/patches/006_telegram_registration_state.sql
+supabase/patches/007_telegram_user_linking.sql
+supabase/patches/008_telegram_language_and_polish.sql
 ```
 
-Fresh setup:
+Patch `006` creates server-managed Telegram registration sessions. Patch `007` adds Telegram identity linking plus `registrations.telegram_user_id`. Patch `008` stores bot language preferences on `telegram_users` and `telegram_registration_sessions`.
 
-1. Open the Supabase project dashboard.
-2. Go to SQL Editor.
-3. Run the full contents of `supabase/schema.sql`.
-4. Sign in with magic link so the `profiles` trigger can create a profile row.
+## Telegram Webhook Setup
 
-Existing database setup:
-
-1. Run `supabase/patches/002_expand_events.sql` if it has not been applied.
-2. Run `supabase/patches/003_quality_alignment.sql`.
-3. Run `supabase/patches/004_ticket_insert_policy.sql`.
-4. Run `supabase/patches/005_registration_ticket_reliability.sql`.
-5. Run `supabase/patches/006_telegram_registration_state.sql`.
-
-The patches are written for existing databases. Patch `005` normalizes registration, ticket, and payment statuses before replacing the related check constraints.
-Patch `006` creates the server-managed Telegram registration session table. It intentionally has RLS enabled with no client policies; the webhook route must use `SUPABASE_SERVICE_ROLE_KEY`.
-
-## Telegram Bot Handoff
-
-The event page builds a deep link from:
+Set the webhook to the deployed route:
 
 ```bash
-NEXT_PUBLIC_TELEGRAM_BOT_URL=https://t.me/raveera_bot
+curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=https://rave-era-project.vercel.app/api/telegram/webhook"
 ```
 
-For event slug `noir-signal`, the generated link is:
+Telegram requires public HTTPS. Local webhook testing needs a secure tunnel.
+
+## Telegram Test Steps
+
+Plain start:
 
 ```text
-https://t.me/raveera_bot?start=event_noir-signal
+/start
 ```
 
-Webhook route:
+Expected: language choice if no preference exists, then UA/EN menu with Search, My Tickets, app placeholder, and website link.
+
+Event deep link:
 
 ```text
-/api/telegram/webhook
+https://t.me/your_bot_username?start=event_noir-signal
 ```
 
-The webhook receives Telegram updates, parses `/start event_slug` or `/start event_event_slug`, stores conversation state in `telegram_registration_sessions`, creates or reuses a pending registration, and creates or reuses a reserved ticket. Payment is not implemented yet; the bot replies that payment will be connected in the next phase.
+Expected: event preview, safe image if `image_url` is valid HTTPS, text fallback if image fails, then confirmation buttons.
 
-Set the webhook later from a deployed HTTPS URL:
+Search:
 
-```bash
-curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=https://your-domain.com/api/telegram/webhook"
+```text
+Tap 🔍 Пошук or 🔍 Search
 ```
 
-Local testing note: Telegram requires a public HTTPS webhook URL. Use a secure tunnel only for testing, then set the webhook to the tunnel URL plus `/api/telegram/webhook`.
+Expected: public events with status `live`, `limited`, or `soon`, each with register and website buttons.
 
-## Missing Profile Fix
+My Tickets:
 
-If users existed before the profile trigger was added, run:
-
-```sql
-insert into public.profiles (id, email, role)
-select id, email, 'user'
-from auth.users
-where id not in (select id from public.profiles)
-on conflict (id) do nothing;
+```text
+Tap 🎟 Мої квитки or 🎟 My tickets
 ```
 
-Promote the first operator account:
+Expected: tickets found through `telegram_user_id`, linked `profile_id`, or `telegram_username`. If no tickets exist, the bot shows the localized empty state and website button.
 
-```sql
-update public.profiles
-set role = 'superadmin'
-where email = 'you@example.com';
-```
+Registration flow:
 
-## Roles
+1. Open an event deep link.
+2. Confirm the event.
+3. Enter name.
+4. Share or type phone.
+5. Enter position and company.
+6. Enter industry/company activity.
+7. Confirm summary.
+8. Tap payment stub.
 
-- `user` - attendee account with dashboard access.
-- `organizer` - can create and manage owned events.
-- `admin` - can manage platform records and promote users up to admin.
-- `superadmin` - top-level platform operator.
+Expected: registration and reserved ticket are created or reused, with `ticket_code`, `qr_payload`, and `payment_status: pending`.
 
-Role-gated surfaces:
+## Demo Flow
 
-- `user` - `/dashboard`
-- `organizer` - `/dashboard`, `/organizer`
-- `admin` - `/dashboard`, `/organizer`, `/admin`
-- `superadmin` - `/dashboard`, `/organizer`, `/admin`, `/superadmin`
+1. Open the website.
+2. Browse events.
+3. Create an event as organizer.
+4. Register on the event page.
+5. Continue in Telegram.
+6. Search events in the bot.
+7. View My Tickets.
+8. Confirm the registration and ticket rows in Supabase.
+9. Explain that real payment, QR image generation, and check-in scanner are next-phase production work.
 
-RLS is enabled for every table. Current route guards are client-side because the MVP uses Supabase browser sessions; RLS is the real data security boundary. Move auth to cookie-based SSR before production.
+## Event Creation
 
-## Event Creation Flow
+Organizer, admin, and superadmin roles can create events at `/organizer`. Public event discovery only shows `live`, `limited`, and `soon`. Draft events remain private to organizer/admin surfaces.
 
-Required role: `organizer`, `admin`, or `superadmin`.
+## Roadmap
 
-1. Sign in with magic link.
-2. Confirm your `profiles.role` is allowed.
-3. Open `/organizer`.
-4. Click **Create event**.
-5. Fill required fields: title, slug, date/time, capacity.
-6. Optional fields include subtitle, description, address, organizer info, Telegram URL, lineup, tags, doors open, event type, ticket wave label, urgency note, referral toggle, wallet toggle, and image URL.
-7. Save to Supabase.
+Near-term:
 
-Public visibility:
+- real payments
+- QR ticket generation
+- check-in scanner
+- organizer event CRUD
+- email and Telegram confirmations
+- referral attribution
+- attendee export
+- role audit logs
 
-- `live`, `limited`, and `soon` appear on `/events`.
-- `draft` stays private to organizer/admin surfaces.
+Mid-term:
 
-## Next Steps
+- promo codes
+- ticket tiers
+- waitlists
+- capacity waves
+- organizer CRM
+- analytics dashboard
+- automated reminders
 
-1. Payment provider backend for Telegram and web checkout
-2. QR check-in
-3. Referral attribution on server-created registrations
-4. Organizer-facing live Telegram registration dashboard
+Long-term:
+
+- mobile app
+- white-label organizer pages
+- wallet/NFT rewards
+- smart access control
+- partner marketplace
+- AI campaign assistant

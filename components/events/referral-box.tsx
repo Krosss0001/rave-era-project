@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Copy, Share2 } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/use-language";
 import { buildReferralUrl } from "@/lib/referral";
 
 type ReferralBoxProps = {
@@ -12,6 +13,7 @@ type ReferralBoxProps = {
 const defaultCode = "RAVE-CREW";
 
 export function ReferralBox({ path, activeReferral }: ReferralBoxProps) {
+  const { language } = useLanguage();
   const [copied, setCopied] = useState(false);
   const code = activeReferral || defaultCode;
   const referralUrl = useMemo(() => buildReferralUrl(path, code), [path, code]);
@@ -34,11 +36,16 @@ export function ReferralBox({ path, activeReferral }: ReferralBoxProps) {
           <Share2 className="h-5 w-5" aria-hidden="true" />
         </span>
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#00FF88]">Distribution loop</p>
-          <h2 className="mt-2 text-2xl font-black uppercase leading-none">Referral growth loop</h2>
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#00FF88]">
+            {language === "ua" ? "Контур дистрибуції" : "Distribution loop"}
+          </p>
+          <h2 className="mt-2 text-2xl font-black uppercase leading-none">
+            {language === "ua" ? "Реферальне зростання" : "Referral growth loop"}
+          </h2>
           <p className="mt-2 text-sm leading-6 text-white/45">
-            Share a tracked invite link. For MVP, attribution is URL-based and shown in the
-            organizer dashboard with mock stats.
+            {language === "ua"
+              ? "Поділіться трекінговим посиланням. У MVP атрибуція базується на URL і показується в кабінеті організатора з demo-статистикою."
+              : "Share a tracked invite link. For MVP, attribution is URL-based and shown in the organizer dashboard with demo stats."}
           </p>
         </div>
       </div>
@@ -49,12 +56,14 @@ export function ReferralBox({ path, activeReferral }: ReferralBoxProps) {
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2 border-y border-white/[0.05] py-3">
         <div>
-          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">Top source</p>
+          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">{language === "ua" ? "Топ джерело" : "Top source"}</p>
           <p className="mt-1 font-mono text-sm font-semibold text-[#00FF88]">RAVE-ANNA</p>
         </div>
         <div>
-          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">Signal</p>
-          <p className="mt-1 font-mono text-sm font-semibold text-white motion-safe:animate-[numberPop_520ms_cubic-bezier(0.16,1,0.3,1)_both]">31 confirmed</p>
+          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">{language === "ua" ? "Сигнал" : "Signal"}</p>
+          <p className="mt-1 font-mono text-sm font-semibold text-white motion-safe:animate-[numberPop_520ms_cubic-bezier(0.16,1,0.3,1)_both]">
+            {language === "ua" ? "31 підтверджено" : "31 confirmed"}
+          </p>
         </div>
       </div>
       <button
@@ -65,7 +74,7 @@ export function ReferralBox({ path, activeReferral }: ReferralBoxProps) {
         }`}
       >
         <Copy className="h-4 w-4" aria-hidden="true" />
-        {copied ? "Copied" : "Copy referral link"}
+        {copied ? (language === "ua" ? "Скопійовано" : "Copied") : (language === "ua" ? "Копіювати реферал" : "Copy referral link")}
       </button>
       <style
         dangerouslySetInnerHTML={{

@@ -150,6 +150,7 @@ export type Database = {
           name: string | null;
           email: string | null;
           telegram_username: string | null;
+          telegram_user_id: string | null;
           referral_code: string | null;
           status: RegistrationStatus;
           created_at: string;
@@ -161,6 +162,7 @@ export type Database = {
           name?: string | null;
           email?: string | null;
           telegram_username?: string | null;
+          telegram_user_id?: string | null;
           referral_code?: string | null;
           status?: RegistrationStatus;
           created_at?: string;
@@ -170,6 +172,7 @@ export type Database = {
           name?: string | null;
           email?: string | null;
           telegram_username?: string | null;
+          telegram_user_id?: string | null;
           referral_code?: string | null;
           status?: RegistrationStatus;
         };
@@ -308,6 +311,7 @@ export type Database = {
           position_company: string | null;
           industry: string | null;
           telegram_username: string | null;
+          language: string;
           registration_id: string | null;
           ticket_id: string | null;
           created_at: string;
@@ -325,6 +329,7 @@ export type Database = {
           position_company?: string | null;
           industry?: string | null;
           telegram_username?: string | null;
+          language?: string;
           registration_id?: string | null;
           ticket_id?: string | null;
           created_at?: string;
@@ -341,6 +346,7 @@ export type Database = {
           position_company?: string | null;
           industry?: string | null;
           telegram_username?: string | null;
+          language?: string;
           registration_id?: string | null;
           ticket_id?: string | null;
           created_at?: string;
@@ -366,6 +372,52 @@ export type Database = {
             columns: ["ticket_id"];
             isOneToOne: false;
             referencedRelation: "tickets";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      telegram_users: {
+        Row: {
+          id: string;
+          telegram_user_id: string;
+          chat_id: string;
+          username: string | null;
+          first_name: string | null;
+          last_name: string | null;
+          profile_id: string | null;
+          language: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          telegram_user_id: string;
+          chat_id: string;
+          username?: string | null;
+          first_name?: string | null;
+          last_name?: string | null;
+          profile_id?: string | null;
+          language?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          telegram_user_id?: string;
+          chat_id?: string;
+          username?: string | null;
+          first_name?: string | null;
+          last_name?: string | null;
+          profile_id?: string | null;
+          language?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "telegram_users_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           }
         ];

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getCurrentRole, type AuthProfile } from "@/lib/auth/get-role";
+import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 
@@ -24,6 +25,7 @@ function getBadgeClass(value: string) {
 }
 
 export function UserDashboard() {
+  const { dictionary } = useLanguage();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [profile, setProfile] = useState<AuthProfile | null>(null);
   const [email, setEmail] = useState("");
@@ -48,7 +50,7 @@ export function UserDashboard() {
 
       if (!roleState.user) {
         setLoading(false);
-        setErrorMessage("Sign in to view your dashboard.");
+        setErrorMessage(dictionary.dashboard.signIn);
         return;
       }
 
@@ -57,7 +59,7 @@ export function UserDashboard() {
       const [registrationResult, ticketResult, referralResult] = await Promise.all([
         supabase
           .from("registrations")
-          .select("id,event_id,user_id,name,email,telegram_username,referral_code,status,created_at")
+          .select("id,event_id,user_id,name,email,telegram_username,telegram_user_id,referral_code,status,created_at")
           .eq("user_id", roleState.user.id)
           .order("created_at", { ascending: false }),
         supabase
@@ -77,7 +79,7 @@ export function UserDashboard() {
       }
 
       if (registrationResult.error || ticketResult.error || referralResult.error) {
-        setErrorMessage("Dashboard data could not be loaded. Refresh and try again.");
+        setErrorMessage(dictionary.dashboard.dataError);
         setLoading(false);
         return;
       }
@@ -107,7 +109,7 @@ export function UserDashboard() {
         }, {})
       );
       setReferrals(referralResult.data ?? []);
-      setErrorMessage(eventResult && "error" in eventResult && eventResult.error ? "Some event details could not be loaded." : null);
+      setErrorMessage(eventResult && "error" in eventResult && eventResult.error ? dictionary.dashboard.eventDetailsError : null);
       setLoading(false);
     }
 
@@ -121,7 +123,7 @@ export function UserDashboard() {
       mounted = false;
       listener?.subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [dictionary.dashboard.dataError, dictionary.dashboard.eventDetailsError, dictionary.dashboard.signIn, supabase]);
 
   if (loading) {
     return (
@@ -138,9 +140,9 @@ export function UserDashboard() {
       <section className="border-y border-white/[0.05] bg-[#020202] py-8">
         <div className="flex flex-col justify-between gap-5 px-1 sm:flex-row sm:items-end">
           <div>
-            <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">User profile</p>
+            <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.dashboard.profile}</p>
             <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white md:text-5xl">
-              Access dashboard
+              {dictionary.dashboard.accessDashboard}
             </h2>
           </div>
           <span className="border border-primary/25 bg-primary/[0.03] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
@@ -151,8 +153,8 @@ export function UserDashboard() {
         <div className="mt-8 grid gap-3 md:grid-cols-3">
           {[
             [email || "Not signed in", "email"],
-            [registrations.length.toString(), "registered events"],
-            [tickets.length.toString(), "tickets"]
+            [registrations.length.toString(), dictionary.dashboard.registeredEvents],
+            [tickets.length.toString(), dictionary.dashboard.tickets]
           ].map(([value, label]) => (
             <div key={label} className="border border-white/[0.05] bg-[#030303] p-4">
               <p className="truncate font-mono text-lg font-semibold text-white">{value}</p>
@@ -175,7 +177,7 @@ export function UserDashboard() {
                   <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">
                     Event {registration.event_id.slice(0, 8)}
                   </p>
-                  <p className="mt-2 text-xl font-black uppercase text-white">{registration.name || "Registration"}</p>
+                  <p className="mt-2 text-xl font-black uppercase text-white">{registration.name || dictionary.events.registration}</p>
                 </div>
                 <span className={`border px-3 py-2 text-center font-mono text-[10px] uppercase tracking-[0.16em] ${getBadgeClass(registration.status)}`}>
                   {registration.status}
@@ -184,15 +186,15 @@ export function UserDashboard() {
             ))
           ) : (
             <div className="py-10">
-              <p className="text-xl font-black uppercase text-white">No registrations yet</p>
+              <p className="text-xl font-black uppercase text-white">{dictionary.dashboard.noRegistrationsTitle}</p>
               <p className="mt-3 max-w-lg text-sm leading-6 text-white/45">
-                Your confirmed event activity will appear here after registration flows are connected.
+                {dictionary.dashboard.noRegistrationsCopy}
               </p>
               <Link
                 href="/events"
                 className="focus-ring mt-5 inline-flex min-h-11 items-center border border-primary px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-primary hover:text-black active:scale-[0.98]"
               >
-                Explore events
+                {dictionary.common.openEvents}
               </Link>
             </div>
           )}
@@ -201,7 +203,7 @@ export function UserDashboard() {
 
       <aside className="grid gap-6">
         <section className="border-y border-white/[0.05] bg-[#020202] py-8">
-          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">My Tickets</p>
+          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.dashboard.myTickets}</p>
           <div className="mt-6 grid gap-3">
             {tickets.length > 0 ? (
               tickets.map((ticket) => {
@@ -245,20 +247,20 @@ export function UserDashboard() {
                 );
               })
             ) : (
-              <p className="text-sm leading-6 text-white/45">No tickets yet. Reserved tickets appear here immediately after registration.</p>
+              <p className="text-sm leading-6 text-white/45">{dictionary.dashboard.noTickets}</p>
             )}
           </div>
         </section>
 
         <section className="border-y border-white/[0.05] bg-[#020202] py-8">
-          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">Referral link</p>
+          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.dashboard.referralLink}</p>
           <div className="mt-6 border border-white/[0.05] bg-[#030303] p-4">
             <p className="break-all font-mono text-xs text-white/50">
               {referrals[0]?.code ? `/events/noir-signal?ref=${referrals[0].code}` : "/events/noir-signal?ref=RAVE-CREW"}
             </p>
           </div>
           <p className="mt-4 text-sm leading-6 text-white/45">
-            Referral attribution is ready in schema; automatic creation comes with the registration backend.
+            {dictionary.dashboard.referralCopy}
           </p>
         </section>
       </aside>

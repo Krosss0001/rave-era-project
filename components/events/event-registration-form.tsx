@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { CheckCircle2, ExternalLink, UserPlus } from "lucide-react";
+import Link from "next/link";
+import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { buildQrPayload, generateTicketCode } from "@/lib/tickets";
 import { buildTelegramUrl } from "@/lib/telegram";
@@ -45,13 +47,13 @@ function isUniqueCollision(error: { code?: string } | null) {
 }
 
 function isSoldOutError(error: { message?: string } | null) {
-  return Boolean(error?.message?.toLowerCase().includes("sold out"));
+  return Boolean(error?.message?.toLowerCase().includes("sold out") || error?.message === "sold_out");
 }
 
 function getCleanErrorMessage(error: unknown, fallback: string) {
   if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
-    if (error.message.toLowerCase().includes("sold out")) {
-      return "Event is sold out";
+    if (error.message.toLowerCase().includes("sold out") || error.message === "sold_out") {
+      return "sold_out";
     }
   }
 
@@ -59,6 +61,7 @@ function getCleanErrorMessage(error: unknown, fallback: string) {
 }
 
 export function EventRegistrationForm({ eventId, eventSlug, referralCode }: EventRegistrationFormProps) {
+  const { dictionary } = useLanguage();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const telegramUrl = useMemo(() => buildTelegramUrl(eventSlug, referralCode), [eventSlug, referralCode]);
   const [open, setOpen] = useState(false);
@@ -236,17 +239,17 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
     const telegramUsername = form.telegramUsername.trim();
 
     if (!eventId) {
-      setMessage({ type: "error", text: "Event id is missing. Refresh this page and try again." });
+      setMessage({ type: "error", text: dictionary.events.missingEvent });
       return;
     }
 
     if (!name) {
-      setMessage({ type: "error", text: "Name is required." });
+      setMessage({ type: "error", text: dictionary.events.nameRequired });
       return;
     }
 
     if (!email || !isValidEmail(email)) {
-      setMessage({ type: "error", text: "Enter a valid email address." });
+      setMessage({ type: "error", text: dictionary.events.invalidEmail });
       return;
     }
 
@@ -258,7 +261,7 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
     if (!userId) {
       setMessage({
         type: "error",
-        text: "Sign in before registering. Current RLS only allows registrations tied to your user account."
+        text: dictionary.events.signInRequired
       });
       return;
     }
@@ -272,7 +275,7 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
         const existingTicket = await createTicketForRegistration(existingRegistration, userId);
 
         setTicket(existingTicket);
-        setMessage({ type: "success", text: "You are already registered for this event." });
+        setMessage({ type: "success", text: dictionary.events.alreadyRegistered });
         return;
       }
 
@@ -293,7 +296,7 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
 
       if (registrationError || !registration) {
         if (isSoldOutError(registrationError)) {
-          throw new Error("Event is sold out");
+          throw new Error("sold_out");
         }
 
         if (isUniqueCollision(registrationError)) {
@@ -303,7 +306,7 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
             const recoveredTicket = await createTicketForRegistration(recoveredRegistration, userId);
 
             setTicket(recoveredTicket);
-            setMessage({ type: "success", text: "You are already registered for this event." });
+            setMessage({ type: "success", text: dictionary.events.alreadyRegistered });
             return;
           }
         }
@@ -314,13 +317,14 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
       const nextTicket = await createTicketForRegistration(registration, userId);
 
       setTicket(nextTicket);
-      setMessage({ type: "success", text: "Registration received." });
+      setMessage({ type: "success", text: dictionary.events.registrationReceived });
       setForm((current) => ({
         ...initialForm,
         email: current.email
       }));
     } catch (error) {
-      setMessage({ type: "error", text: getCleanErrorMessage(error, "Registration could not be completed. Try again.") });
+      const cleanMessage = getCleanErrorMessage(error, dictionary.events.genericError);
+      setMessage({ type: "error", text: cleanMessage === "sold_out" ? dictionary.events.soldOut : cleanMessage });
     } finally {
       setLoading(false);
     }
@@ -334,10 +338,10 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
           <UserPlus className="h-5 w-5" aria-hidden="true" />
         </span>
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#00FF88]">Registration</p>
-          <h2 className="mt-2 text-2xl font-black uppercase leading-none">Reserve access</h2>
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#00FF88]">{dictionary.events.registration}</p>
+          <h2 className="mt-2 text-2xl font-black uppercase leading-none">{dictionary.events.reserveAccess}</h2>
           <p className="mt-2 text-sm leading-6 text-white/45">
-            Submit your registration details. Telegram handles the confirmation flow after the request is received.
+            {dictionary.events.submitDetails}
           </p>
         </div>
       </div>
@@ -347,27 +351,35 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
           <div className="flex items-start gap-2 text-[#00FF88]">
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <div>
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em]">You are registered</p>
-              <p className="mt-2 text-sm leading-6 text-white/65">Next step: confirm in Telegram</p>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em]">{dictionary.events.registered}</p>
+              <p className="mt-2 text-sm leading-6 text-white/65">{dictionary.events.nextTelegram}</p>
             </div>
           </div>
           <div className="mt-4 border border-white/[0.05] bg-black px-3 py-3">
-            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">Ticket code</p>
+            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">{dictionary.events.ticketCode}</p>
             <p className="mt-1 font-mono text-xl font-semibold text-white">{ticket.ticket_code}</p>
             <div className="mt-3 flex flex-wrap gap-2 font-mono text-[9px] uppercase tracking-[0.16em]">
               <span className="border border-[#00FF88]/25 bg-[#00FF88]/[0.035] px-2 py-1 text-[#00FF88]">{ticket.status}</span>
-              <span className="border border-white/[0.06] bg-[#020202] px-2 py-1 text-white/45">Payment {ticket.payment_status}</span>
+              <span className="border border-white/[0.06] bg-[#020202] px-2 py-1 text-white/45">{dictionary.events.payment} {ticket.payment_status}</span>
             </div>
           </div>
-          <a
-            href={telegramUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="focus-ring mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 border border-[#00FF88] px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-[#00FF88] motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-[#00FF88] hover:text-black active:scale-[0.98]"
-          >
-            Continue in Telegram
-            <ExternalLink className="h-4 w-4" aria-hidden="true" />
-          </a>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <a
+              href={telegramUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 border border-[#00FF88] px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-[#00FF88] motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-[#00FF88] hover:text-black active:scale-[0.98]"
+            >
+              {dictionary.events.continueTelegram}
+              <ExternalLink className="h-4 w-4" aria-hidden="true" />
+            </a>
+            <Link
+              href="/dashboard"
+              className="focus-ring inline-flex min-h-11 items-center justify-center border border-white/[0.08] px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-white/55 motion-safe:transition-[border-color,color,transform] motion-safe:duration-500 hover:border-[#00FF88]/30 hover:text-[#00FF88] active:scale-[0.98]"
+            >
+              {dictionary.nav.dashboard}
+            </Link>
+          </div>
         </div>
       ) : !open ? (
         <button
@@ -375,12 +387,12 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
           onClick={() => setOpen(true)}
           className="focus-ring mt-5 min-h-11 w-full bg-[#00FF88] px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-black motion-safe:transition-[filter,transform,box-shadow] motion-safe:duration-500 motion-safe:ease-out hover:brightness-110 hover:shadow-[0_0_34px_rgba(0,255,136,0.16)] active:scale-[0.98]"
         >
-          Register
+          {dictionary.nav.registration}
         </button>
       ) : (
         <form onSubmit={submitRegistration} className="mt-5 grid gap-4">
           <label className="block">
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Name</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{dictionary.events.name}</span>
             <input
               type="text"
               value={form.name}
@@ -391,7 +403,7 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
             />
           </label>
           <label className="block">
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Email</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{dictionary.events.email}</span>
             <input
               type="email"
               value={form.email}
@@ -402,7 +414,7 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
             />
           </label>
           <label className="block">
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Telegram username</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{dictionary.events.telegramUsername}</span>
             <input
               type="text"
               value={form.telegramUsername}
@@ -415,7 +427,7 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
 
           {!userId && authChecked ? (
             <p className="border border-white/[0.05] bg-[#030303] px-3 py-2 text-xs leading-5 text-white/45">
-              Sign in to submit. The database RLS policy only accepts registrations connected to the current user.
+              {dictionary.events.signInRequired}
             </p>
           ) : null}
 
@@ -436,7 +448,7 @@ export function EventRegistrationForm({ eventId, eventSlug, referralCode }: Even
             disabled={loading}
             className="focus-ring min-h-11 bg-[#00FF88] px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-500 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
           >
-            {loading ? "Submitting" : "Submit registration"}
+            {loading ? dictionary.events.submitting : dictionary.events.submitRegistration}
           </button>
         </form>
       )}
