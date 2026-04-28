@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
-import { CheckCircle2, Search, TriangleAlert } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { Camera, CheckCircle2, Search, TriangleAlert } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 import { parseTicketQrInput } from "@/lib/qr";
@@ -16,6 +16,12 @@ type CheckInResult = Database["public"]["Functions"]["check_in_ticket"]["Returns
 type ValidatedTicket = TicketRow & {
   event_title: string;
 };
+
+type NativeBarcodeDetector = {
+  detect: (source: HTMLVideoElement) => Promise<Array<{ rawValue?: string }>>;
+};
+
+type NativeBarcodeDetectorConstructor = new (options?: { formats?: string[] }) => NativeBarcodeDetector;
 
 function getBadgeClass(value: string | boolean | null) {
   if (value === true || value === "active" || value === "paid") {
@@ -42,22 +48,57 @@ function mapCheckInResult(result: CheckInResult): ValidatedTicket {
   };
 }
 
+function getBarcodeDetector() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return (window as Window & { BarcodeDetector?: NativeBarcodeDetectorConstructor }).BarcodeDetector ?? null;
+}
+
 export function CheckInPanel() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const scanFrameRef = useRef<number | null>(null);
+  const scanActiveRef = useRef(false);
   const [ticketCode, setTicketCode] = useState("");
   const [ticket, setTicket] = useState<ValidatedTicket | null>(null);
   const [loading, setLoading] = useState(false);
   const [checkingIn, setCheckingIn] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannerStatus, setScannerStatus] = useState<"idle" | "starting" | "scanning" | "detected" | "unsupported" | "error">("idle");
+  const [scannerMessage, setScannerMessage] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error" | "warning"; text: string } | null>(null);
 
   const canCheckIn = ticket?.status === "active" && ticket.payment_status === "paid" && !ticket.checked_in;
 
-  async function validateTicket(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const stopScanner = useCallback((preserveStatus = false) => {
+    scanActiveRef.current = false;
+
+    if (scanFrameRef.current !== null) {
+      window.cancelAnimationFrame(scanFrameRef.current);
+      scanFrameRef.current = null;
+    }
+
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    setScannerOpen(false);
+    if (!preserveStatus) {
+      setScannerStatus("idle");
+    }
+  }, []);
+
+  const validateTicketInput = useCallback(async (input: string) => {
     setMessage(null);
     setTicket(null);
 
-    const parsedInput = parseTicketQrInput(ticketCode);
+    const parsedInput = parseTicketQrInput(input);
 
     if (parsedInput.error) {
       setMessage({ type: "error", text: parsedInput.error });
@@ -129,7 +170,115 @@ export function CheckInPanel() {
     } finally {
       setLoading(false);
     }
+  }, [supabase]);
+
+  async function validateTicket(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await validateTicketInput(ticketCode);
   }
+
+  const handleScannedValue = useCallback(
+    async (value: string) => {
+      const parsedInput = parseTicketQrInput(value);
+
+      if (parsedInput.error) {
+        setScannerStatus("error");
+        setScannerMessage("Invalid QR payload.");
+        return;
+      }
+
+      const scannedTicketCode = parsedInput.ticketCode;
+
+      if (!scannedTicketCode) {
+        setScannerStatus("error");
+        setScannerMessage("Invalid QR payload.");
+        return;
+      }
+
+      setTicketCode(scannedTicketCode);
+      setScannerStatus("detected");
+      setScannerMessage("QR detected");
+      stopScanner(true);
+      await validateTicketInput(value);
+    },
+    [stopScanner, validateTicketInput]
+  );
+
+  const startScanner = useCallback(async () => {
+    const BarcodeDetector = getBarcodeDetector();
+
+    if (!navigator.mediaDevices?.getUserMedia || !BarcodeDetector) {
+      setScannerOpen(false);
+      setScannerStatus("unsupported");
+      setScannerMessage("Camera not supported, use manual input");
+      return;
+    }
+
+    setScannerOpen(true);
+    setScannerStatus("starting");
+    setScannerMessage(null);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" }
+        },
+        audio: false
+      });
+
+      streamRef.current = stream;
+
+      if (!videoRef.current) {
+        throw new Error("Camera preview is not available.");
+      }
+
+      videoRef.current.srcObject = stream;
+      await videoRef.current.play();
+
+      const detector = new BarcodeDetector({ formats: ["qr_code"] });
+      scanActiveRef.current = true;
+      setScannerStatus("scanning");
+      setScannerMessage("Scanning...");
+
+      const scan = async () => {
+        if (!scanActiveRef.current || !videoRef.current) {
+          return;
+        }
+
+        try {
+          const codes = await detector.detect(videoRef.current);
+          const rawValue = codes.find((code) => typeof code.rawValue === "string" && code.rawValue.trim())?.rawValue;
+
+          if (rawValue) {
+            scanActiveRef.current = false;
+            await handleScannedValue(rawValue);
+            return;
+          }
+        } catch {
+          setScannerStatus("error");
+          setScannerMessage("Camera scan failed, use manual input");
+          stopScanner();
+          return;
+        }
+
+        scanFrameRef.current = window.requestAnimationFrame(scan);
+      };
+
+      scanFrameRef.current = window.requestAnimationFrame(scan);
+    } catch {
+      setScannerOpen(false);
+      setScannerStatus("error");
+      setScannerMessage("Camera not supported, use manual input");
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  }, [handleScannedValue, stopScanner]);
+
+  useEffect(() => {
+    return () => {
+      stopScanner();
+    };
+  }, [stopScanner]);
 
   async function checkInTicket() {
     if (!supabase || !ticket || !canCheckIn) {
@@ -177,15 +326,58 @@ export function CheckInPanel() {
             className="mt-2 min-h-11 w-full border border-white/[0.08] bg-black px-3 font-mono text-sm uppercase text-white outline-none motion-safe:transition-colors motion-safe:duration-500 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           />
         </label>
-        <button
-          type="submit"
-          disabled={loading}
-          aria-busy={loading}
-          className="focus-ring mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-primary px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-500 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
-        >
-          <Search className="h-4 w-4" aria-hidden="true" />
-          {loading ? "Validating" : "Validate"}
-        </button>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (scannerOpen) {
+                stopScanner();
+              } else {
+                void startScanner();
+              }
+            }}
+            className="focus-ring inline-flex min-h-11 w-full items-center justify-center gap-2 border border-primary/35 px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-primary hover:text-black active:scale-[0.98]"
+          >
+            <Camera className="h-4 w-4" aria-hidden="true" />
+            {scannerOpen ? "Stop scan" : "Scan QR"}
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            aria-busy={loading}
+            className="focus-ring inline-flex min-h-11 w-full items-center justify-center gap-2 bg-primary px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-500 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <Search className="h-4 w-4" aria-hidden="true" />
+            {loading ? "Validating" : "Validate"}
+          </button>
+        </div>
+
+        {scannerOpen ? (
+          <div className="mt-4 overflow-hidden border border-white/[0.06] bg-black">
+            <div className="aspect-[4/3] w-full bg-[#030303]">
+              <video ref={videoRef} className="h-full w-full object-cover" muted playsInline aria-label="QR scanner camera preview" />
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] px-3 py-2">
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">
+                {scannerStatus === "starting" ? "Starting camera" : "Scanning"}
+              </p>
+              <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_14px_rgba(0,255,136,0.55)] motion-safe:animate-pulse" aria-hidden="true" />
+            </div>
+          </div>
+        ) : null}
+
+        {scannerMessage ? (
+          <p
+            className={
+              scannerStatus === "detected"
+                ? "mt-3 border border-primary/30 bg-primary/[0.04] px-3 py-2 text-sm text-primary"
+                : "mt-3 border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-sm text-white/65"
+            }
+            aria-live="polite"
+          >
+            {scannerMessage}
+          </p>
+        ) : null}
       </form>
 
       <div className="border-y border-white/[0.05] bg-[#020202] py-8">

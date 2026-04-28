@@ -12,13 +12,21 @@ import { slugify } from "@/lib/slugify";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { EVENT_SELECT_FIELDS } from "@/lib/supabase/event-fields";
 import { mapDatabaseEvent } from "@/lib/supabase/event-mapper";
-import type { Database, EventStatus } from "@/lib/supabase/types";
+import type { BroadcastAudience, Database, EventStatus } from "@/lib/supabase/types";
+import { TelegramBroadcastPanel } from "@/components/shared/telegram-broadcast-panel";
 
 type RegistrationRow = Pick<Database["public"]["Tables"]["registrations"]["Row"], "event_id" | "status">;
 type EventRow = Database["public"]["Tables"]["events"]["Row"];
 type OrganizerEvent = RaveeraEvent & { dbStatus?: EventStatus };
 
 const eventStatusOptions: EventStatus[] = ["draft", "live", "limited", "soon"];
+const campaignAudienceOptions: Array<{ value: BroadcastAudience; label: string }> = [
+  { value: "event_registered", label: "Registered" },
+  { value: "event_confirmed", label: "Confirmed" },
+  { value: "event_pending_payment", label: "Pending payment" },
+  { value: "event_paid", label: "Paid" },
+  { value: "event_checked_in", label: "Checked-in" }
+];
 
 const initialForm = {
   title: "",
@@ -545,6 +553,18 @@ export function OrganizerEventPortfolio() {
             <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{label}</p>
           </div>
         ))}
+      </div>
+
+      <div className="mt-10">
+        <TelegramBroadcastPanel
+          title="Campaigns"
+          eyebrow="Telegram campaigns"
+          description="Send event-scoped Telegram updates to registered, confirmed, pending, paid, or checked-in attendees."
+          events={events.map((event) => ({ id: event.id, title: event.title, slug: event.slug }))}
+          audienceOptions={campaignAudienceOptions}
+          requireEvent
+          defaultAudience="event_registered"
+        />
       </div>
 
       <div className="mt-10 grid gap-0">

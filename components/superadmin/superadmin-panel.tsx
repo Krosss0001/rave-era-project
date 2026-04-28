@@ -3,14 +3,27 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import type { Database } from "@/lib/supabase/types";
+import type { BroadcastAudience, Database } from "@/lib/supabase/types";
+import { TelegramBroadcastPanel } from "@/components/shared/telegram-broadcast-panel";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+type EventOption = Pick<Database["public"]["Tables"]["events"]["Row"], "id" | "title" | "slug">;
+
+const superadminAudienceOptions: Array<{ value: BroadcastAudience; label: string }> = [
+  { value: "all_telegram_users", label: "All Telegram users" },
+  { value: "event_registered", label: "Registered" },
+  { value: "event_confirmed", label: "Confirmed" },
+  { value: "event_pending_payment", label: "Pending payment" },
+  { value: "event_paid", label: "Paid" },
+  { value: "event_checked_in", label: "Checked-in" },
+  { value: "bot_interacted_not_registered", label: "Bot users not registered" }
+];
 
 export function SuperadminPanel() {
   const { dictionary } = useLanguage();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
+  const [events, setEvents] = useState<EventOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
@@ -24,17 +37,24 @@ export function SuperadminPanel() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id,email,full_name,role,wallet_address,telegram_username,created_at")
-        .order("created_at", { ascending: false });
+      const [profileResult, eventResult] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id,email,full_name,role,wallet_address,telegram_username,created_at")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("events")
+          .select("id,title,slug")
+          .order("date", { ascending: true, nullsFirst: false })
+      ]);
 
       if (!mounted) {
         return;
       }
 
-      setProfiles(data ?? []);
-      setMessage(error ? "Profiles are not visible. Confirm the signed-in profile has the superadmin role." : "");
+      setProfiles(profileResult.data ?? []);
+      setEvents(eventResult.data ?? []);
+      setMessage(profileResult.error ? "Profiles are not visible. Confirm the signed-in profile has the superadmin role." : "");
       setLoading(false);
     }
 
@@ -51,8 +71,19 @@ export function SuperadminPanel() {
   }, {});
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
-      <section className="border-y border-white/[0.05] bg-[#020202] py-8">
+    <div className="grid gap-10">
+      <TelegramBroadcastPanel
+        title="Telegram Broadcast Center"
+        eyebrow="Broadcast operations"
+        description="Create a targeted Telegram message, estimate its audience, and send it from the server-side bot integration."
+        events={events}
+        audienceOptions={superadminAudienceOptions}
+        requireEvent={false}
+        defaultAudience="all_telegram_users"
+      />
+
+      <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+        <section className="border-y border-white/[0.05] bg-[#020202] py-8">
           <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.superadmin.roleArchitecture}</p>
         <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white md:text-5xl">
           {dictionary.superadmin.platformControl}
@@ -68,9 +99,9 @@ export function SuperadminPanel() {
             </div>
           ))}
         </div>
-      </section>
+        </section>
 
-      <section className="border-y border-white/[0.05] bg-[#020202] py-8">
+        <section className="border-y border-white/[0.05] bg-[#020202] py-8">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">Prepared actions</p>
@@ -98,7 +129,8 @@ export function SuperadminPanel() {
             </div>
           ))}
         </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 }

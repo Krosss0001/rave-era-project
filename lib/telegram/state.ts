@@ -83,7 +83,7 @@ export async function getEventBySlug(supabase: SupabaseClient<Database>, slug: s
 export async function getPublicTelegramEvents(supabase: SupabaseClient<Database>) {
   const { data, error } = await supabase
     .from("events")
-    .select("id,slug,title,subtitle,description,date,city,venue,address,price,currency,status,image_url")
+    .select("id,slug,title,subtitle,description,date,city,venue,address,price,currency,capacity,status,image_url")
     .in("status", ["live", "limited", "soon"])
     .order("date", { ascending: true, nullsFirst: false })
     .limit(8);
@@ -165,6 +165,17 @@ export async function setTelegramUserLanguage(
   const { error } = await supabase
     .from("telegram_users")
     .update({ language, updated_at: new Date().toISOString() })
+    .eq("telegram_user_id", telegramUserId);
+
+  if (error && error.code !== "42P01" && !isUndefinedColumn(error)) {
+    throw error;
+  }
+}
+
+export async function unsubscribeTelegramUser(supabase: SupabaseClient<Database>, telegramUserId: string) {
+  const { error } = await supabase
+    .from("telegram_users")
+    .update({ is_subscribed: false, updated_at: new Date().toISOString() })
     .eq("telegram_user_id", telegramUserId);
 
   if (error && error.code !== "42P01" && !isUndefinedColumn(error)) {

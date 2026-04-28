@@ -22,6 +22,7 @@ import {
   parseStartPayload,
   setTelegramUserLanguage,
   startSession,
+  unsubscribeTelegramUser,
   updateSession,
   upsertTelegramUser,
   type EventRow,
@@ -92,6 +93,11 @@ function getEventUrl(eventSlug: string) {
   return `${getAppUrl()}/events/${eventSlug}`;
 }
 
+function getEventShareUrl(eventSlug: string, title: string) {
+  const eventUrl = getEventUrl(eventSlug);
+  return `https://t.me/share/url?url=${encodeURIComponent(eventUrl)}&text=${encodeURIComponent(title)}`;
+}
+
 function languageKeyboard() {
   return {
     inlineKeyboard: [
@@ -154,7 +160,8 @@ async function sendEventPreview(chatId: string, event: EventRow, language: BotLa
     ? [[{ text: copy.yes, callback_data: "confirm_yes" }], [{ text: copy.cancel, callback_data: "cancel" }]]
     : [
         [{ text: copy.registerButton, callback_data: `register:${event.slug}` }],
-        [{ text: copy.openOnSite, url: eventUrl }]
+        [{ text: copy.openOnSite, url: eventUrl }],
+        [{ text: copy.shareButton, url: getEventShareUrl(event.slug, event.title) }]
       ];
 
   const imageUrl = normalizeTelegramImageUrl(event.image_url);
@@ -253,6 +260,7 @@ async function sendMyTickets(
     await sendTelegramMessage(chatId, copy.ticketsMissing, {
       inlineKeyboard: [
         [{ text: copy.search, callback_data: "search_events" }],
+        [{ text: copy.myTickets, callback_data: "my_tickets" }],
         [{ text: copy.openSite, url: `${getAppUrl()}/events` }]
       ]
     });
@@ -269,9 +277,9 @@ async function sendMyTickets(
       [
         `<b>${escapeHtml(eventTitle)}</b>`,
         "",
-        `<b>${copy.dateLabel}</b>: ${escapeHtml(formatTelegramDate(event?.date ?? null, language))}`,
-        `<b>${copy.locationLabel}</b>: ${escapeHtml(location)}`,
-        `<b>${copy.ticketLabel}</b>: ${escapeHtml(item.ticket.ticket_code)}`,
+        `${copy.dateLabel}: ${escapeHtml(formatTelegramDate(event?.date ?? null, language))}`,
+        `${copy.locationLabel}: ${escapeHtml(location)}`,
+        `${copy.ticketLabel}: ${escapeHtml(item.ticket.ticket_code)}`,
         `${copy.statusLabel}: ${escapeHtml(item.ticket.status)}`,
         `${copy.paymentLabel}: ${escapeHtml(item.ticket.payment_status)}`
       ].join("\n"),
@@ -290,6 +298,7 @@ async function finishPaymentStub(chatId: string, session: TelegramSession, langu
   const supabase = getTelegramSupabaseClient();
   const event = session.event_slug ? await getEventBySlug(supabase, session.event_slug) : null;
   const isFreeEvent = Number(event?.price ?? 0) <= 0;
+  const eventUrl = event?.slug ? getEventUrl(event.slug) : `${getAppUrl()}/events`;
   const { ticket } = isFreeEvent
     ? await confirmFreeRegistrationAndTicket(supabase, session)
     : await createPendingRegistrationAndTicket(supabase, session);
@@ -300,13 +309,14 @@ async function finishPaymentStub(chatId: string, session: TelegramSession, langu
       isFreeEvent ? copy.freeConfirmed : copy.paymentPending,
       "",
       `${copy.ticketLabel}: ${escapeHtml(ticket.ticket_code)}`,
+      `${copy.statusLabel}: ${escapeHtml(ticket.status)}`,
       `${copy.paymentLabel}: ${escapeHtml(ticket.payment_status)}`
     ].join("\n"),
     {
       inlineKeyboard: [
         [{ text: copy.showQr, callback_data: `qr:${ticket.ticket_code}` }],
         [{ text: copy.myTickets, callback_data: "my_tickets" }],
-        [{ text: copy.openSite, url: `${getAppUrl()}/events` }]
+        [{ text: copy.openOnSite, url: eventUrl }]
       ],
       removeKeyboard: true
     }
@@ -349,6 +359,26 @@ async function handleStart(message: TelegramMessage, payload: string | undefined
   await askForEventConfirmation(user.chatId, session, event, language);
 }
 
+async function handleStop(message: TelegramMessage) {
+  const user = getTelegramUser(message);
+
+  if (!user) {
+    return;
+  }
+
+  const supabase = getTelegramSupabaseClient();
+  await upsertTelegramUser(supabase, user);
+  const language = (await getTelegramUserLanguage(supabase, user.telegramUserId)) ?? "uk";
+
+  await unsubscribeTelegramUser(supabase, user.telegramUserId);
+  await sendTelegramMessage(
+    user.chatId,
+    language === "en"
+      ? "You have unsubscribed from Rave'era Group broadcasts."
+      : "Ви відписалися від розсилок Rave'era Group."
+  );
+}
+
 async function handleCallback(callbackQuery: TelegramCallbackQuery) {
   const data = callbackQuery.data;
   const user = getTelegramUser(callbackQuery);
@@ -385,7 +415,7 @@ async function handleCallback(callbackQuery: TelegramCallbackQuery) {
 
   if (data.startsWith("qr:")) {
     const code = data.slice("qr:".length);
-    await sendTelegramMessage(user.chatId, `<b>${copy.qrPayload}</b>\n${escapeHtml(code)}`);
+    await sendTelegramMessage(user.chatId, `<b>${copy.qrPayload}</b>\n${escapeHtml(code)}\n\nQR image placeholder: scan/check-in uses this ticket code.`);
     return;
   }
 
@@ -472,9 +502,9 @@ async function handleConversationMessage(message: TelegramMessage) {
   const copy = getTelegramCopy(language);
   const otherCopy = getTelegramCopy(language === "uk" ? "en" : "uk");
   const text = message.text?.trim();
-  const legacySearch: string[] = ["🔍 Пошук", "🔍 Search"];
-  const legacyOpenApp: string[] = ["📱 Перейти у додаток", "📱 Open app"];
-  const legacyOpenSite: string[] = ["🌐 Перейти на сайт", "🌐 Open website"];
+  const legacySearch: string[] = ["Пошук", "Search", "Find event", "Знайти подію"];
+  const legacyOpenApp: string[] = ["Додаток", "App", "Open app"];
+  const legacyOpenSite: string[] = ["Відкрити сайт", "Open website"];
   const searchCommands: string[] = [copy.search, otherCopy.search, ...legacySearch];
   const ticketCommands: string[] = [copy.myTickets, otherCopy.myTickets];
   const appCommands: string[] = [copy.openApp, otherCopy.openApp, ...legacyOpenApp];
@@ -572,6 +602,11 @@ export async function POST(request: Request) {
     const message = update.message;
     const callbackQuery = update.callback_query;
 
+    if (message?.text?.trim() === "/stop") {
+      await handleStop(message);
+      return NextResponse.json({ ok: true });
+    }
+
     if (message?.text?.startsWith("/start")) {
       const [, payload] = message.text.split(/\s+/, 2);
       await handleStart(message, payload);
@@ -597,3 +632,5 @@ export async function POST(request: Request) {
 export async function GET() {
   return NextResponse.json({ ok: true, service: "telegram-webhook" });
 }
+
+

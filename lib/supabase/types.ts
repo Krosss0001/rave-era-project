@@ -5,6 +5,16 @@ export type EventStatus = "draft" | "published" | "live" | "limited" | "soon" | 
 export type RegistrationStatus = "pending" | "confirmed" | "cancelled";
 export type TicketStatus = "reserved" | "active" | "used";
 export type PaymentStatus = "pending" | "paid" | "failed";
+export type BroadcastAudience =
+  | "all_telegram_users"
+  | "event_registered"
+  | "event_confirmed"
+  | "event_pending_payment"
+  | "event_paid"
+  | "event_checked_in"
+  | "bot_interacted_not_registered";
+export type BroadcastStatus = "draft" | "queued" | "sending" | "sent" | "failed" | "cancelled";
+export type BroadcastRecipientStatus = "queued" | "sending" | "sent" | "failed" | "skipped";
 
 export type Database = {
   public: {
@@ -399,6 +409,7 @@ export type Database = {
           last_name: string | null;
           profile_id: string | null;
           language: string;
+          is_subscribed: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -411,6 +422,7 @@ export type Database = {
           last_name?: string | null;
           profile_id?: string | null;
           language?: string;
+          is_subscribed?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -422,6 +434,7 @@ export type Database = {
           last_name?: string | null;
           profile_id?: string | null;
           language?: string;
+          is_subscribed?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -432,6 +445,103 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
+          }
+        ];
+      };
+      telegram_broadcasts: {
+        Row: {
+          id: string;
+          created_by: string | null;
+          event_id: string | null;
+          audience: BroadcastAudience;
+          language: string;
+          message: string;
+          status: BroadcastStatus;
+          created_at: string;
+          sent_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          created_by?: string | null;
+          event_id?: string | null;
+          audience: BroadcastAudience;
+          language?: string;
+          message: string;
+          status?: BroadcastStatus;
+          created_at?: string;
+          sent_at?: string | null;
+        };
+        Update: {
+          created_by?: string | null;
+          event_id?: string | null;
+          audience?: BroadcastAudience;
+          language?: string;
+          message?: string;
+          status?: BroadcastStatus;
+          created_at?: string;
+          sent_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "telegram_broadcasts_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "telegram_broadcasts_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      telegram_broadcast_recipients: {
+        Row: {
+          id: string;
+          broadcast_id: string;
+          telegram_user_id: string | null;
+          chat_id: string;
+          status: BroadcastRecipientStatus;
+          error: string | null;
+          sent_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          broadcast_id: string;
+          telegram_user_id?: string | null;
+          chat_id: string;
+          status?: BroadcastRecipientStatus;
+          error?: string | null;
+          sent_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          broadcast_id?: string;
+          telegram_user_id?: string | null;
+          chat_id?: string;
+          status?: BroadcastRecipientStatus;
+          error?: string | null;
+          sent_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "telegram_broadcast_recipients_broadcast_id_fkey";
+            columns: ["broadcast_id"];
+            isOneToOne: false;
+            referencedRelation: "telegram_broadcasts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "telegram_broadcast_recipients_telegram_user_id_fkey";
+            columns: ["telegram_user_id"];
+            isOneToOne: false;
+            referencedRelation: "telegram_users";
+            referencedColumns: ["telegram_user_id"];
           }
         ];
       };

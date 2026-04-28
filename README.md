@@ -16,6 +16,7 @@ https://rave-era-project.vercel.app
 - Event detail pages with responsive hero, safe image fallback, web registration, Telegram continuation, referrals, and organizer details
 - UA/EN website language toggle with localStorage persistence
 - UA/EN Telegram bot menu, search, event deep links, registration flow, and My Tickets
+- Telegram broadcast preview and server-side sending for superadmins and organizer event campaigns
 - Ticket creation with QR payload placeholder
 - Free-event path that confirms registration without payment
 - Paid-event path that reserves tickets with payment pending
@@ -43,6 +44,8 @@ https://rave-era-project.vercel.app
 - `/admin` - admin role-management foundation
 - `/superadmin` - superadmin control foundation
 - `/api/telegram/webhook` - Telegram webhook
+- `/api/telegram/broadcast/preview` - estimate Telegram broadcast recipients
+- `/api/telegram/broadcast/send` - send Telegram broadcasts through the server-side bot
 
 ## Environment Variables
 
@@ -77,9 +80,32 @@ supabase/patches/005_registration_ticket_reliability.sql
 supabase/patches/006_telegram_registration_state.sql
 supabase/patches/007_telegram_user_linking.sql
 supabase/patches/008_telegram_language_and_polish.sql
+supabase/patches/009_qr_checkin.sql
+supabase/patches/010_telegram_broadcasts.sql
 ```
 
-Patch `006` creates server-managed Telegram registration sessions. Patch `007` adds Telegram identity linking plus `registrations.telegram_user_id`. Patch `008` stores bot language preferences on `telegram_users` and `telegram_registration_sessions`.
+Patch `006` creates server-managed Telegram registration sessions. Patch `007` adds Telegram identity linking plus `registrations.telegram_user_id`. Patch `008` stores bot language preferences on `telegram_users` and `telegram_registration_sessions`. Patch `009` adds QR check-in support. Patch `010` adds Telegram broadcast tables, recipient tracking, and `telegram_users.is_subscribed`.
+
+## Telegram Broadcasts
+
+Superadmins can open `/superadmin` and use **Telegram Broadcast Center** to preview and send messages to all Telegram users, event audiences, or bot users who have not registered.
+
+Organizers can open `/organizer` and use **Campaigns** to message audiences for their own events only:
+
+- registered
+- confirmed
+- pending payment
+- paid
+- checked-in
+
+Broadcast safety:
+
+- Telegram messages are sent only from server routes.
+- `TELEGRAM_BOT_TOKEN` stays server-only and is never exposed to the browser.
+- Preview and send routes require a signed-in Supabase session.
+- Organizers are restricted to event-scoped audiences for events they own.
+- Unsubscribed users are excluded by `telegram_users.is_subscribed = true`.
+- Users can send `/stop` to the bot to unsubscribe from future broadcasts.
 
 ## Payment And QR Behavior
 

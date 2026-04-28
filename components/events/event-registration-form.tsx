@@ -64,7 +64,7 @@ function getCleanErrorMessage(error: unknown, fallback: string) {
 }
 
 export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referralCode }: EventRegistrationFormProps) {
-  const { dictionary } = useLanguage();
+  const { language } = useLanguage();
   const isFreeEvent = isFreePrice(eventPrice);
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const telegramUrl = useMemo(() => buildTelegramUrl(eventSlug, referralCode), [eventSlug, referralCode]);
@@ -75,6 +75,56 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [ticket, setTicket] = useState<TicketPreview | null>(null);
+  const copy =
+    language === "ua"
+      ? {
+          title: "Резервна веб-реєстрація",
+          description: isFreeEvent ? "Безкоштовна подія: квиток підтверджується одразу." : "Оплату буде підключено наступним етапом.",
+          open: "Web fallback registration",
+          registered: "Ви зареєстровані",
+          nextTelegram: "Наступний крок: продовжити в Telegram",
+          ticketCode: "Код квитка",
+          payment: "Оплата",
+          name: "Ім'я",
+          email: "Email",
+          telegramUsername: "Telegram username",
+          signInRequired: "Увійдіть, щоб зареєструватися.",
+          missingEvent: "ID події відсутній. Оновіть сторінку і спробуйте ще раз.",
+          nameRequired: "Вкажіть ім'я.",
+          invalidEmail: "Вкажіть коректний email.",
+          alreadyRegistered: "Ви вже зареєстровані на цю подію.",
+          registrationReceived: "Реєстрацію отримано.",
+          soldOut: "Подія вже sold out.",
+          genericError: "Не вдалося завершити реєстрацію. Спробуйте ще раз.",
+          continueTelegram: "Continue in Telegram",
+          dashboard: "Мої квитки",
+          submit: "Надіслати",
+          submitting: "Надсилання"
+        }
+      : {
+          title: "Web fallback registration",
+          description: isFreeEvent ? "Free event: ticket is confirmed immediately." : "Payment will be connected next.",
+          open: "Web fallback registration",
+          registered: "You are registered",
+          nextTelegram: "Next step: continue in Telegram",
+          ticketCode: "Ticket code",
+          payment: "Payment",
+          name: "Name",
+          email: "Email",
+          telegramUsername: "Telegram username",
+          signInRequired: "Sign in to register.",
+          missingEvent: "Event ID is missing. Refresh this page and try again.",
+          nameRequired: "Name is required.",
+          invalidEmail: "Enter a valid email address.",
+          alreadyRegistered: "You are already registered for this event.",
+          registrationReceived: "Registration received.",
+          soldOut: "Event is sold out.",
+          genericError: "Registration could not be completed. Try again.",
+          continueTelegram: "Continue in Telegram",
+          dashboard: "My tickets",
+          submit: "Submit",
+          submitting: "Submitting"
+        };
 
   useEffect(() => {
     let mounted = true;
@@ -256,17 +306,17 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
     const telegramUsername = form.telegramUsername.trim();
 
     if (!eventId) {
-      setMessage({ type: "error", text: dictionary.events.missingEvent });
+      setMessage({ type: "error", text: copy.missingEvent });
       return;
     }
 
     if (!name) {
-      setMessage({ type: "error", text: dictionary.events.nameRequired });
+      setMessage({ type: "error", text: copy.nameRequired });
       return;
     }
 
     if (!email || !isValidEmail(email)) {
-      setMessage({ type: "error", text: dictionary.events.invalidEmail });
+      setMessage({ type: "error", text: copy.invalidEmail });
       return;
     }
 
@@ -278,7 +328,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
     if (!userId) {
       setMessage({
         type: "error",
-        text: dictionary.events.signInRequired
+        text: copy.signInRequired
       });
       return;
     }
@@ -299,7 +349,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
         const existingTicket = await createTicketForRegistration(existingRegistration, userId);
 
         setTicket(existingTicket);
-        setMessage({ type: "success", text: dictionary.events.alreadyRegistered });
+        setMessage({ type: "success", text: copy.alreadyRegistered });
         return;
       }
 
@@ -330,7 +380,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
             const recoveredTicket = await createTicketForRegistration(recoveredRegistration, userId);
 
             setTicket(recoveredTicket);
-            setMessage({ type: "success", text: dictionary.events.alreadyRegistered });
+            setMessage({ type: "success", text: copy.alreadyRegistered });
             return;
           }
         }
@@ -341,28 +391,25 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
       const nextTicket = await createTicketForRegistration(registration, userId);
 
       setTicket(nextTicket);
-      setMessage({ type: "success", text: dictionary.events.registrationReceived });
+      setMessage({ type: "success", text: copy.registrationReceived });
       setForm((current) => ({
         ...initialForm,
         email: current.email
       }));
     } catch (error) {
-      const cleanMessage = getCleanErrorMessage(error, dictionary.events.genericError);
-      setMessage({ type: "error", text: cleanMessage === "sold_out" ? dictionary.events.soldOut : cleanMessage });
+      const cleanMessage = getCleanErrorMessage(error, copy.genericError);
+      setMessage({ type: "error", text: cleanMessage === "sold_out" ? copy.soldOut : cleanMessage });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <section className="group relative border border-white/[0.08] bg-[#020202] p-5 shadow-[0_0_60px_rgba(0,255,136,0.035)]">
-      <span className="absolute left-0 top-0 h-px w-full bg-[#00FF88]" aria-hidden="true" />
+    <section className="group relative border border-white/[0.06] bg-[#020202] p-4">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#00FF88]">{dictionary.events.registerWeb}</p>
-          <p className="mt-2 text-sm leading-6 text-white/45">
-            {isFreeEvent ? dictionary.common.freeConfirmed : dictionary.common.paymentComing}
-          </p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/42">{copy.title}</p>
+          <p className="mt-2 text-sm leading-6 text-white/45">{copy.description}</p>
         </div>
         <span className="shrink-0 border border-white/[0.06] bg-[#030303] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.16em] text-white/35">
           Web
@@ -374,16 +421,16 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           <div className="flex items-start gap-2 text-[#00FF88]">
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <div>
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em]">{dictionary.events.registered}</p>
-              <p className="mt-2 text-sm leading-6 text-white/65">{dictionary.events.nextTelegram}</p>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em]">{copy.registered}</p>
+              <p className="mt-2 text-sm leading-6 text-white/65">{copy.nextTelegram}</p>
             </div>
           </div>
           <div className="mt-4 border border-white/[0.05] bg-black px-3 py-3">
-            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">{dictionary.events.ticketCode}</p>
+            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">{copy.ticketCode}</p>
             <p className="mt-1 break-words font-mono text-xl font-semibold text-white">{ticket.ticket_code}</p>
             <div className="mt-3 flex flex-wrap gap-2 font-mono text-[9px] uppercase tracking-[0.16em]">
               <span className="border border-[#00FF88]/25 bg-[#00FF88]/[0.035] px-2 py-1 text-[#00FF88]">{ticket.status}</span>
-              <span className="border border-white/[0.06] bg-[#020202] px-2 py-1 text-white/45">{dictionary.events.payment} {ticket.payment_status}</span>
+              <span className="border border-white/[0.06] bg-[#020202] px-2 py-1 text-white/45">{copy.payment} {ticket.payment_status}</span>
             </div>
           </div>
           <div className="mt-4">
@@ -398,16 +445,16 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
               href={telegramUrl}
               target="_blank"
               rel="noreferrer"
-              className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 border border-[#00FF88] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.16em] text-[#00FF88] motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-[#00FF88] hover:text-black active:scale-[0.98] sm:tracking-widest"
+              className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 border border-[#00FF88] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.16em] text-[#00FF88] transition duration-200 hover:bg-[#00FF88] hover:text-black active:scale-[0.99] sm:tracking-widest"
             >
-              <span className="min-w-0">{dictionary.events.continueTelegram}</span>
+              <span className="min-w-0">{copy.continueTelegram}</span>
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
             </a>
             <Link
               href="/dashboard"
-              className="focus-ring inline-flex min-h-11 items-center justify-center border border-white/[0.08] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.16em] text-white/55 motion-safe:transition-[border-color,color,transform] motion-safe:duration-500 hover:border-[#00FF88]/30 hover:text-[#00FF88] active:scale-[0.98] sm:tracking-widest"
+              className="focus-ring inline-flex min-h-11 items-center justify-center border border-white/[0.08] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.16em] text-white/55 transition duration-200 hover:border-[#00FF88]/30 hover:text-[#00FF88] active:scale-[0.99] sm:tracking-widest"
             >
-              {dictionary.nav.dashboard}
+              {copy.dashboard}
             </Link>
           </div>
         </div>
@@ -415,49 +462,49 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="focus-ring mt-5 min-h-11 w-full bg-[#00FF88] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.16em] text-black motion-safe:transition-[filter,transform,box-shadow] motion-safe:duration-500 motion-safe:ease-out hover:brightness-110 hover:shadow-[0_0_34px_rgba(0,255,136,0.16)] active:scale-[0.98] sm:tracking-widest"
+          className="focus-ring mt-5 min-h-11 w-full border border-white/[0.1] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.14em] text-white/55 transition duration-200 hover:border-[#00FF88]/35 hover:text-[#00FF88] active:scale-[0.99]"
         >
-          {dictionary.nav.registration}
+          {copy.open}
         </button>
       ) : (
         <form onSubmit={submitRegistration} className="mt-5 grid gap-4">
           <label className="block">
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{dictionary.events.name}</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{copy.name}</span>
             <input
               type="text"
               value={form.name}
               onChange={(event) => updateField("name", event.target.value)}
               autoComplete="name"
               required
-              className="mt-2 min-h-11 w-full border border-white/[0.08] bg-black px-3 text-sm text-white outline-none motion-safe:transition-colors motion-safe:duration-500 focus:border-[#00FF88]"
+              className="mt-2 min-h-11 w-full border border-white/[0.08] bg-black px-3 text-sm text-white outline-none transition duration-200 focus:border-[#00FF88]"
             />
           </label>
           <label className="block">
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{dictionary.events.email}</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{copy.email}</span>
             <input
               type="email"
               value={form.email}
               onChange={(event) => updateField("email", event.target.value)}
               autoComplete="email"
               required
-              className="mt-2 min-h-11 w-full border border-white/[0.08] bg-black px-3 font-mono text-sm text-white outline-none motion-safe:transition-colors motion-safe:duration-500 focus:border-[#00FF88]"
+              className="mt-2 min-h-11 w-full border border-white/[0.08] bg-black px-3 font-mono text-sm text-white outline-none transition duration-200 focus:border-[#00FF88]"
             />
           </label>
           <label className="block">
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{dictionary.events.telegramUsername}</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{copy.telegramUsername}</span>
             <input
               type="text"
               value={form.telegramUsername}
               onChange={(event) => updateField("telegramUsername", event.target.value)}
               placeholder="@username"
               autoComplete="username"
-              className="mt-2 min-h-11 w-full border border-white/[0.08] bg-black px-3 font-mono text-sm text-white outline-none motion-safe:transition-colors motion-safe:duration-500 focus:border-[#00FF88]"
+              className="mt-2 min-h-11 w-full border border-white/[0.08] bg-black px-3 font-mono text-sm text-white outline-none transition duration-200 focus:border-[#00FF88]"
             />
           </label>
 
           {!userId && authChecked ? (
             <p className="border border-white/[0.05] bg-[#030303] px-3 py-2 text-xs leading-5 text-white/45">
-              {dictionary.events.signInRequired}
+              {copy.signInRequired}
             </p>
           ) : null}
 
@@ -476,9 +523,9 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           <button
             type="submit"
             disabled={loading}
-            className="focus-ring min-h-11 bg-[#00FF88] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.16em] text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-500 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 sm:tracking-widest"
+            className="focus-ring min-h-11 border border-[#00FF88]/55 px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.14em] text-[#00FF88] transition duration-200 hover:bg-[#00FF88] hover:text-black active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45"
           >
-            {loading ? dictionary.events.submitting : dictionary.events.submitRegistration}
+            {loading ? copy.submitting : copy.submit}
           </button>
         </form>
       )}
