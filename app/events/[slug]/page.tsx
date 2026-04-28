@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Activity, CalendarDays, Clock, MapPin, Mic2, Send, Tags, UserRound, Users } from "lucide-react";
 import { organizer } from "@/data/organizers";
-import { formatEventDate, getCapacityPercent } from "@/lib/format";
+import { getCapacityPercent } from "@/lib/format";
 import { getPublicEventBySlugWithFallback } from "@/lib/supabase/events";
 import { buildTelegramUrl } from "@/lib/telegram";
 import { TelegramCta } from "@/components/events/telegram-cta";
@@ -12,6 +12,7 @@ import { ReferralBox } from "@/components/events/referral-box";
 import { WalletPlaceholder } from "@/components/events/wallet-placeholder";
 import { SafeEventImage } from "@/components/events/safe-event-image";
 import { LocalizedText } from "@/components/shared/localized-text";
+import { LocalizedEventDate } from "@/components/shared/localized-event-date";
 import { LocalizedPrice } from "@/components/shared/localized-price";
 
 export const dynamic = "force-dynamic";
@@ -60,7 +61,12 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
 
   const referralCode = searchParams?.ref;
   const telegramUrl = buildTelegramUrl(event.slug, referralCode);
-  const eventStatusLabel = event.status === "soon" ? "SOON" : "LIVE";
+  const eventStatusLabel =
+    event.status === "soon"
+      ? { ua: "Скоро", en: "SOON" }
+      : event.status === "limited"
+        ? { ua: "Обмежено", en: "LIMITED" }
+        : { ua: "Наживо", en: "LIVE" };
   const aboutParagraphs = getEventParagraphs(event.description);
   const capacityPercent = getCapacityPercent(event.registered, event.capacity);
   const urgent = capacityPercent >= 60;
@@ -75,19 +81,19 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           : "bg-white/45";
   const pressure =
     capacityPercent >= 90
-      ? { label: "Critical capacity", tone: "border-red-400/25 bg-red-400/[0.035] text-red-200" }
+      ? { label: { ua: "Критична місткість", en: "Critical capacity" }, tone: "border-red-400/25 bg-red-400/[0.035] text-red-200" }
       : capacityPercent >= 70
-        ? { label: "Warning capacity", tone: "border-[#00FF88]/30 bg-[#00FF88]/[0.035] text-[#00FF88]" }
+        ? { label: { ua: "Місткість швидко заповнюється", en: "Warning capacity" }, tone: "border-[#00FF88]/30 bg-[#00FF88]/[0.035] text-[#00FF88]" }
         : capacityPercent >= 40
-          ? { label: "Demand warming", tone: "border-white/[0.08] bg-white/[0.025] text-white/60" }
-          : { label: "Calm wave", tone: "border-white/[0.05] bg-white/[0.018] text-white/45" };
+          ? { label: { ua: "Попит зростає", en: "Demand warming" }, tone: "border-white/[0.08] bg-white/[0.025] text-white/60" }
+          : { label: { ua: "Спокійна хвиля", en: "Calm wave" }, tone: "border-white/[0.05] bg-white/[0.018] text-white/45" };
   const eventInfo = [
-    { label: "Date", value: formatEventDate(event.date), Icon: CalendarDays },
-    { label: "Time", value: event.doorsOpen || event.time || "TBA", Icon: Clock },
-    { label: "Location", value: event.address || locationLabel, Icon: MapPin },
-    { label: "Age", value: event.ageLimit || "18+", Icon: Users },
-    { label: "Format", value: event.eventType || "Live event", Icon: Activity },
-    { label: "Category", value: event.tags[0] || "Rave", Icon: Tags }
+    { key: "date", label: <LocalizedText ua="Дата" en="Date" />, value: <LocalizedEventDate date={event.date} />, Icon: CalendarDays },
+    { key: "time", label: <LocalizedText ua="Час" en="Time" />, value: event.doorsOpen || event.time || "TBA", Icon: Clock },
+    { key: "location", label: <LocalizedText ua="Локація" en="Location" />, value: event.address || locationLabel, Icon: MapPin },
+    { key: "age", label: <LocalizedText ua="Вік" en="Age" />, value: event.ageLimit || "18+", Icon: Users },
+    { key: "format", label: <LocalizedText ua="Формат" en="Format" />, value: event.eventType || <LocalizedText ua="Жива подія" en="Live event" />, Icon: Activity },
+    { key: "category", label: <LocalizedText ua="Категорія" en="Category" />, value: event.tags[0] || "Rave", Icon: Tags }
   ];
 
   return (
@@ -97,18 +103,18 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           src={event.image}
           alt={`${event.title} atmosphere`}
           priority
-          className="object-cover object-center opacity-40 grayscale motion-safe:transition-[transform,opacity,filter] motion-safe:duration-200 motion-safe:ease-out group-hover:scale-[1.01] group-hover:opacity-55 group-hover:grayscale-0"
+          className="object-cover object-center opacity-20 grayscale motion-safe:transition-[transform,opacity,filter] motion-safe:duration-300 motion-safe:ease-out group-hover:scale-[1.01] group-hover:opacity-28 group-hover:grayscale-0"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.98)_0%,rgba(0,0,0,0.88)_42%,rgba(0,0,0,0.5)_100%)]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/62 to-black/24" />
+        <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(0,0,0,0.98)_0%,rgba(0,0,0,0.86)_46%,rgba(0,0,0,0.28)_100%)]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/38 to-transparent" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.014)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.014)_1px,transparent_1px)] bg-[size:80px_80px] opacity-45" />
 
-        <div className="relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl items-end px-4 pb-10 pt-24 sm:px-6 md:min-h-[680px] md:px-10 md:pb-16 lg:px-12 2xl:max-w-[1500px]">
-          <div className="w-full max-w-[900px]">
+        <div className="relative mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-end gap-8 px-4 pb-10 pt-24 sm:px-6 md:min-h-[680px] md:px-10 md:pb-16 lg:grid-cols-[minmax(0,0.98fr)_minmax(320px,0.72fr)] lg:items-center lg:px-12 2xl:max-w-[1500px]">
+          <div className="w-full max-w-[860px]">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex min-h-8 items-center border border-[#00FF88]/40 bg-[#00FF88]/5 px-4 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#00FF88]">
-                {eventStatusLabel}
+                <LocalizedText ua={eventStatusLabel.ua} en={eventStatusLabel.en} />
               </span>
               {referralCode ? (
                 <span className="inline-flex min-h-8 items-center border border-white/[0.06] bg-black/80 px-4 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">
@@ -117,7 +123,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
               ) : null}
             </div>
 
-            <h1 className="mt-6 max-w-[900px] whitespace-normal text-[32px] font-black uppercase leading-[0.95] tracking-normal text-white [hyphens:none] [overflow-wrap:normal] [text-wrap:balance] [word-break:normal] sm:text-[48px] lg:text-[72px]">
+            <h1 className="mt-6 max-w-[900px] whitespace-normal text-[32px] font-black uppercase leading-[0.98] tracking-normal text-white [hyphens:none] [overflow-wrap:anywhere] [text-wrap:balance] [word-break:normal] sm:text-[48px] lg:text-[64px] xl:text-[72px]">
               {event.title}
             </h1>
 
@@ -127,10 +133,10 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
 
             <div className="mt-8 grid gap-3 font-mono text-[10px] uppercase tracking-[0.13em] text-white/72 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                { key: "date", Icon: CalendarDays, text: formatEventDate(event.date) },
+                { key: "date", Icon: CalendarDays, text: <LocalizedEventDate date={event.date} /> },
                 { key: "location", Icon: MapPin, text: locationLabel },
                 { key: "price", Icon: Tags, text: <LocalizedPrice price={event.price} currency={event.currency} /> },
-                { key: "capacity", Icon: Users, text: `${event.registered}/${event.capacity} registered` }
+                { key: "capacity", Icon: Users, text: <LocalizedText ua={`${event.registered}/${event.capacity} зареєстровано`} en={`${event.registered}/${event.capacity} registered`} /> }
               ].map(({ key, Icon, text }) => (
                 <div key={key} className="flex min-h-14 min-w-0 items-center gap-3 border border-white/[0.06] bg-black/74 px-4 py-3 backdrop-blur-sm">
                   <Icon className="h-4 w-4 shrink-0 text-[#00FF88]" aria-hidden="true" />
@@ -149,7 +155,22 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
                 <Send className="h-4 w-4" aria-hidden="true" />
                 <LocalizedText ua="Продовжити в Telegram" en="Continue in Telegram" />
               </Link>
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/42">{event.urgencyNote || "Telegram confirmation active"}</p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/42">
+                {event.urgencyNote || <LocalizedText ua="Telegram-підтвердження активне" en="Telegram confirmation active" />}
+              </p>
+            </div>
+          </div>
+
+          <div className="order-first w-full lg:order-none">
+            <div className="relative mx-auto aspect-[4/3] max-h-[560px] max-w-[620px] overflow-hidden border border-white/[0.08] bg-black shadow-[0_0_80px_rgba(0,255,136,0.08)] lg:ml-auto">
+              <SafeEventImage
+                src={event.image}
+                alt={`${event.title} event poster`}
+                priority
+                className="object-contain object-center opacity-100 motion-safe:transition-transform motion-safe:duration-300 group-hover:scale-[1.01]"
+                sizes="(min-width: 1024px) 44vw, 100vw"
+              />
+              <div className="pointer-events-none absolute inset-0 border border-[#00FF88]/10" />
             </div>
           </div>
         </div>
@@ -169,10 +190,10 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           </article>
 
           <article className="border-y border-white/[0.05] py-8 md:py-10">
-            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#00FF88]">Event info</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#00FF88]"><LocalizedText ua="Інформація" en="Event info" /></p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {eventInfo.map(({ label, value, Icon }) => (
-                <div key={label} className="group flex min-h-24 items-start gap-4 border border-white/[0.06] bg-[#020202] p-4 transition duration-200 hover:-translate-y-0.5 hover:border-[#00FF88]/25">
+              {eventInfo.map(({ key, label, value, Icon }) => (
+                <div key={key} className="group flex min-h-24 items-start gap-4 border border-white/[0.06] bg-[#020202] p-4 transition duration-200 hover:-translate-y-0.5 hover:border-[#00FF88]/25">
                   <Icon className="mt-1 h-4 w-4 shrink-0 text-[#00FF88]" aria-hidden="true" />
                   <div className="min-w-0">
                     <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">{label}</p>
@@ -184,7 +205,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           </article>
 
           <article className="border-y border-white/[0.05] py-8 md:py-10">
-            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#00FF88]">Lineup</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#00FF88]"><LocalizedText ua="Лайнап / програма" en="Lineup / agenda" /></p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               {event.lineup.map((artist, index) => (
                 <div key={artist} className="group flex min-h-32 flex-col justify-between border border-white/[0.06] bg-[#020202] p-5 transition duration-200 hover:-translate-y-0.5 hover:border-[#00FF88]/35 hover:bg-[#00FF88]/[0.025]">
@@ -218,35 +239,35 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <section className="relative border border-[#00FF88]/20 bg-[#020202] p-5 shadow-[0_0_72px_rgba(0,255,136,0.06)]">
             <span className="absolute left-0 top-0 h-px w-full bg-[#00FF88]" aria-hidden="true" />
-            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/35">Ticket</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/35"><LocalizedText ua="Квиток" en="Ticket" /></p>
             <p className="mt-3 font-mono text-4xl font-semibold leading-none text-white">
               <LocalizedPrice price={event.price} currency={event.currency} />
             </p>
             {urgent ? (
               <p className="mt-3 border border-[#00FF88]/25 bg-[#00FF88]/[0.035] px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#00FF88]">
-                Last wave active
+                <LocalizedText ua="Активна остання хвиля" en="Last wave active" />
               </p>
             ) : null}
             <div className="mt-4 grid gap-2 font-mono text-[10px] uppercase tracking-[0.16em]">
-              <p className={`border px-3 py-2 ${pressure.tone}`}>{pressure.label}</p>
-              <p className="border border-[#00FF88]/25 bg-[#00FF88]/[0.03] px-3 py-2 text-[#00FF88]">{event.ticketWaveLabel || "Wave active"}</p>
+              <p className={`border px-3 py-2 ${pressure.tone}`}><LocalizedText ua={pressure.label.ua} en={pressure.label.en} /></p>
+              <p className="border border-[#00FF88]/25 bg-[#00FF88]/[0.03] px-3 py-2 text-[#00FF88]">{event.ticketWaveLabel || <LocalizedText ua="Хвиля активна" en="Wave active" />}</p>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-2 border-y border-white/[0.05] py-4">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Registered</p>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35"><LocalizedText ua="Зареєстровано" en="Registered" /></p>
                 <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-white">{event.registered}</p>
               </div>
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Capacity</p>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35"><LocalizedText ua="Місткість" en="Capacity" /></p>
                 <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-white">{event.capacity}</p>
               </div>
             </div>
             <div className="mt-5">
               <div className="mb-2 flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">
-                <span>Capacity</span>
-                <span className="tabular-nums">{capacityPercent}% filled</span>
+                <span><LocalizedText ua="Місткість" en="Capacity" /></span>
+                <span className="tabular-nums"><LocalizedText ua={`${capacityPercent}% заповнено`} en={`${capacityPercent}% filled`} /></span>
               </div>
-              <div className="h-px overflow-hidden bg-white/20">
+              <div className="h-1 overflow-hidden bg-white/20">
                 <div className={`h-full origin-left ${capacityTone} motion-safe:animate-[barFill_700ms_cubic-bezier(0.16,1,0.3,1)_both]`} style={{ width: `${capacityPercent}%`, "--bar-width": `${capacityPercent}%` } as CSSProperties} />
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { answerCallbackQuery, sendTelegramMessage, sendTelegramPhoto } from "@/lib/telegram/bot";
+import { generateTicketQrDataUrl } from "@/lib/qr";
+import { answerCallbackQuery, sendTelegramMessage, sendTelegramPhoto, sendTelegramPhotoDataUrl } from "@/lib/telegram/bot";
 import {
   buildEventCardMessage,
   buildEventConfirmationMessage,
@@ -17,10 +18,12 @@ import {
   getLatestSession,
   getPublicTelegramEvents,
   getTelegramSupabaseClient,
+  getTelegramTicketByCode,
   getTelegramUserLanguage,
   getTicketsForTelegramUser,
   parseStartPayload,
   setTelegramUserLanguage,
+  subscribeTelegramUser,
   startSession,
   unsubscribeTelegramUser,
   updateSession,
@@ -102,8 +105,8 @@ function languageKeyboard() {
   return {
     inlineKeyboard: [
       [
-        { text: "Українська", callback_data: "lang:uk" },
-        { text: "English", callback_data: "lang:en" }
+        { text: "🇺🇦 Українська", callback_data: "lang:uk" },
+        { text: "🇬🇧 English", callback_data: "lang:en" }
       ]
     ]
   };
@@ -115,7 +118,8 @@ function mainMenuKeyboard(language: BotLanguage) {
   return {
     replyKeyboard: [
       [{ text: copy.search }, { text: copy.myTickets }],
-      [{ text: copy.openApp }, { text: copy.openSite }]
+      [{ text: copy.openSite }, { text: copy.openApp }],
+      [{ text: copy.changeLanguage }]
     ]
   };
 }
@@ -173,8 +177,11 @@ async function sendEventPreview(chatId: string, event: EventRow, language: BotLa
         inlineKeyboard
       });
       return;
-    } catch {
-      // Fall back to text if Telegram rejects or cannot fetch the image.
+    } catch (error) {
+      console.warn("Telegram image send failed", {
+        eventSlug: event.slug,
+        reason: error instanceof Error ? error.message : "unknown"
+      });
     }
   }
 
@@ -260,7 +267,6 @@ async function sendMyTickets(
     await sendTelegramMessage(chatId, copy.ticketsMissing, {
       inlineKeyboard: [
         [{ text: copy.search, callback_data: "search_events" }],
-        [{ text: copy.myTickets, callback_data: "my_tickets" }],
         [{ text: copy.openSite, url: `${getAppUrl()}/events` }]
       ]
     });
@@ -339,6 +345,7 @@ async function handleStart(message: TelegramMessage, payload: string | undefined
   if (!eventSlug) {
     if (!storedLanguage) {
       await showLanguageChoice(user.chatId);
+      return;
     }
 
     await showMainMenu(user.chatId, language);
@@ -346,6 +353,12 @@ async function handleStart(message: TelegramMessage, payload: string | undefined
   }
 
   const session = await startSession(supabase, { ...user, language }, eventSlug);
+
+  if (!storedLanguage) {
+    await showLanguageChoice(user.chatId);
+    return;
+  }
+
   const event = await getEventBySlug(supabase, eventSlug);
 
   if (!event || !session.event_id) {
@@ -369,14 +382,81 @@ async function handleStop(message: TelegramMessage) {
   const supabase = getTelegramSupabaseClient();
   await upsertTelegramUser(supabase, user);
   const language = (await getTelegramUserLanguage(supabase, user.telegramUserId)) ?? "uk";
+  const copy = getTelegramCopy(language);
 
   await unsubscribeTelegramUser(supabase, user.telegramUserId);
-  await sendTelegramMessage(
-    user.chatId,
-    language === "en"
-      ? "You have unsubscribed from Rave'era Group broadcasts."
-      : "Ви відписалися від розсилок Rave'era Group."
+  await sendTelegramMessage(user.chatId, copy.unsubscribed);
+}
+
+async function sendTicketQr(
+  chatId: string,
+  telegramUserId: string,
+  telegramUsername: string | null,
+  ticketCode: string,
+  language: BotLanguage
+) {
+  const copy = getTelegramCopy(language);
+  const ticketRow = await getTelegramTicketByCode(
+    getTelegramSupabaseClient(),
+    telegramUserId,
+    telegramUsername,
+    ticketCode
   );
+
+  if (!ticketRow) {
+    console.warn("Telegram ticket lookup failed", { telegramUserId, ticketCode });
+    await sendTelegramMessage(chatId, copy.ticketNotFound, mainMenuKeyboard(language));
+    return;
+  }
+
+  const { ticket, event } = ticketRow;
+  const eventTitle = event?.title || copy.eventFallback;
+  const caption = [
+    `<b>${escapeHtml(eventTitle)}</b>`,
+    "",
+    `${copy.ticketLabel}: ${escapeHtml(ticket.ticket_code)}`,
+    `${copy.statusLabel}: ${escapeHtml(ticket.status)}`,
+    `${copy.paymentLabel}: ${escapeHtml(ticket.payment_status)}`,
+    "",
+    copy.qrInstructions
+  ].join("\n");
+
+  if (ticket.status === "used" || ticket.checked_in) {
+    await sendTelegramMessage(
+      chatId,
+      [`<b>${escapeHtml(eventTitle)}</b>`, "", `${copy.ticketLabel}: ${escapeHtml(ticket.ticket_code)}`, copy.qrUsed].join("\n"),
+      mainMenuKeyboard(language)
+    );
+    return;
+  }
+
+  if (ticket.status !== "active" || ticket.payment_status !== "paid") {
+    await sendTelegramMessage(
+      chatId,
+      [
+        `<b>${escapeHtml(eventTitle)}</b>`,
+        "",
+        `${copy.ticketLabel}: ${escapeHtml(ticket.ticket_code)}`,
+        `${copy.statusLabel}: ${escapeHtml(ticket.status)}`,
+        `${copy.paymentLabel}: ${escapeHtml(ticket.payment_status)}`,
+        "",
+        copy.qrLocked
+      ].join("\n"),
+      mainMenuKeyboard(language)
+    );
+    return;
+  }
+
+  try {
+    const qrDataUrl = await generateTicketQrDataUrl(ticket);
+    await sendTelegramPhotoDataUrl(chatId, qrDataUrl, { caption });
+  } catch (error) {
+    console.warn("Telegram QR send failed", {
+      ticketCode: ticket.ticket_code,
+      reason: error instanceof Error ? error.message : "unknown"
+    });
+    await sendTelegramMessage(chatId, [caption, "", copy.qrFallback, ticket.ticket_code].join("\n"), mainMenuKeyboard(language));
+  }
 }
 
 async function handleCallback(callbackQuery: TelegramCallbackQuery) {
@@ -395,8 +475,23 @@ async function handleCallback(callbackQuery: TelegramCallbackQuery) {
   if (data === "lang:uk" || data === "lang:en") {
     const language = data.endsWith("en") ? "en" : "uk";
     await setTelegramUserLanguage(supabase, user.telegramUserId, language);
+    await subscribeTelegramUser(supabase, user.telegramUserId);
     await sendTelegramMessage(user.chatId, getTelegramCopy(language).languageSaved);
+
+    const session = await getLatestSession(supabase, user.telegramUserId, user.chatId);
+    const event = session?.event_slug ? await getEventBySlug(supabase, session.event_slug) : null;
+
+    if (session && event && session.step === "started") {
+      await askForEventConfirmation(user.chatId, session, event, language);
+      return;
+    }
+
     await showMainMenu(user.chatId, language);
+    return;
+  }
+
+  if (data === "change_language") {
+    await showLanguageChoice(user.chatId);
     return;
   }
 
@@ -414,8 +509,7 @@ async function handleCallback(callbackQuery: TelegramCallbackQuery) {
   }
 
   if (data.startsWith("qr:")) {
-    const code = data.slice("qr:".length);
-    await sendTelegramMessage(user.chatId, `<b>${copy.qrPayload}</b>\n${escapeHtml(code)}\n\nQR image placeholder: scan/check-in uses this ticket code.`);
+    await sendTicketQr(user.chatId, user.telegramUserId, user.telegramUsername, data.slice("qr:".length), language);
     return;
   }
 
@@ -478,6 +572,11 @@ async function handleCallback(callbackQuery: TelegramCallbackQuery) {
     try {
       await finishPaymentStub(user.chatId, session, language);
     } catch (error) {
+      console.warn("Telegram registration/ticket creation failed", {
+        telegramUserId: user.telegramUserId,
+        sessionId: session.id,
+        reason: error instanceof Error ? error.message : "unknown"
+      });
       const message = error instanceof Error && error.message.toLowerCase().includes("sold out")
         ? copy.soldOut
         : copy.genericError;
@@ -509,6 +608,7 @@ async function handleConversationMessage(message: TelegramMessage) {
   const ticketCommands: string[] = [copy.myTickets, otherCopy.myTickets];
   const appCommands: string[] = [copy.openApp, otherCopy.openApp, ...legacyOpenApp];
   const siteCommands: string[] = [copy.openSite, otherCopy.openSite, ...legacyOpenSite];
+  const languageCommands: string[] = [copy.changeLanguage, otherCopy.changeLanguage, "/language", "/lang"];
 
   if (text && searchCommands.includes(text)) {
     await sendEventsSearch(user.chatId, language);
@@ -529,6 +629,11 @@ async function handleConversationMessage(message: TelegramMessage) {
     await sendTelegramMessage(user.chatId, `${getAppUrl()}/events`, {
       inlineKeyboard: [[{ text: copy.openSite, url: `${getAppUrl()}/events` }]]
     });
+    return;
+  }
+
+  if (text && languageCommands.includes(text)) {
+    await showLanguageChoice(user.chatId);
     return;
   }
 
@@ -624,7 +729,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("Telegram webhook error", error);
+    console.error("Telegram webhook error", error instanceof Error ? error.message : error);
     return NextResponse.json({ ok: false }, { status: 200 });
   }
 }
@@ -632,5 +737,3 @@ export async function POST(request: Request) {
 export async function GET() {
   return NextResponse.json({ ok: true, service: "telegram-webhook" });
 }
-
-

@@ -2,9 +2,25 @@
 
 import { useState } from "react";
 import { ExternalLink, Wallet } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/use-language";
 
 export function WalletPlaceholder() {
   const [connected, setConnected] = useState(false);
+  const { language } = useLanguage();
+  const copy =
+    language === "ua"
+      ? {
+          title: "Гаманець у резерві",
+          body: "Додатковий шар перепусток для майбутнього закритого доступу.",
+          connected: "Демо-гаманець підключено",
+          standby: "Шар гаманця у резерві"
+        }
+      : {
+          title: "Wallet standby",
+          body: "Optional pass layer for future gated access.",
+          connected: "Demo wallet connected",
+          standby: "Wallet layer standby"
+        };
 
   return (
     <section className="group relative border border-white/[0.06] bg-[#020202] p-4 transition duration-200 hover:border-[#00FF88]/25">
@@ -14,8 +30,8 @@ export function WalletPlaceholder() {
         </span>
         <div className="min-w-0">
           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#00FF88]">Solana</p>
-          <h2 className="mt-2 text-lg font-black uppercase leading-none text-white">Wallet standby</h2>
-          <p className="mt-2 text-sm leading-6 text-white/48">Optional pass layer for future gated access.</p>
+          <h2 className="mt-2 text-lg font-black uppercase leading-none text-white">{copy.title}</h2>
+          <p className="mt-2 text-sm leading-6 text-white/48">{copy.body}</p>
         </div>
       </div>
       <button
@@ -24,7 +40,7 @@ export function WalletPlaceholder() {
         aria-pressed={connected}
         className="focus-ring mt-4 inline-flex min-h-10 w-full items-center justify-between gap-2 border border-white/[0.08] bg-black px-4 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45 transition duration-200 hover:border-[#00FF88]/30 hover:text-[#00FF88] active:scale-[0.99]"
       >
-        <span>{connected ? "Demo wallet connected" : "Wallet layer standby"}</span>
+        <span>{connected ? copy.connected : copy.standby}</span>
         <span className="h-1.5 w-1.5 rounded-full bg-[#00FF88] shadow-[0_0_12px_rgba(0,255,136,0.5)]" aria-hidden="true" />
       </button>
       {connected ? (

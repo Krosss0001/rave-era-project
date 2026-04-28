@@ -19,7 +19,7 @@ export function TelegramCta({ eventSlug, referralCode }: TelegramCtaProps) {
           kicker: "Основний шлях",
           title: "Telegram",
           body: "Швидке підтвердження, статус квитка і QR в одному місці.",
-          button: "Continue in Telegram",
+          button: "Продовжити в Telegram",
           referral: "Реферал застосовано"
         }
       : {

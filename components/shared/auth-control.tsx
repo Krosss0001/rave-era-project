@@ -5,6 +5,16 @@ import type { Session } from "@supabase/supabase-js";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
+function getEmailRedirectTo() {
+  const configuredAppUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "");
+
+  if (configuredAppUrl) {
+    return `${configuredAppUrl}/dashboard`;
+  }
+
+  return `${window.location.origin}/dashboard`;
+}
+
 export function AuthControl() {
   const { dictionary } = useLanguage();
   const configured = isSupabaseConfigured();
@@ -49,7 +59,7 @@ export function AuthControl() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: window.location.origin
+        emailRedirectTo: getEmailRedirectTo()
       }
     });
 

@@ -12,7 +12,7 @@ export default function CheckInPage() {
             Check-in
           </h1>
           <p className="mt-8 max-w-2xl text-lg font-light leading-8 text-white/[0.55]">
-            Validate ticket access and mark paid active tickets as used at the door.
+            Scan the QR shown in Telegram, validate the event and ticket state, then mark active paid tickets as used at the door.
           </p>
         </div>
         <div className="mt-12">

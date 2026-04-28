@@ -23,7 +23,7 @@ export function isFreePrice(price: number) {
 
 export function formatPriceForLanguage(price: number, currency: string, language: "ua" | "en") {
   if (isFreePrice(price)) {
-    return language === "ua" ? "БЕЗКОШТОВНО" : "FREE";
+    return language === "ua" ? "Безкоштовно" : "FREE";
   }
 
   return `${new Intl.NumberFormat(language === "ua" ? "uk-UA" : "en-US").format(price)} ${currency || "UAH"}`;

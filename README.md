@@ -139,6 +139,45 @@ curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=https://rav
 
 Telegram requires public HTTPS. Local webhook testing needs a secure tunnel.
 
+## Telegram Product Flow
+
+The bot is designed as the main event companion:
+
+1. `/start` opens language selection for new Telegram users.
+2. Saved users go straight to the main menu.
+3. Website event links pass the event slug through the Telegram `start` payload.
+4. The bot shows the correct event preview, image when Telegram accepts it, and a text fallback when image sending fails.
+5. Registration collects name, phone, company/role, and field/context.
+6. Free events confirm immediately and unlock the QR.
+7. Paid events create a reserved ticket with payment pending; QR stays locked until payment is confirmed.
+8. **My tickets** finds tickets by Telegram user id, Telegram username, or linked profile.
+9. **Show QR** generates a real QR image from `qr_payload` or `ticket_code`.
+10. Organizers scan QR codes on `/check-in`.
+
+Language behavior:
+
+- New users choose between `🇺🇦 Українська` and `🇬🇧 English`.
+- The choice is saved to `telegram_users.language`.
+- The main menu includes `🌐 Змінити мову` / `🌐 Change language`.
+- `/language` and `/lang` also reopen language selection.
+
+QR and check-in behavior:
+
+- QR is sent as a Telegram photo when possible.
+- If QR image generation or Telegram upload fails, the bot falls back to the ticket code.
+- Active paid tickets show the QR and door instructions.
+- Pending-payment tickets explain that QR is locked.
+- Used or checked-in tickets explain that the ticket was already used.
+- `/check-in` is role-gated to organizer, admin, and superadmin users.
+- The check-in page supports camera scan when the browser exposes `BarcodeDetector`, plus manual ticket-code entry.
+
+Known limitations:
+
+- Real payments are not connected yet.
+- Paid tickets remain pending until manually or future-provider confirmed.
+- Telegram-to-web account linking is based on stored Telegram identity and optional profile linkage; users who register on the web without a Telegram username may still need to continue through the event Telegram deep link.
+- QR images are generated server-side for Telegram and client-side for dashboard display, but they are not yet stored as files.
+
 ## Telegram Test Steps
 
 Plain start:
@@ -173,6 +212,22 @@ Tap 🎟 Мої квитки or 🎟 My tickets
 
 Expected: tickets found through `telegram_user_id`, linked `profile_id`, or `telegram_username`. If no tickets exist, the bot shows the localized empty state and website button.
 
+Show QR:
+
+```text
+Tap Show QR on an active paid ticket
+```
+
+Expected: Telegram sends a QR image with event title, ticket code, status, payment status, and entrance instructions. Pending tickets show a locked message. Used tickets show an already-used message.
+
+Change language:
+
+```text
+Tap 🌐 Change language or send /language
+```
+
+Expected: the bot shows UA/EN buttons, saves the selection, and returns to the menu or active event confirmation.
+
 Registration flow:
 
 1. Open an event deep link.
@@ -205,8 +260,10 @@ Event detail conversion order:
 5. Continue in Telegram.
 6. Search events in the bot.
 7. View My Tickets.
-8. Confirm the registration and ticket rows in Supabase.
-9. Explain that real payment, QR image generation, and check-in scanner are next-phase production work.
+8. Show QR for active paid/free tickets.
+9. Scan the QR on `/check-in` as organizer/admin/superadmin.
+10. Confirm the registration and ticket rows in Supabase.
+11. Explain that real payment provider integration is next-phase production work.
 
 ## Event Creation
 
@@ -217,8 +274,8 @@ Organizer, admin, and superadmin roles can create events at `/organizer`. Public
 Near-term:
 
 - real payments
-- QR ticket generation
-- check-in scanner
+- payment confirmation webhook
+- stored QR image assets if needed
 - organizer event CRUD
 - email and Telegram confirmations
 - referral attribution

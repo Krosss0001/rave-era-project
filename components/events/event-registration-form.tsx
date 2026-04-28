@@ -80,7 +80,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
       ? {
           title: "Резервна веб-реєстрація",
           description: isFreeEvent ? "Безкоштовна подія: квиток підтверджується одразу." : "Оплату буде підключено наступним етапом.",
-          open: "Web fallback registration",
+          open: "Веб-реєстрація",
           registered: "Ви зареєстровані",
           nextTelegram: "Наступний крок: продовжити в Telegram",
           ticketCode: "Код квитка",
@@ -94,9 +94,9 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           invalidEmail: "Вкажіть коректний email.",
           alreadyRegistered: "Ви вже зареєстровані на цю подію.",
           registrationReceived: "Реєстрацію отримано.",
-          soldOut: "Подія вже sold out.",
+          soldOut: "Подію вже розпродано.",
           genericError: "Не вдалося завершити реєстрацію. Спробуйте ще раз.",
-          continueTelegram: "Continue in Telegram",
+          continueTelegram: "Продовжити в Telegram",
           dashboard: "Мої квитки",
           submit: "Надіслати",
           submitting: "Надсилання"

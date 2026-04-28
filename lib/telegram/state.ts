@@ -183,6 +183,17 @@ export async function unsubscribeTelegramUser(supabase: SupabaseClient<Database>
   }
 }
 
+export async function subscribeTelegramUser(supabase: SupabaseClient<Database>, telegramUserId: string) {
+  const { error } = await supabase
+    .from("telegram_users")
+    .update({ is_subscribed: true, updated_at: new Date().toISOString() })
+    .eq("telegram_user_id", telegramUserId);
+
+  if (error && error.code !== "42P01" && !isUndefinedColumn(error)) {
+    throw error;
+  }
+}
+
 export async function getLatestSession(supabase: SupabaseClient<Database>, telegramUserId: string, chatId: string) {
   const { data, error } = await supabase
     .from("telegram_registration_sessions")
@@ -561,7 +572,7 @@ export async function getTicketsForTelegramUser(
       telegram_username,
       status,
       events(id,slug,title,date,city,venue),
-      tickets(id,ticket_code,qr_payload,status,payment_status)
+      tickets(id,ticket_code,qr_payload,status,payment_status,checked_in)
     `)
     .or(filters.join(","))
     .neq("status", "cancelled")
@@ -573,4 +584,26 @@ export async function getTicketsForTelegramUser(
   }
 
   return data ?? [];
+}
+
+export async function getTelegramTicketByCode(
+  supabase: SupabaseClient<Database>,
+  telegramUserId: string,
+  telegramUsername: string | null,
+  ticketCode: string
+) {
+  const rows = await getTicketsForTelegramUser(supabase, telegramUserId, telegramUsername);
+  const normalizedCode = ticketCode.trim().toUpperCase();
+
+  for (const row of rows) {
+    const tickets = Array.isArray(row.tickets) ? row.tickets : row.tickets ? [row.tickets] : [];
+    const ticket = tickets.find((item) => item.ticket_code.toUpperCase() === normalizedCode);
+
+    if (ticket) {
+      const event = Array.isArray(row.events) ? row.events[0] : row.events;
+      return { registration: row, ticket, event };
+    }
+  }
+
+  return null;
 }
