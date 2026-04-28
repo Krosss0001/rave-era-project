@@ -102,7 +102,7 @@ export function EventBrowser({ events }: EventBrowserProps) {
               {copy.filters}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="-mx-1 flex flex-nowrap items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
               {categories.map((filter) => {
                 const active = category === filter.value;
 
@@ -112,7 +112,7 @@ export function EventBrowser({ events }: EventBrowserProps) {
                     key={filter.value}
                     aria-pressed={active}
                     onClick={() => setCategory(filter.value)}
-                    className={`focus-ring min-h-10 border px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] motion-safe:transition-[border-color,color,background-color] motion-safe:duration-200 ${
+                    className={`focus-ring min-h-10 shrink-0 border px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] motion-safe:transition-[border-color,color,background-color] motion-safe:duration-200 sm:tracking-[0.16em] ${
                       active
                         ? "border-[#00FF88] bg-[#00FF88]/10 text-[#00FF88]"
                         : "border-white/[0.06] text-white/48 hover:border-[#00FF88]/35 hover:text-white"
@@ -124,12 +124,12 @@ export function EventBrowser({ events }: EventBrowserProps) {
               })}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 border-t border-white/[0.05] pt-4">
+            <div className="-mx-1 flex flex-nowrap items-center gap-2 overflow-x-auto border-t border-white/[0.05] px-1 pb-1 pt-4 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
               <button
                 type="button"
                 aria-pressed={city === "all"}
                 onClick={() => setCity("all")}
-                className={`focus-ring min-h-10 border px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] motion-safe:transition-[border-color,color,background-color] motion-safe:duration-200 ${
+                className={`focus-ring min-h-10 shrink-0 border px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] motion-safe:transition-[border-color,color,background-color] motion-safe:duration-200 sm:tracking-[0.16em] ${
                   city === "all"
                     ? "border-[#00FF88] bg-[#00FF88]/10 text-[#00FF88]"
                     : "border-white/[0.06] text-white/48 hover:border-[#00FF88]/35 hover:text-white"
@@ -146,7 +146,7 @@ export function EventBrowser({ events }: EventBrowserProps) {
                     key={eventCity}
                     aria-pressed={active}
                     onClick={() => setCity(eventCity)}
-                    className={`focus-ring min-h-10 border px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] motion-safe:transition-[border-color,color,background-color] motion-safe:duration-200 ${
+                    className={`focus-ring min-h-10 shrink-0 border px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] motion-safe:transition-[border-color,color,background-color] motion-safe:duration-200 sm:tracking-[0.16em] ${
                       active
                         ? "border-[#00FF88] bg-[#00FF88]/10 text-[#00FF88]"
                         : "border-white/[0.06] text-white/48 hover:border-[#00FF88]/35 hover:text-white"
@@ -178,7 +178,7 @@ export function EventBrowser({ events }: EventBrowserProps) {
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <SectionLabel index="02" label={copy.upcoming} />
-            <h2 className="event-reveal mt-4 text-4xl font-black uppercase leading-[0.9] text-white md:text-7xl">
+            <h2 className="event-reveal mt-4 text-[clamp(2.25rem,12vw,4.5rem)] font-black uppercase leading-[0.92] text-white md:leading-[0.9]">
               {language === "ua" ? "Наступне в календарі" : "Next on the calendar"}
             </h2>
           </div>

@@ -70,7 +70,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
   const aboutParagraphs = getEventParagraphs(event.description);
   const capacityPercent = getCapacityPercent(event.registered, event.capacity);
   const urgent = capacityPercent >= 60;
-  const locationLabel = [event.city, event.venue].filter(Boolean).join(", ") || event.address || "Location TBA";
+  const locationLabel = [event.city, event.venue].filter(Boolean).join(", ") || event.address || "Локація уточнюється";
   const capacityTone =
     capacityPercent >= 90
       ? "bg-[#00FF88] shadow-[0_0_24px_rgba(0,255,136,0.48)]"
@@ -110,7 +110,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/38 to-transparent" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.014)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.014)_1px,transparent_1px)] bg-[size:80px_80px] opacity-45" />
 
-        <div className="relative mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-end gap-8 px-4 pb-10 pt-24 sm:px-6 md:min-h-[680px] md:px-10 md:pb-16 lg:grid-cols-[minmax(0,0.98fr)_minmax(320px,0.72fr)] lg:items-center lg:px-12 2xl:max-w-[1500px]">
+        <div className="relative mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-end gap-8 px-4 pb-10 pt-16 sm:px-6 sm:pt-20 md:min-h-[680px] md:px-10 md:pb-16 lg:grid-cols-[minmax(0,0.98fr)_minmax(320px,0.72fr)] lg:items-center lg:px-12 2xl:max-w-[1500px]">
           <div className="w-full max-w-[860px]">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex min-h-8 items-center border border-[#00FF88]/40 bg-[#00FF88]/5 px-4 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#00FF88]">
@@ -123,7 +123,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
               ) : null}
             </div>
 
-            <h1 className="mt-6 max-w-[900px] whitespace-normal text-[32px] font-black uppercase leading-[0.98] tracking-normal text-white [hyphens:none] [overflow-wrap:anywhere] [text-wrap:balance] [word-break:normal] sm:text-[48px] lg:text-[64px] xl:text-[72px]">
+            <h1 className="mt-6 max-w-[900px] whitespace-normal text-[clamp(2rem,12vw,4.5rem)] font-black uppercase leading-[1] tracking-normal text-white [hyphens:none] [overflow-wrap:anywhere] [text-wrap:balance] [word-break:normal] lg:leading-[0.96]">
               {event.title}
             </h1>
 
@@ -131,7 +131,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
               <p className="mt-5 max-w-[700px] text-base font-light leading-7 text-white/70 sm:text-lg sm:leading-8">{event.subtitle}</p>
             ) : null}
 
-            <div className="mt-8 grid gap-3 font-mono text-[10px] uppercase tracking-[0.13em] text-white/72 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-8 grid gap-3 font-mono text-[10px] uppercase tracking-[0.11em] text-white/72 sm:grid-cols-2 sm:tracking-[0.13em] lg:grid-cols-4">
               {[
                 { key: "date", Icon: CalendarDays, text: <LocalizedEventDate date={event.date} /> },
                 { key: "location", Icon: MapPin, text: locationLabel },
@@ -140,7 +140,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
               ].map(({ key, Icon, text }) => (
                 <div key={key} className="flex min-h-14 min-w-0 items-center gap-3 border border-white/[0.06] bg-black/74 px-4 py-3 backdrop-blur-sm">
                   <Icon className="h-4 w-4 shrink-0 text-[#00FF88]" aria-hidden="true" />
-                  <span className="min-w-0 overflow-hidden text-ellipsis">{text}</span>
+                  <span className="min-w-0 break-words leading-5">{text}</span>
                 </div>
               ))}
             </div>
@@ -162,7 +162,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           </div>
 
           <div className="order-first w-full lg:order-none">
-            <div className="relative mx-auto aspect-[4/3] max-h-[560px] max-w-[620px] overflow-hidden border border-white/[0.08] bg-black shadow-[0_0_80px_rgba(0,255,136,0.08)] lg:ml-auto">
+            <div className="relative mx-auto aspect-[4/3] max-h-[560px] max-w-[620px] overflow-hidden border border-white/[0.08] bg-black shadow-[0_0_80px_rgba(0,255,136,0.08)] sm:aspect-[16/10] lg:ml-auto lg:aspect-[4/3]">
               <SafeEventImage
                 src={event.image}
                 alt={`${event.title} event poster`}
@@ -176,13 +176,13 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 md:px-10 md:py-20 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-12 lg:px-12 xl:grid-cols-[minmax(0,1fr)_384px] 2xl:max-w-[1500px]">
+      <section className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:px-10 md:py-20 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10 lg:px-12 xl:grid-cols-[minmax(0,1fr)_384px] 2xl:max-w-[1500px]">
         <div className="space-y-10">
-          <article className="max-w-[700px] border-y border-white/[0.05] py-8 md:py-10">
+          <article className="max-w-[700px] border-y border-white/[0.05] py-7 md:py-10">
             <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#00FF88]">
               <LocalizedText ua="Про подію" en="About event" />
             </p>
-            <div className="mt-6 space-y-5 text-base leading-[1.7] text-white/68 sm:text-lg">
+            <div className="mt-6 space-y-5 text-base leading-7 text-white/68 sm:text-lg sm:leading-[1.7]">
               {(aboutParagraphs.length ? aboutParagraphs : [event.description]).filter(Boolean).map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}
@@ -240,7 +240,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           <section className="relative border border-[#00FF88]/20 bg-[#020202] p-5 shadow-[0_0_72px_rgba(0,255,136,0.06)]">
             <span className="absolute left-0 top-0 h-px w-full bg-[#00FF88]" aria-hidden="true" />
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/35"><LocalizedText ua="Квиток" en="Ticket" /></p>
-            <p className="mt-3 font-mono text-4xl font-semibold leading-none text-white">
+            <p className="mt-3 font-mono text-[clamp(2rem,11vw,2.5rem)] font-semibold leading-none text-white">
               <LocalizedPrice price={event.price} currency={event.currency} />
             </p>
             {urgent ? (
@@ -252,7 +252,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
               <p className={`border px-3 py-2 ${pressure.tone}`}><LocalizedText ua={pressure.label.ua} en={pressure.label.en} /></p>
               <p className="border border-[#00FF88]/25 bg-[#00FF88]/[0.03] px-3 py-2 text-[#00FF88]">{event.ticketWaveLabel || <LocalizedText ua="Хвиля активна" en="Wave active" />}</p>
             </div>
-            <div className="mt-5 grid grid-cols-2 gap-2 border-y border-white/[0.05] py-4">
+            <div className="mt-5 grid gap-2 border-y border-white/[0.05] py-4 min-[360px]:grid-cols-2">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35"><LocalizedText ua="Зареєстровано" en="Registered" /></p>
                 <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-white">{event.registered}</p>

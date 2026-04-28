@@ -10,7 +10,7 @@ type TicketQrProps = {
   lockedMessage?: string;
 };
 
-export function TicketQr({ ticket, locked = false, lockedMessage = "QR unlocks after payment is confirmed." }: TicketQrProps) {
+export function TicketQr({ ticket, locked = false, lockedMessage = "QR відкриється після підтвердження квитка." }: TicketQrProps) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -33,7 +33,7 @@ export function TicketQr({ ticket, locked = false, lockedMessage = "QR unlocks a
       .catch(() => {
         if (mounted) {
           setDataUrl(null);
-          setErrorMessage("QR could not be generated.");
+          setErrorMessage("Не вдалося створити QR.");
         }
       });
 
@@ -65,9 +65,9 @@ export function TicketQr({ ticket, locked = false, lockedMessage = "QR unlocks a
     <div className="flex min-h-40 items-center justify-center border border-white/[0.06] bg-black p-4">
       {dataUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={dataUrl} alt={`QR code for ticket ${ticket.ticket_code}`} className="h-40 w-40 bg-white p-2" />
+        <img src={dataUrl} alt={`QR квитка ${ticket.ticket_code}`} className="h-40 w-40 bg-white p-2" />
       ) : (
-        <div className="h-40 w-40 border border-white/[0.05] bg-white/[0.03] motion-safe:animate-pulse" aria-label="Generating QR code" />
+        <div className="h-40 w-40 border border-white/[0.05] bg-white/[0.03] motion-safe:animate-pulse" aria-label="Створення QR" />
       )}
     </div>
   );

@@ -170,13 +170,13 @@ export default function HomePage() {
       <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.045] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:4px_4px]" />
       <section className="relative overflow-hidden">
         <div className="absolute right-[-18%] top-[4%] -z-10 h-[55vw] w-[55vw] bg-[#00FF88]/10 blur-[150px] motion-safe:animate-[heroGlow_9s_cubic-bezier(0.16,1,0.3,1)_infinite_alternate]" />
-        <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-10 px-4 py-28 sm:px-6 md:px-10 md:py-28 lg:grid-cols-[1.1fr_0.9fr] lg:px-12 2xl:max-w-[1500px]">
+        <div className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 sm:py-24 md:px-10 md:py-28 lg:grid-cols-[1.1fr_0.9fr] lg:px-12 2xl:max-w-[1500px]">
           <div className="max-w-3xl">
-            <p className="inline-flex items-center gap-2 border border-white/[0.05] bg-[#020202] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.24em] text-white/55">
+            <p className="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 border border-white/[0.05] bg-[#020202] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/55 sm:px-4 sm:tracking-[0.24em]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#00FF88] shadow-[0_0_16px_rgba(0,255,136,0.75)] motion-safe:animate-[softPulse_2.2s_ease-out_infinite]" aria-hidden="true" />
               <span className="whitespace-nowrap">Rave<span className="text-[#00FF88]">&apos;</span>era</span> Group <span className="text-[#00FF88]" aria-hidden="true">{"\u00B7"}</span> Concerts <span className="text-[#00FF88]">&amp;</span> Marketing Agency
             </p>
-            <h1 className="mt-8 text-[clamp(3rem,16vw,10.5rem)] font-black uppercase leading-[0.78] text-white sm:text-[clamp(4.5rem,9.6vw,10.5rem)]">
+            <h1 className="mt-7 text-[clamp(2.8rem,15vw,10.5rem)] font-black uppercase leading-[0.84] text-white sm:mt-8 sm:text-[clamp(4.5rem,9.6vw,10.5rem)] sm:leading-[0.78]">
               {heroLines.map((line, index) => (
                 <span
                   key={line.en}
@@ -189,7 +189,7 @@ export default function HomePage() {
                 </span>
               ))}
             </h1>
-            <p className="mt-8 max-w-xl text-lg font-semibold uppercase leading-[1.08] text-white motion-safe:animate-[fadeUp_520ms_cubic-bezier(0.16,1,0.3,1)_360ms_both] md:text-3xl">
+            <p className="mt-6 max-w-xl text-base font-semibold uppercase leading-tight text-white motion-safe:animate-[fadeUp_520ms_cubic-bezier(0.16,1,0.3,1)_360ms_both] sm:text-lg md:mt-8 md:text-3xl md:leading-[1.08]">
               <LocalizedText
                 ua={
                   <>
@@ -300,11 +300,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#000000] px-4 py-28 sm:px-6 md:px-10 md:py-40 lg:px-12 2xl:max-w-[1500px]">
+      <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#000000] px-4 py-16 sm:px-6 md:px-10 md:py-28 lg:px-12 2xl:max-w-[1500px]">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <SectionLabel index="01" label={<LocalizedText ua="Система платформи" en="Platform System" />} />
-            <h2 className="scroll-reveal mt-4 max-w-3xl text-4xl font-black uppercase leading-[0.88] text-white md:text-7xl">
+            <h2 className="scroll-reveal mt-4 max-w-3xl text-[clamp(2.25rem,12vw,4.5rem)] font-black uppercase leading-[0.92] text-white md:leading-[0.88]">
               <LocalizedText ua="Єдина система для попиту на події" en="One system for event demand" />
             </h2>
           </div>
@@ -341,11 +341,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#020202] px-4 py-28 sm:px-6 md:px-10 md:py-40 lg:px-12 2xl:max-w-[1500px]">
+      <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#020202] px-4 py-16 sm:px-6 md:px-10 md:py-28 lg:px-12 2xl:max-w-[1500px]">
         <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
           <div>
             <SectionLabel index="02" label={<LocalizedText ua="Подія у фокусі" en="Featured Event" />} />
-            <h2 className="scroll-reveal mt-4 text-4xl font-black uppercase leading-[0.88] text-white md:text-7xl">
+            <h2 className="scroll-reveal mt-4 text-[clamp(2.25rem,12vw,4.5rem)] font-black uppercase leading-[0.92] text-white md:leading-[0.88]">
               <LocalizedText ua="Сторінки подій як доказ продукту" en="Event pages as product proof" />
             </h2>
             <p className="mt-5 max-w-md text-sm leading-6 text-white/45">
@@ -391,7 +391,7 @@ export default function HomePage() {
                 </h3>
                 <p className="mt-4 text-sm leading-6 text-white/45">{featuredEvent.subtitle}</p>
               </div>
-              <div className="mt-8 grid grid-cols-3 gap-3 border-t border-white/[0.05] pt-5">
+              <div className="mt-8 grid gap-3 border-t border-white/[0.05] pt-5 min-[420px]:grid-cols-3">
                 {[
                   { value: capacityPercent + "%", label: "capacity" },
                   { value: <LocalizedPrice price={featuredEvent.price} currency={featuredEvent.currency} />, label: "price" },
@@ -408,11 +408,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#000000] px-4 py-28 sm:px-6 md:px-10 md:py-40 lg:px-12 2xl:max-w-[1500px]">
+      <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#000000] px-4 py-16 sm:px-6 md:px-10 md:py-28 lg:px-12 2xl:max-w-[1500px]">
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
           <div>
             <SectionLabel index="03" label={<LocalizedText ua="Двигун зростання" en="Growth Engine" />} />
-              <h2 className="scroll-reveal mt-4 text-4xl font-black uppercase leading-[0.88] text-white md:text-6xl">
+              <h2 className="scroll-reveal mt-4 text-[clamp(2.25rem,12vw,4rem)] font-black uppercase leading-[0.92] text-white md:leading-[0.88]">
               <LocalizedText ua="Більше, ніж квитки" en="Built beyond ticketing" />
             </h2>
             <p className="mt-5 max-w-lg text-sm leading-6 text-white/45">
@@ -448,11 +448,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#020202] px-4 py-28 sm:px-6 md:px-10 md:py-40 lg:px-12 2xl:max-w-[1500px]">
+      <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#020202] px-4 py-16 sm:px-6 md:px-10 md:py-28 lg:px-12 2xl:max-w-[1500px]">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <SectionLabel index="04" label={<LocalizedText ua="Демо-флоу" en="Demo Flow" />} />
-            <h2 className="scroll-reveal mt-4 max-w-4xl text-4xl font-black uppercase leading-[0.88] text-white md:text-7xl">
+            <h2 className="scroll-reveal mt-4 max-w-4xl text-[clamp(2.25rem,12vw,4.5rem)] font-black uppercase leading-[0.92] text-white md:leading-[0.88]">
               <LocalizedText ua="Від пошуку до доступу" en="From discovery to access" />
             </h2>
           </div>
@@ -467,7 +467,7 @@ export default function HomePage() {
           {demoSteps.map((step, index) => (
             <article
               key={step.title.en}
-              className="scroll-card group relative grid gap-4 overflow-hidden border border-white/[0.05] bg-[#030303] p-5 transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-[#00FF88]/30 hover:bg-[#00FF88]/[0.02] md:grid-cols-[120px_0.7fr_1fr] md:items-center"
+              className="scroll-card group relative grid gap-4 overflow-hidden border border-white/[0.05] bg-[#030303] p-4 transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-[#00FF88]/30 hover:bg-[#00FF88]/[0.02] sm:p-5 md:grid-cols-[120px_0.7fr_1fr] md:items-center"
               style={revealStyle(index)}
             >
               <CornerBrackets />
@@ -475,7 +475,7 @@ export default function HomePage() {
               <span className="font-mono text-[10px] text-white/20 transition group-hover:text-[#00FF88]">
                 {String(index + 1).padStart(2, "0")}
               </span>
-              <h3 className="text-2xl font-black uppercase leading-none text-white md:text-4xl">
+              <h3 className="text-[clamp(1.5rem,9vw,2.25rem)] font-black uppercase leading-none text-white">
                 <LocalizedText ua={step.title.ua} en={step.title.en} />
               </h3>
               <p className="text-sm leading-6 text-white/45">

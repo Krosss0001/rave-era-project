@@ -79,7 +79,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
     language === "ua"
       ? {
           title: "Резервна веб-реєстрація",
-          description: isFreeEvent ? "Безкоштовна подія: квиток підтверджується одразу." : "Оплату буде підключено наступним етапом.",
+          description: isFreeEvent ? "Безкоштовна подія: реєстрацію буде збережено, а квиток зʼявиться у вашому кабінеті." : "Оплату буде підключено наступним етапом.",
           open: "Веб-реєстрація",
           registered: "Ви зареєстровані",
           nextTelegram: "Наступний крок: продовжити в Telegram",
@@ -93,7 +93,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           nameRequired: "Вкажіть ім'я.",
           invalidEmail: "Вкажіть коректний email.",
           alreadyRegistered: "Ви вже зареєстровані на цю подію.",
-          registrationReceived: "Реєстрацію отримано.",
+          registrationReceived: "Реєстрацію отримано. Квиток збережено у вашому кабінеті.",
           soldOut: "Подію вже розпродано.",
           genericError: "Не вдалося завершити реєстрацію. Спробуйте ще раз.",
           continueTelegram: "Продовжити в Telegram",
@@ -103,7 +103,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
         }
       : {
           title: "Web fallback registration",
-          description: isFreeEvent ? "Free event: ticket is confirmed immediately." : "Payment will be connected next.",
+          description: isFreeEvent ? "Free event: registration is saved and the ticket appears in your dashboard." : "Payment will be connected next.",
           open: "Web fallback registration",
           registered: "You are registered",
           nextTelegram: "Next step: continue in Telegram",
@@ -117,7 +117,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           nameRequired: "Name is required.",
           invalidEmail: "Enter a valid email address.",
           alreadyRegistered: "You are already registered for this event.",
-          registrationReceived: "Registration received.",
+          registrationReceived: "Registration received. The ticket is saved in your dashboard.",
           soldOut: "Event is sold out.",
           genericError: "Registration could not be completed. Try again.",
           continueTelegram: "Continue in Telegram",
@@ -240,19 +240,6 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
     const existingTicket = await getTicketForRegistration(registration.id);
 
     if (existingTicket) {
-      if (isFreeEvent && (existingTicket.status !== "active" || existingTicket.payment_status !== "paid")) {
-        const { data, error } = await supabase
-          .from("tickets")
-          .update({ status: "active", payment_status: "paid" })
-          .eq("registration_id", registration.id)
-          .select("ticket_code,qr_payload,status,payment_status")
-          .single();
-
-        if (!error && data) {
-          return data;
-        }
-      }
-
       return existingTicket;
     }
 
@@ -268,8 +255,8 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           user_id: currentUserId,
           ticket_code: nextTicketCode,
           qr_payload: buildQrPayload(nextTicketCode, registration.event_id, currentUserId),
-          status: isFreeEvent ? "active" : "reserved",
-          payment_status: isFreeEvent ? "paid" : "pending"
+          status: "reserved",
+          payment_status: "pending"
         })
         .select("ticket_code,qr_payload,status,payment_status")
         .single();
@@ -437,7 +424,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
             <TicketQr
               ticket={ticket}
               locked={ticket.status !== "active" || ticket.payment_status !== "paid"}
-              lockedMessage="QR unlocks when this ticket is active and paid."
+              lockedMessage={language === "ua" ? "QR відкриється, коли квиток стане активним і підтвердженим." : "QR unlocks when this ticket is active and paid."}
             />
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">

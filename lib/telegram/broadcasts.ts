@@ -12,13 +12,13 @@ export const EVENT_BROADCAST_AUDIENCES: BroadcastAudience[] = [
 ];
 
 export const BROADCAST_AUDIENCE_LABELS: Record<BroadcastAudience, string> = {
-  all_telegram_users: "All Telegram users",
-  event_registered: "Event registrations",
-  event_confirmed: "Confirmed event registrations",
-  event_pending_payment: "Pending payment",
-  event_paid: "Paid attendees",
-  event_checked_in: "Checked-in attendees",
-  bot_interacted_not_registered: "Bot users without registration"
+  all_telegram_users: "Усі Telegram користувачі",
+  event_registered: "Реєстрації на подію",
+  event_confirmed: "Підтверджені реєстрації",
+  event_pending_payment: "Очікують підтвердження",
+  event_paid: "Підтверджені учасники",
+  event_checked_in: "Учасники з check-in",
+  bot_interacted_not_registered: "Користувачі бота без реєстрації"
 };
 
 export type BroadcastRequest = {
@@ -53,19 +53,19 @@ export function parseBroadcastRequest(body: unknown): BroadcastRequest {
   const input = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
   const audience = input.audience;
   const message = typeof input.message === "string" ? input.message.trim() : "";
-  const language = input.language === "en" ? "en" : "uk";
+  const language: BotLanguage = "uk";
   const eventId = typeof input.eventId === "string" && input.eventId.trim() ? input.eventId.trim() : null;
 
   if (!isBroadcastAudience(audience)) {
-    throw new Error("audience is required.");
+    throw new Error("Потрібно вибрати аудиторію.");
   }
 
   if (!message) {
-    throw new Error("message is required.");
+    throw new Error("Потрібно ввести повідомлення.");
   }
 
   if (isEventBroadcastAudience(audience) && !eventId) {
-    throw new Error("eventId is required for this audience.");
+    throw new Error("Для цієї аудиторії потрібно вибрати подію.");
   }
 
   return {
@@ -185,8 +185,8 @@ export function formatBroadcastMessage(input: {
   message: string;
   event: BroadcastEvent | null;
 }) {
-  const title = input.language === "en" ? "Message from Rave'era Group" : "Повідомлення від Rave'era Group";
-  const footer = input.language === "en" ? "/stop to unsubscribe" : "/stop щоб відписатися";
+  const title = "Повідомлення від Rave'era Group";
+  const footer = "/stop щоб відписатися";
   const eventUrl = getEventUrl(input.event);
   const eventLines = input.event
     ? [`<b>${escapeHtml(input.event.title)}</b>`, eventUrl]

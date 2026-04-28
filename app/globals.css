@@ -37,6 +37,43 @@ body {
   overflow-x: hidden;
 }
 
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  min-width: 0;
+}
+
+h1,
+h2,
+h3,
+p,
+a,
+button,
+span,
+td,
+th,
+label {
+  overflow-wrap: anywhere;
+}
+
+table {
+  border-collapse: collapse;
+}
+
 body::before {
   pointer-events: none;
   content: "";
@@ -111,4 +148,19 @@ body::before {
 
 .focus-ring {
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+}
+
+@media (max-width: 390px) {
+  .tracking-widest,
+  [class*="tracking-[0.28em]"],
+  [class*="tracking-[0.26em]"],
+  [class*="tracking-[0.24em]"],
+  [class*="tracking-[0.22em]"],
+  [class*="tracking-[0.2em]"] {
+    letter-spacing: 0.11em !important;
+  }
+
+  .focus-ring {
+    scroll-margin: 1rem;
+  }
 }

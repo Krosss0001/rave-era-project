@@ -4,7 +4,7 @@ import Image, { type ImageProps } from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FALLBACK_EVENT_IMAGE, getSafeImageSrc, isFallbackImage } from "@/lib/images";
 
-type SafeImageProps = Omit<ImageProps, "src" | "onError" | "onLoad" | "unoptimized"> & {
+type SafeImageProps = Omit<ImageProps, "src" | "onError" | "onLoad"> & {
   src: string | null | undefined;
   fallbackSrc?: string;
   timeoutMs?: number;
@@ -65,7 +65,6 @@ export function SafeImage({
       {...props}
       src={imageSrc}
       alt={alt}
-      unoptimized
       onLoad={clearTimer}
       onError={useFallback}
     />

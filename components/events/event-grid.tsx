@@ -13,7 +13,7 @@ export function EventGrid({ events }: EventGridProps) {
 
   if (events.length === 0) {
     return (
-      <div className="border border-white/[0.05] bg-[#020202] p-8 text-center">
+      <div className="border border-white/[0.05] bg-[#020202] p-5 text-center sm:p-8">
         <h3 className="text-xl font-black uppercase">{dictionary.events.noEventsTitle}</h3>
         <p className="mt-2 text-sm text-white/45">
           {dictionary.events.noEventsCopy}

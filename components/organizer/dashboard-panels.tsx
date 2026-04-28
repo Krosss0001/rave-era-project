@@ -65,18 +65,18 @@ export function MetricGrid() {
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {items.map(([label, value]) => (
         <div
           key={label}
-          className="group relative border border-white/[0.05] bg-[#020202] p-6 motion-safe:transition-[border-color,box-shadow,transform] motion-safe:duration-500 motion-safe:ease-out hover:border-primary/[0.35] hover:shadow-[0_0_28px_rgba(0,255,136,0.06)] motion-safe:hover:-translate-y-0.5"
+          className="group relative min-w-0 border border-white/[0.05] bg-[#020202] p-4 motion-safe:transition-[border-color,box-shadow,transform] motion-safe:duration-500 motion-safe:ease-out hover:border-primary/[0.35] hover:shadow-[0_0_28px_rgba(0,255,136,0.06)] motion-safe:hover:-translate-y-0.5 sm:p-5 lg:p-6"
         >
           <span className="absolute left-0 top-0 h-px w-0 bg-primary motion-safe:transition-[width] motion-safe:duration-500 motion-safe:ease-out group-hover:w-full" aria-hidden="true" />
           <p className="flex items-center justify-between gap-3 font-mono text-xs uppercase tracking-[0.22em] text-white/[0.32]">
             {label}
             <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_12px_rgba(0,255,136,0.45)] motion-safe:animate-pulse" aria-hidden="true" />
           </p>
-          <p className="mt-5 font-mono text-4xl font-semibold tabular-nums text-white md:text-5xl">
+          <p className="mt-5 font-mono text-[clamp(2rem,10vw,3rem)] font-semibold tabular-nums text-white">
             <CountUpValue value={value} />
           </p>
         </div>
@@ -96,7 +96,7 @@ export function SystemStatusRow() {
   return (
     <div className="grid gap-3 border-y border-white/[0.05] bg-[#020202] py-4 sm:grid-cols-3">
       {items.map(([label, status]) => (
-        <div key={label} className="flex min-h-12 items-center justify-between border border-white/[0.05] bg-[#030303] px-4 font-mono text-[10px] uppercase tracking-[0.16em] text-white/[0.42]">
+        <div key={label} className="flex min-h-12 min-w-0 items-center justify-between gap-3 border border-white/[0.05] bg-[#030303] px-4 font-mono text-[10px] uppercase tracking-[0.14em] text-white/[0.42] sm:tracking-[0.16em]">
           <span>{label}</span>
           <span className={status === "standby" ? "text-white/35" : "text-primary"}>
             <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-current shadow-[0_0_10px_currentColor] motion-safe:animate-pulse" aria-hidden="true" />
@@ -115,7 +115,7 @@ export function RegistrationTable() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{language === "ua" ? "Реєстрації" : "Registrations"}</p>
-          <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white md:text-5xl">
+          <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">
             {language === "ua" ? "Операції з гостями" : "Attendee operations"}
           </h2>
         </div>
@@ -123,7 +123,7 @@ export function RegistrationTable() {
           {language === "ua" ? "Demo дані" : "Demo data"}
         </span>
       </div>
-      <div className="mt-10 overflow-x-auto border-t border-white/[0.05]">
+      <div className="-mx-4 mt-8 overflow-x-auto border-t border-white/[0.05] px-4 sm:mx-0 sm:mt-10 sm:px-0">
         <table className="w-full min-w-[620px] text-left text-sm">
           <thead className="font-mono text-xs uppercase tracking-[0.18em] text-white/[0.34]">
             <tr>
@@ -166,15 +166,15 @@ export function ReferralPanel() {
   return (
     <section className="border-y border-white/[0.05] bg-[#020202] py-8">
       <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{language === "ua" ? "Реферальний рушій" : "Referral engine"}</p>
-      <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white">{language === "ua" ? "Топ джерела зростання" : "Top growth sources"}</h2>
+      <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">{language === "ua" ? "Топ джерела зростання" : "Top growth sources"}</h2>
       <div className="mt-8 border border-primary/25 bg-[#030303] p-5">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-primary">{language === "ua" ? "Найкращий результат" : "Best performer"}</p>
-        <div className="mt-4 flex items-end justify-between gap-4">
-          <div>
+        <div className="mt-4 flex flex-col gap-4 min-[380px]:flex-row min-[380px]:items-end min-[380px]:justify-between">
+          <div className="min-w-0">
             <p className="text-2xl font-black uppercase text-white">{topReferral.ownerName}</p>
             <p className="mt-2 font-mono text-sm text-white/[0.45]">{topReferral.code}</p>
           </div>
-          <p className="font-mono text-5xl font-semibold tabular-nums text-primary">{topReferral.confirmed}</p>
+          <p className="font-mono text-[clamp(2.5rem,13vw,3rem)] font-semibold tabular-nums text-primary">{topReferral.confirmed}</p>
         </div>
       </div>
       <div className="mt-6 grid gap-0 border-t border-white/[0.05]">
@@ -184,7 +184,7 @@ export function ReferralPanel() {
             className="border-b border-white/[0.05] bg-[#020202] py-5 motion-safe:transition-colors motion-safe:duration-500 hover:bg-primary/[0.018]"
           >
             <div className="flex items-center justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <p className="font-semibold text-white/[0.82]">{referral.ownerName}</p>
                 <p className="mt-1 font-mono text-xs uppercase tracking-[0.16em] text-white/[0.38]">{referral.code}</p>
               </div>
@@ -214,7 +214,7 @@ export function TelegramStatusPanel() {
         </span>
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{language === "ua" ? "Шар підтримки" : "Support layer"}</p>
-          <h2 className="mt-2 text-3xl font-black uppercase leading-none text-white">Telegram execution</h2>
+          <h2 className="mt-2 text-[clamp(1.75rem,9vw,2rem)] font-black uppercase leading-none text-white">Telegram execution</h2>
         </div>
       </div>
       <div className="mt-7 border-y border-white/[0.05]">
@@ -261,7 +261,7 @@ export function SolanaReadinessPanel() {
         </span>
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">Solana-ready</p>
-          <h2 className="mt-2 text-3xl font-black uppercase leading-none text-white">
+          <h2 className="mt-2 text-[clamp(1.75rem,9vw,2rem)] font-black uppercase leading-none text-white">
             {language === "ua" ? "Майбутня utility логіка" : "Future utility path"}
           </h2>
         </div>

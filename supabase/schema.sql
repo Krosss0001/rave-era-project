@@ -56,6 +56,8 @@ create table if not exists public.registrations (
   user_id uuid references public.profiles(id) on delete set null,
   name text,
   email text,
+  phone text,
+  instagram_nickname text,
   telegram_username text,
   referral_code text,
   status text not null default 'pending',

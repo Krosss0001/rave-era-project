@@ -56,6 +56,32 @@ function getBarcodeDetector() {
   return (window as Window & { BarcodeDetector?: NativeBarcodeDetectorConstructor }).BarcodeDetector ?? null;
 }
 
+function logCheckInIssue(message: string, details: Record<string, unknown> = {}) {
+  console.warn(message, details);
+}
+
+function getCheckInErrorMessage(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("ticket_not_found") || normalized.includes("not found")) {
+    return "Квиток не знайдено або доступ заборонено.";
+  }
+
+  if (normalized.includes("access_denied")) {
+    return "У вас немає доступу до цієї події.";
+  }
+
+  if (normalized.includes("ticket_already_used")) {
+    return "Цей квиток уже використано для входу.";
+  }
+
+  if (normalized.includes("ticket_not_active_paid")) {
+    return "Для входу доступні лише активні підтверджені квитки.";
+  }
+
+  return "Не вдалося підтвердити вхід.";
+}
+
 export function CheckInPanel() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -101,6 +127,7 @@ export function CheckInPanel() {
     const parsedInput = parseTicketQrInput(input);
 
     if (parsedInput.error) {
+      logCheckInIssue("Check-in QR parse failed", { reason: parsedInput.error });
       setMessage({ type: "error", text: parsedInput.error });
       return;
     }
@@ -108,12 +135,12 @@ export function CheckInPanel() {
     const lookupTicketCode = parsedInput.ticketCode;
 
     if (!lookupTicketCode) {
-      setMessage({ type: "error", text: "Invalid QR payload." });
+      setMessage({ type: "error", text: "Некоректний QR-код." });
       return;
     }
 
     if (!supabase) {
-      setMessage({ type: "error", text: "Supabase is not configured." });
+      setMessage({ type: "error", text: "Supabase не налаштовано." });
       return;
     }
 
@@ -127,16 +154,26 @@ export function CheckInPanel() {
         .maybeSingle();
 
       if (ticketError) {
+        logCheckInIssue("Check-in ticket lookup failed", {
+          ticketCode: lookupTicketCode,
+          reason: ticketError.message
+        });
         throw new Error(ticketError.message);
       }
 
       if (!ticketData) {
-        setMessage({ type: "error", text: "Ticket not found or access denied." });
+        logCheckInIssue("Check-in ticket not found", { ticketCode: lookupTicketCode });
+        setMessage({ type: "error", text: "Квиток не знайдено або доступ заборонено." });
         return;
       }
 
       if (parsedInput.eventId && parsedInput.eventId !== ticketData.event_id) {
-        setMessage({ type: "error", text: "Invalid QR payload." });
+        logCheckInIssue("Check-in QR event mismatch", {
+          ticketCode: lookupTicketCode,
+          qrEventId: parsedInput.eventId,
+          ticketEventId: ticketData.event_id
+        });
+        setMessage({ type: "error", text: "Некоректний QR-код." });
         return;
       }
 
@@ -147,7 +184,12 @@ export function CheckInPanel() {
         .maybeSingle();
 
       if (eventError || !eventData) {
-        setMessage({ type: "error", text: "Event details could not be loaded." });
+        logCheckInIssue("Check-in event lookup failed", {
+          ticketCode: lookupTicketCode,
+          eventId: ticketData.event_id,
+          reason: eventError?.message
+        });
+        setMessage({ type: "error", text: "Не вдалося завантажити дані події." });
         return;
       }
 
@@ -159,14 +201,17 @@ export function CheckInPanel() {
       setTicket(nextTicket);
 
       if (nextTicket.checked_in || nextTicket.status === "used") {
-        setMessage({ type: "warning", text: "This ticket has already been checked in." });
+        setMessage({ type: "warning", text: "Цей квиток уже використано для входу." });
       } else if (nextTicket.status !== "active" || nextTicket.payment_status !== "paid") {
-        setMessage({ type: "warning", text: "Only active, paid tickets can be checked in." });
+        setMessage({ type: "warning", text: "Для входу доступні лише активні підтверджені квитки." });
       } else {
-        setMessage({ type: "success", text: "Ticket is valid for check-in." });
+        setMessage({ type: "success", text: "Квиток дійсний для входу." });
       }
     } catch (error) {
-      setMessage({ type: "error", text: error instanceof Error ? error.message : "Ticket could not be validated." });
+      logCheckInIssue("Check-in validation failed", {
+        reason: error instanceof Error ? error.message : "unknown"
+      });
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "Не вдалося перевірити квиток." });
     } finally {
       setLoading(false);
     }
@@ -182,8 +227,9 @@ export function CheckInPanel() {
       const parsedInput = parseTicketQrInput(value);
 
       if (parsedInput.error) {
+        logCheckInIssue("Check-in scanned QR parse failed", { reason: parsedInput.error });
         setScannerStatus("error");
-        setScannerMessage("Invalid QR payload.");
+        setScannerMessage("Некоректний QR-код.");
         return;
       }
 
@@ -191,13 +237,13 @@ export function CheckInPanel() {
 
       if (!scannedTicketCode) {
         setScannerStatus("error");
-        setScannerMessage("Invalid QR payload.");
+        setScannerMessage("Некоректний QR-код.");
         return;
       }
 
       setTicketCode(scannedTicketCode);
       setScannerStatus("detected");
-      setScannerMessage("QR detected");
+      setScannerMessage("QR знайдено");
       stopScanner(true);
       await validateTicketInput(value);
     },
@@ -210,7 +256,7 @@ export function CheckInPanel() {
     if (!navigator.mediaDevices?.getUserMedia || !BarcodeDetector) {
       setScannerOpen(false);
       setScannerStatus("unsupported");
-      setScannerMessage("Camera not supported, use manual input");
+      setScannerMessage("Камера не підтримується, введіть код вручну");
       return;
     }
 
@@ -229,7 +275,7 @@ export function CheckInPanel() {
       streamRef.current = stream;
 
       if (!videoRef.current) {
-        throw new Error("Camera preview is not available.");
+        throw new Error("Попередній перегляд камери недоступний.");
       }
 
       videoRef.current.srcObject = stream;
@@ -254,9 +300,12 @@ export function CheckInPanel() {
             await handleScannedValue(rawValue);
             return;
           }
-        } catch {
+        } catch (error) {
+          logCheckInIssue("Check-in camera scan failed", {
+            reason: error instanceof Error ? error.message : "unknown"
+          });
           setScannerStatus("error");
-          setScannerMessage("Camera scan failed, use manual input");
+          setScannerMessage("Не вдалося просканувати, введіть код вручну");
           stopScanner();
           return;
         }
@@ -265,10 +314,13 @@ export function CheckInPanel() {
       };
 
       scanFrameRef.current = window.requestAnimationFrame(scan);
-    } catch {
+    } catch (error) {
+      logCheckInIssue("Check-in camera start failed", {
+        reason: error instanceof Error ? error.message : "unknown"
+      });
       setScannerOpen(false);
       setScannerStatus("error");
-      setScannerMessage("Camera not supported, use manual input");
+      setScannerMessage("Камера не підтримується, введіть код вручну");
       streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
@@ -294,29 +346,38 @@ export function CheckInPanel() {
       });
 
       if (error) {
+        logCheckInIssue("Check-in RPC failed", {
+          ticketCode: ticket.ticket_code,
+          reason: error.message
+        });
         throw new Error(error.message);
       }
 
       const updatedTicket = data?.[0];
 
       if (!updatedTicket) {
-        throw new Error("Ticket could not be checked in.");
+        logCheckInIssue("Check-in RPC returned no ticket", { ticketCode: ticket.ticket_code });
+        throw new Error("Не вдалося підтвердити вхід за квитком.");
       }
 
       setTicket(mapCheckInResult(updatedTicket));
-      setMessage({ type: "success", text: "Ticket checked in." });
+      setMessage({ type: "success", text: "Вхід за квитком підтверджено." });
     } catch (error) {
-      setMessage({ type: "error", text: error instanceof Error ? error.message : "Check-in failed." });
+      logCheckInIssue("Check-in action failed", {
+        ticketCode: ticket.ticket_code,
+        reason: error instanceof Error ? error.message : "unknown"
+      });
+      setMessage({ type: "error", text: error instanceof Error ? getCheckInErrorMessage(error.message) : "Не вдалося підтвердити вхід." });
     } finally {
       setCheckingIn(false);
     }
   }
 
   return (
-    <section className="grid gap-8 lg:grid-cols-[0.72fr_1fr]">
+    <section className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1fr)] lg:gap-8">
       <form onSubmit={validateTicket} className="border-y border-white/[0.05] bg-[#020202] py-8">
         <label className="block">
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Ticket code</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Код квитка</span>
           <input
             type="text"
             value={ticketCode}
@@ -326,7 +387,7 @@ export function CheckInPanel() {
             className="mt-2 min-h-11 w-full border border-white/[0.08] bg-black px-3 font-mono text-sm uppercase text-white outline-none motion-safe:transition-colors motion-safe:duration-500 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           />
         </label>
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <div className="mt-4 grid gap-2 min-[380px]:grid-cols-2">
           <button
             type="button"
             onClick={() => {
@@ -339,7 +400,7 @@ export function CheckInPanel() {
             className="focus-ring inline-flex min-h-11 w-full items-center justify-center gap-2 border border-primary/35 px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-primary hover:text-black active:scale-[0.98]"
           >
             <Camera className="h-4 w-4" aria-hidden="true" />
-            {scannerOpen ? "Stop scan" : "Scan QR"}
+            {scannerOpen ? "Зупинити" : "Сканувати QR"}
           </button>
           <button
             type="submit"
@@ -348,7 +409,7 @@ export function CheckInPanel() {
             className="focus-ring inline-flex min-h-11 w-full items-center justify-center gap-2 bg-primary px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-500 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
           >
             <Search className="h-4 w-4" aria-hidden="true" />
-            {loading ? "Validating" : "Validate"}
+            {loading ? "Перевірка" : "Перевірити"}
           </button>
         </div>
 
@@ -359,7 +420,7 @@ export function CheckInPanel() {
             </div>
             <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] px-3 py-2">
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">
-                {scannerStatus === "starting" ? "Starting camera" : "Scanning"}
+                {scannerStatus === "starting" ? "Запуск камери" : "Сканування"}
               </p>
               <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_14px_rgba(0,255,136,0.55)] motion-safe:animate-pulse" aria-hidden="true" />
             </div>
@@ -409,16 +470,16 @@ export function CheckInPanel() {
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Event title</p>
               <p className="mt-2 text-2xl font-black uppercase text-white">{ticket.event_title}</p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 min-[380px]:grid-cols-2">
               {[
-                ["Ticket code", ticket.ticket_code],
-                ["Status", ticket.status],
-                ["Payment status", ticket.payment_status],
-                ["Checked in", ticket.checked_in ? "yes" : "no"]
+                ["Код квитка", ticket.ticket_code],
+                ["Статус", ticket.status],
+                ["Оплата", ticket.payment_status],
+                ["Вхід", ticket.checked_in ? "так" : "ні"]
               ].map(([label, value]) => (
                 <div key={label} className="border border-white/[0.05] bg-[#030303] p-4">
                   <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">{label}</p>
-                  <span className={`mt-2 inline-flex border px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] ${getBadgeClass(value === "yes" ? true : value === "no" ? false : value)}`}>
+                  <span className={`mt-2 inline-flex border px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] ${getBadgeClass(value === "так" ? true : value === "ні" ? false : value)}`}>
                     {value}
                   </span>
                 </div>
@@ -431,13 +492,13 @@ export function CheckInPanel() {
               aria-busy={checkingIn}
               className="focus-ring min-h-11 bg-primary px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-500 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
             >
-              {checkingIn ? "Checking in" : "Check in"}
+              {checkingIn ? "Підтвердження" : "Підтвердити вхід"}
             </button>
           </div>
         ) : (
           <div className="border border-white/[0.05] bg-[#030303] p-6">
-            <p className="text-xl font-black uppercase text-white">No ticket selected</p>
-            <p className="mt-3 text-sm leading-6 text-white/45">Validate a ticket code to see event and check-in status.</p>
+            <p className="text-xl font-black uppercase text-white">Квиток не обрано</p>
+            <p className="mt-3 text-sm leading-6 text-white/45">Перевірте код квитка, щоб побачити подію та статус входу.</p>
           </div>
         )}
       </div>

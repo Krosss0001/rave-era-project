@@ -31,7 +31,7 @@ export function parseTicketQrInput(value: string): ParsedTicketQrInput {
   const input = value.trim();
 
   if (!input) {
-    return { ticketCode: null, eventId: null, error: "Enter a ticket code." };
+    return { ticketCode: null, eventId: null, error: "Введіть код квитка." };
   }
 
   if (!input.startsWith("{")) {
@@ -44,11 +44,11 @@ export function parseTicketQrInput(value: string): ParsedTicketQrInput {
     const eventId = typeof payload.event_id === "string" && payload.event_id.trim() ? payload.event_id.trim() : null;
 
     if (!ticketCode) {
-      return { ticketCode: null, eventId: null, error: "Invalid QR payload." };
+      return { ticketCode: null, eventId: null, error: "Некоректний QR-код." };
     }
 
     return { ticketCode, eventId, error: null };
   } catch {
-    return { ticketCode: null, eventId: null, error: "Invalid QR payload." };
+    return { ticketCode: null, eventId: null, error: "Некоректний QR-код." };
   }
 }

@@ -71,7 +71,7 @@ export function AdminPanel() {
       <div className="flex flex-col justify-between gap-5 px-1 sm:flex-row sm:items-end">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.admin.profiles}</p>
-          <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white md:text-5xl">
+          <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">
             {dictionary.admin.roleControl}
           </h2>
         </div>
@@ -86,8 +86,8 @@ export function AdminPanel() {
         </p>
       ) : null}
 
-      <div className="mt-10 overflow-x-auto border-t border-white/[0.05]">
-        <table className="w-full min-w-[720px] text-left text-sm">
+      <div className="-mx-4 mt-8 overflow-x-auto border-t border-white/[0.05] px-4 sm:mx-0 sm:mt-10 sm:px-0">
+        <table className="w-full min-w-[680px] text-left text-sm">
           <thead className="font-mono text-xs uppercase tracking-[0.18em] text-white/[0.34]">
             <tr>
               <th className="py-4 font-medium">Email</th>
@@ -112,7 +112,7 @@ export function AdminPanel() {
 
                 return (
                   <tr key={profile.id} className="motion-safe:transition-colors motion-safe:duration-500 hover:bg-primary/[0.018]">
-                    <td className="py-4 font-mono text-white/[0.72]">{profile.email ?? "No email"}</td>
+                    <td className="max-w-56 break-all py-4 pr-4 font-mono text-white/[0.72]">{profile.email ?? "No email"}</td>
                     <td className="py-4 text-white/[0.45]">{profile.full_name ?? "Not set"}</td>
                     <td className="py-4">
                       <span className="border border-primary/25 bg-primary/[0.03] px-2.5 py-1 font-mono text-xs font-semibold uppercase tracking-[0.14em] text-primary">

@@ -1,8 +1,6 @@
 # Rave'era Platform
 
-Rave'era is a premium event platform for creating events, promoting events, selling tickets, managing registrations, Telegram confirmation, referrals, organizer analytics, and future QR/check-in/payment flow.
-
-It supports concerts and nightlife, but the product language is broader: conferences, festivals, cultural events, corporate events, ticketing operations, audience growth, and event operations.
+Rave'era is a premium event platform for creating events, promoting events, managing registrations, Telegram confirmation, QR tickets, check-in, referrals, organizer analytics, and future payment flow.
 
 Deploy URL:
 
@@ -15,12 +13,12 @@ https://rave-era-project.vercel.app
 - Public event discovery with Supabase data and mock fallback
 - Event detail pages with responsive hero, safe image fallback, web registration, Telegram continuation, referrals, and organizer details
 - UA/EN website language toggle with localStorage persistence
-- UA/EN Telegram bot menu, search, event deep links, registration flow, and My Tickets
+- Ukrainian-only Telegram bot menu, event search, event deep links, registration flow, QR tickets, and My Tickets
 - Telegram broadcast preview and server-side sending for superadmins and organizer event campaigns
-- Ticket creation with QR payload placeholder
+- Ticket creation with QR payloads
 - Free-event path that confirms registration without payment
 - Paid-event path that reserves tickets with payment pending
-- Organizer event creation and role-gated dashboards
+- Role-gated organizer, admin, superadmin, dashboard, and check-in surfaces
 
 ## Stack
 
@@ -30,7 +28,7 @@ https://rave-era-project.vercel.app
 - Supabase auth and database
 - Telegram Bot API webhook
 - Lightweight UA/EN website language foundation
-- UA/EN Telegram bot flows
+- Ukrainian-only Telegram bot flows
 - Mock fallback data for public pages
 - No real payment provider yet
 
@@ -43,6 +41,7 @@ https://rave-era-project.vercel.app
 - `/organizer` - organizer event creation and operating panels
 - `/admin` - admin role-management foundation
 - `/superadmin` - superadmin control foundation
+- `/check-in` - role-gated QR/ticket validation and door check-in
 - `/api/telegram/webhook` - Telegram webhook
 - `/api/telegram/broadcast/preview` - estimate Telegram broadcast recipients
 - `/api/telegram/broadcast/send` - send Telegram broadcasts through the server-side bot
@@ -82,15 +81,60 @@ supabase/patches/007_telegram_user_linking.sql
 supabase/patches/008_telegram_language_and_polish.sql
 supabase/patches/009_qr_checkin.sql
 supabase/patches/010_telegram_broadcasts.sql
+supabase/patches/011_registration_contact_fields.sql
 ```
 
-Patch `006` creates server-managed Telegram registration sessions. Patch `007` adds Telegram identity linking plus `registrations.telegram_user_id`. Patch `008` stores bot language preferences on `telegram_users` and `telegram_registration_sessions`. Patch `009` adds QR check-in support. Patch `010` adds Telegram broadcast tables, recipient tracking, and `telegram_users.is_subscribed`.
+Patch `006` creates server-managed Telegram registration sessions. Patch `007` adds Telegram identity linking plus `registrations.telegram_user_id`. Patch `008` keeps legacy language columns defaulted to `uk`. Patch `009` adds QR check-in support. Patch `010` adds Telegram broadcast tables, recipient tracking, and `telegram_users.is_subscribed`. Patch `011` adds `registrations.phone` and `registrations.instagram_nickname`.
+
+## Telegram Webhook Setup
+
+Set the webhook to the deployed route:
+
+```bash
+curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=https://rave-era-project.vercel.app/api/telegram/webhook"
+```
+
+Telegram requires public HTTPS. Local webhook testing needs a secure tunnel.
+
+## Telegram Bot Flow
+
+The bot is Ukrainian-only. `/start` opens the main menu:
+
+- `🔍 Знайти подію`
+- `🎟 Мої квитки`
+- `🌐 Відкрити сайт`
+- `📱 Додаток`
+
+`🔍 Знайти подію` lists public events with title, date, location, and price. Each event has `Зареєструватись`, `Відкрити на сайті`, and `Поділитися`.
+
+`🎟 Мої квитки` finds tickets by `telegram_user_id`, linked profile, or Telegram username. Each ticket shows event, code, and status, with `Показати QR` and `Відкрити подію`. If no tickets exist, the bot replies: `У вас ще немає квитків`.
+
+`🌐 Відкрити сайт` points to `/events`. `📱 Додаток` shows a placeholder message until the app is available. Unknown text returns the user to the main menu so there are no dead ends.
+
+## Telegram Registration Fields
+
+Registration starts from an event deep link or an event card. The bot confirms the event, then collects:
+
+1. Mobile phone, required.
+2. Full name, required.
+3. Instagram nickname, optional.
+4. Email, required.
+
+The summary shows event, phone, name, Instagram, and email. Confirming creates or reuses a registration and creates or reuses a ticket. Free events immediately confirm the registration and activate the ticket. Paid events stay reserved until payment support is connected.
+
+## QR And Check-In
+
+`Показати QR` generates a QR image from the ticket QR payload or ticket code. Active paid/free tickets show the QR and entrance instructions. Reserved, pending, used, or checked-in tickets show a clear status message instead of crashing.
+
+Organizers, admins, and superadmins use `/check-in`. The page supports camera scanning when `BarcodeDetector` is available and manual ticket-code entry otherwise. Check-in validates the QR payload, confirms event ownership through Supabase policies/RPC, and marks active paid tickets as used.
+
+Safe logs include operational details such as event slug, ticket code, Telegram user id, and error message only. Secrets and tokens are never logged.
 
 ## Telegram Broadcasts
 
-Superadmins can open `/superadmin` and use **Telegram Broadcast Center** to preview and send messages to all Telegram users, event audiences, or bot users who have not registered.
+Superadmins can open `/superadmin` and use Telegram Broadcast Center to preview and send messages to all Telegram users, event audiences, or bot users who have not registered.
 
-Organizers can open `/organizer` and use **Campaigns** to message audiences for their own events only:
+Organizers can open `/organizer` and use Campaigns to message audiences for their own events only:
 
 - registered
 - confirmed
@@ -107,167 +151,51 @@ Broadcast safety:
 - Unsubscribed users are excluded by `telegram_users.is_subscribed = true`.
 - Users can send `/stop` to the bot to unsubscribe from future broadcasts.
 
-## Payment And QR Behavior
+## Telegram Test Steps
 
-Free events:
+1. Send `/start`.
+   Expected: Ukrainian menu with event search, tickets, website, and app placeholder.
 
-- Website shows `FREE` / `БЕЗКОШТОВНО` instead of `0 UAH`.
-- Telegram shows `FREE` / `БЕЗКОШТОВНО`.
-- Telegram confirmation creates or reuses a registration, sets it to `confirmed`, sets ticket status to `active`, sets payment status to `paid`, and shows the QR payload placeholder.
+2. Tap `🔍 Знайти подію`.
+   Expected: event cards with title, date, location, price, and the three action buttons.
 
-Paid events:
+3. Open an event card and tap `Зареєструватись`.
+   Expected: event confirmation, then four numbered registration steps.
 
-- Payment provider is intentionally not connected yet.
-- Registration remains `pending`.
-- Ticket remains `reserved`.
-- Ticket `payment_status` remains `pending`.
+4. Enter phone, full name, optional Instagram, and email.
+   Expected: summary with `Все правильно`, `🔁 Почати спочатку`, and `Скасувати`.
 
-Telegram images:
+5. Confirm the summary.
+   Expected: registration/ticket is created or reused. Free events return an active ticket. Paid events return a reserved ticket.
 
-- The bot uses the original Supabase `events.image_url`.
-- Only direct HTTPS URLs are attempted with `sendPhoto`.
-- Invalid URLs, localhost URLs, blocked hosts, or Telegram send failures fall back to text-only previews.
-- Server logs include event slug and error message only, never secrets.
+6. Tap `🎟 Мої квитки`.
+   Expected: event, code, status, `Показати QR`, and `Відкрити подію`. Empty users see `У вас ще немає квитків`.
 
-## Telegram Webhook Setup
+7. Tap `Показати QR`.
+   Expected: active paid/free tickets send a QR image. Pending tickets explain that QR is locked. Used tickets explain that the ticket was already used.
 
-Set the webhook to the deployed route:
+8. Scan the QR on `/check-in` as organizer/admin/superadmin.
+   Expected: valid active paid ticket can be checked in; invalid QR, event mismatch, pending ticket, or used ticket shows a clear message and logs a safe diagnostic.
 
-```bash
-curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=https://rave-era-project.vercel.app/api/telegram/webhook"
-```
-
-Telegram requires public HTTPS. Local webhook testing needs a secure tunnel.
-
-## Telegram Product Flow
-
-The bot is designed as the main event companion:
-
-1. `/start` opens language selection for new Telegram users.
-2. Saved users go straight to the main menu.
-3. Website event links pass the event slug through the Telegram `start` payload.
-4. The bot shows the correct event preview, image when Telegram accepts it, and a text fallback when image sending fails.
-5. Registration collects name, phone, company/role, and field/context.
-6. Free events confirm immediately and unlock the QR.
-7. Paid events create a reserved ticket with payment pending; QR stays locked until payment is confirmed.
-8. **My tickets** finds tickets by Telegram user id, Telegram username, or linked profile.
-9. **Show QR** generates a real QR image from `qr_payload` or `ticket_code`.
-10. Organizers scan QR codes on `/check-in`.
-
-Language behavior:
-
-- New users choose between `🇺🇦 Українська` and `🇬🇧 English`.
-- The choice is saved to `telegram_users.language`.
-- The main menu includes `🌐 Змінити мову` / `🌐 Change language`.
-- `/language` and `/lang` also reopen language selection.
-
-QR and check-in behavior:
-
-- QR is sent as a Telegram photo when possible.
-- If QR image generation or Telegram upload fails, the bot falls back to the ticket code.
-- Active paid tickets show the QR and door instructions.
-- Pending-payment tickets explain that QR is locked.
-- Used or checked-in tickets explain that the ticket was already used.
-- `/check-in` is role-gated to organizer, admin, and superadmin users.
-- The check-in page supports camera scan when the browser exposes `BarcodeDetector`, plus manual ticket-code entry.
-
-Known limitations:
+## Known Limitations
 
 - Real payments are not connected yet.
 - Paid tickets remain pending until manually or future-provider confirmed.
-- Telegram-to-web account linking is based on stored Telegram identity and optional profile linkage; users who register on the web without a Telegram username may still need to continue through the event Telegram deep link.
-- QR images are generated server-side for Telegram and client-side for dashboard display, but they are not yet stored as files.
-
-## Telegram Test Steps
-
-Plain start:
-
-```text
-/start
-```
-
-Expected: language choice if no preference exists, then UA/EN menu with Search, My Tickets, app placeholder, and website link.
-
-Event deep link:
-
-```text
-https://t.me/your_bot_username?start=event_noir-signal
-```
-
-Expected: event preview, direct Supabase `image_url` photo if it is valid HTTPS, text fallback if Telegram rejects the image, then confirmation buttons.
-
-Search:
-
-```text
-Tap 🔍 Пошук or 🔍 Search
-```
-
-Expected: public events with status `live`, `limited`, or `soon`, each with register and website buttons.
-
-My Tickets:
-
-```text
-Tap 🎟 Мої квитки or 🎟 My tickets
-```
-
-Expected: tickets found through `telegram_user_id`, linked `profile_id`, or `telegram_username`. If no tickets exist, the bot shows the localized empty state and website button.
-
-Show QR:
-
-```text
-Tap Show QR on an active paid ticket
-```
-
-Expected: Telegram sends a QR image with event title, ticket code, status, payment status, and entrance instructions. Pending tickets show a locked message. Used tickets show an already-used message.
-
-Change language:
-
-```text
-Tap 🌐 Change language or send /language
-```
-
-Expected: the bot shows UA/EN buttons, saves the selection, and returns to the menu or active event confirmation.
-
-Registration flow:
-
-1. Open an event deep link.
-2. Confirm the event.
-3. Enter name.
-4. Share or type phone.
-5. Enter position and company.
-6. Enter industry/company activity.
-7. Confirm summary.
-8. Tap payment/confirmation button.
-
-Expected for paid events: registration and reserved ticket are created or reused, with `ticket_code`, `qr_payload`, and `payment_status: pending`.
-
-Expected for free events: registration is confirmed, ticket status is active, payment status is paid, and QR payload is shown immediately.
-
-Event detail conversion order:
-
-1. Ticket wave / price / capacity.
-2. Telegram execution layer.
-3. Referral growth loop.
-4. Solana-ready access placeholder.
-5. Compact web registration fallback for users who prefer not to use Telegram.
+- Telegram-to-web account linking is based on stored Telegram identity and optional profile linkage.
+- QR images are generated on demand and are not yet stored as files.
 
 ## Demo Flow
 
 1. Open the website.
 2. Browse events.
 3. Create an event as organizer.
-4. Register on the event page.
-5. Continue in Telegram.
-6. Search events in the bot.
-7. View My Tickets.
-8. Show QR for active paid/free tickets.
-9. Scan the QR on `/check-in` as organizer/admin/superadmin.
-10. Confirm the registration and ticket rows in Supabase.
-11. Explain that real payment provider integration is next-phase production work.
-
-## Event Creation
-
-Organizer, admin, and superadmin roles can create events at `/organizer`. Public event discovery only shows `live`, `limited`, and `soon`. Draft events remain private to organizer/admin surfaces.
+4. Register on the event page or continue in Telegram.
+5. Search events in the bot.
+6. View My Tickets.
+7. Use `Показати QR` for active paid/free tickets.
+8. Scan the QR on `/check-in` as organizer/admin/superadmin.
+9. Confirm the registration and ticket rows in Supabase.
+10. Explain that real payment provider integration is next-phase production work.
 
 ## Roadmap
 

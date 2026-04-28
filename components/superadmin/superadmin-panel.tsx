@@ -82,10 +82,10 @@ export function SuperadminPanel() {
         defaultAudience="all_telegram_users"
       />
 
-      <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+      <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-10">
         <section className="border-y border-white/[0.05] bg-[#020202] py-8">
           <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.superadmin.roleArchitecture}</p>
-        <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white md:text-5xl">
+        <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">
           {dictionary.superadmin.platformControl}
         </h2>
         <p className="mt-5 max-w-xl text-sm leading-6 text-white/45">
@@ -105,9 +105,9 @@ export function SuperadminPanel() {
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">Prepared actions</p>
-            <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white md:text-5xl">{dictionary.superadmin.queue}</h2>
+            <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">{dictionary.superadmin.queue}</h2>
           </div>
-          <span className="border border-primary/25 bg-primary/[0.03] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
+          <span className="border border-primary/25 bg-primary/[0.03] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-primary sm:tracking-[0.18em]">
             {dictionary.superadmin.serverActionsLater}
           </span>
         </div>

@@ -2,10 +2,10 @@ export function formatEventDate(date: string) {
   const parsedDate = new Date(date);
 
   if (Number.isNaN(parsedDate.getTime())) {
-    return "Date TBA";
+    return "Дата уточнюється";
   }
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat("uk-UA", {
     month: "short",
     day: "numeric",
     year: "numeric"
@@ -23,7 +23,7 @@ export function isFreePrice(price: number) {
 
 export function formatPriceForLanguage(price: number, currency: string, language: "ua" | "en") {
   if (isFreePrice(price)) {
-    return language === "ua" ? "Безкоштовно" : "FREE";
+    return language === "ua" ? "Безкоштовно" : "Free";
   }
 
   return `${new Intl.NumberFormat(language === "ua" ? "uk-UA" : "en-US").format(price)} ${currency || "UAH"}`;

@@ -45,7 +45,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
       <span className="pointer-events-none absolute left-3 top-3 z-20 h-4 w-4 border-l border-t border-[#00FF88]/45 opacity-0 motion-safe:transition-opacity motion-safe:duration-500 group-hover:opacity-100" aria-hidden="true" />
       <span className="pointer-events-none absolute bottom-3 right-3 z-20 h-4 w-4 border-b border-r border-[#00FF88]/45 opacity-0 motion-safe:transition-opacity motion-safe:duration-500 group-hover:opacity-100" aria-hidden="true" />
 
-      <div className={`relative overflow-hidden bg-black ${featured ? "aspect-[4/3] min-h-[280px] lg:aspect-auto lg:min-h-[440px]" : "aspect-[4/3] sm:aspect-[16/10]"}`}>
+      <div className={`relative overflow-hidden bg-black ${featured ? "aspect-[4/3] min-h-[220px] sm:min-h-[280px] lg:aspect-auto lg:min-h-[440px]" : "aspect-[4/3] sm:aspect-[16/10]"}`}>
         <SafeEventImage
           src={event.image}
           alt={`${event.title} event poster`}
@@ -64,7 +64,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">
             <LocalizedEventDate date={event.date} /> / {event.city} / <span className="text-[#00FF88]"><LocalizedText ua={statusLabel.ua} en={statusLabel.en} /></span>
           </p>
-          <h3 className={`mt-3 break-words font-black uppercase leading-[0.94] text-white [text-shadow:0_0_40px_rgba(255,255,255,0.06)] ${featured ? "text-4xl sm:text-6xl lg:text-7xl" : "text-3xl sm:text-4xl"}`}>
+          <h3 className={`mt-3 break-words font-black uppercase leading-[0.98] text-white [text-shadow:0_0_40px_rgba(255,255,255,0.06)] ${featured ? "text-[clamp(2rem,11vw,4.5rem)] lg:leading-[0.94]" : "text-[clamp(1.75rem,9vw,2.25rem)]"}`}>
             {event.title}
           </h3>
           <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/45">
@@ -75,7 +75,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
             <LocalizedText ua={`${recentSales} квитків за останню хвилю продажів`} en={`${recentSales} tickets sold in the latest sales window`} />
           </p>
         </div>
-        <div className="mt-7 grid grid-cols-2 gap-2 border-t border-white/[0.05] pt-5 sm:grid-cols-3">
+        <div className="mt-7 grid grid-cols-1 gap-2 border-t border-white/[0.05] pt-5 min-[360px]:grid-cols-2 sm:grid-cols-3">
           {[
             { id: "city", value: event.city, label: <LocalizedText ua="місто" en="city" /> },
             { id: "price", value: <LocalizedPrice price={event.price} currency={event.currency} />, label: <LocalizedText ua="ціна" en="price" /> },

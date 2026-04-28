@@ -7,12 +7,12 @@ import type { Database } from "@/lib/supabase/types";
 export type TelegramStep =
   | "started"
   | "confirm_event"
-  | "ask_name"
   | "ask_phone"
-  | "ask_position_company"
-  | "ask_industry"
+  | "ask_name"
+  | "ask_instagram"
+  | "ask_email"
   | "summary"
-  | "payment_pending"
+  | "registered"
   | "cancelled";
 
 export type TelegramSession = Database["public"]["Tables"]["telegram_registration_sessions"]["Row"];
@@ -41,6 +41,10 @@ function isTicketCodeCollision(error: { code?: string; message?: string } | null
 
 function isUndefinedColumn(error: { code?: string } | null) {
   return error?.code === "42703";
+}
+
+function logTelegramStateIssue(message: string, details: Record<string, unknown> = {}) {
+  console.warn(message, details);
 }
 
 export function getTelegramSupabaseClient() {
@@ -84,7 +88,7 @@ export async function getPublicTelegramEvents(supabase: SupabaseClient<Database>
   const { data, error } = await supabase
     .from("events")
     .select("id,slug,title,subtitle,description,date,city,venue,address,price,currency,capacity,status,image_url")
-    .in("status", ["live", "limited", "soon"])
+    .in("status", ["published", "live", "limited", "soon"])
     .order("date", { ascending: true, nullsFirst: false })
     .limit(8);
 
@@ -132,42 +136,6 @@ export async function upsertTelegramUser(supabase: SupabaseClient<Database>, use
       }
     }
 
-    throw error;
-  }
-}
-
-export async function getTelegramUserLanguage(
-  supabase: SupabaseClient<Database>,
-  telegramUserId: string
-): Promise<BotLanguage | null> {
-  const { data, error } = await supabase
-    .from("telegram_users")
-    .select("language")
-    .eq("telegram_user_id", telegramUserId)
-    .maybeSingle();
-
-  if (error) {
-    if (error.code === "42P01" || isMissingRow(error) || isUndefinedColumn(error)) {
-      return null;
-    }
-
-    throw error;
-  }
-
-  return data?.language === "en" ? "en" : data?.language === "uk" ? "uk" : null;
-}
-
-export async function setTelegramUserLanguage(
-  supabase: SupabaseClient<Database>,
-  telegramUserId: string,
-  language: BotLanguage
-) {
-  const { error } = await supabase
-    .from("telegram_users")
-    .update({ language, updated_at: new Date().toISOString() })
-    .eq("telegram_user_id", telegramUserId);
-
-  if (error && error.code !== "42P01" && !isUndefinedColumn(error)) {
     throw error;
   }
 }
@@ -344,21 +312,6 @@ async function getRegistrationForSession(supabase: SupabaseClient<Database>, ses
     }
   }
 
-  if (session.event_id && session.telegram_username) {
-    const { data, error } = await supabase
-      .from("registrations")
-      .select("id,event_id,user_id,status")
-      .eq("event_id", session.event_id)
-      .eq("telegram_username", session.telegram_username)
-      .maybeSingle();
-
-    if (error && !isMissingRow(error)) {
-      throw error;
-    }
-
-    return data;
-  }
-
   if (session.event_id && session.telegram_user_id) {
     const { data, error } = await supabase
       .from("registrations")
@@ -368,6 +321,23 @@ async function getRegistrationForSession(supabase: SupabaseClient<Database>, ses
       .maybeSingle();
 
     if (error && !isMissingRow(error) && !isUndefinedColumn(error)) {
+      throw error;
+    }
+
+    if (data || !isUndefinedColumn(error)) {
+      return data;
+    }
+  }
+
+  if (session.event_id && session.telegram_username) {
+    const { data, error } = await supabase
+      .from("registrations")
+      .select("id,event_id,user_id,status")
+      .eq("event_id", session.event_id)
+      .eq("telegram_username", session.telegram_username)
+      .maybeSingle();
+
+    if (error && !isMissingRow(error)) {
       throw error;
     }
 
@@ -426,13 +396,31 @@ async function createTicket(supabase: SupabaseClient<Database>, registrationId: 
       const recovered = await getTicketForRegistration(supabase, registrationId);
 
       if (recovered) {
+        logTelegramStateIssue("Telegram ticket insert hit existing registration ticket", {
+          registrationId,
+          eventId,
+          attempt
+        });
         return recovered;
       }
     }
 
     if (!isTicketCodeCollision(error)) {
+      logTelegramStateIssue("Telegram ticket insert failed", {
+        registrationId,
+        eventId,
+        attempt,
+        code: error?.code,
+        reason: error?.message
+      });
       break;
     }
+
+    logTelegramStateIssue("Telegram ticket code collision", {
+      registrationId,
+      eventId,
+      attempt
+    });
   }
 
   throw new Error(lastError?.message || "Ticket could not be created.");
@@ -453,7 +441,7 @@ export async function createPendingRegistrationAndTicket(
   await updateSession(supabase, session.id, {
     registration_id: registration.id,
     ticket_id: ticket.id,
-    step: "payment_pending"
+    step: "registered"
   });
 
   return { registration, ticket };
@@ -495,13 +483,17 @@ export async function confirmFreeRegistrationAndTicket(
 }
 
 async function insertRegistration(supabase: SupabaseClient<Database>, session: TelegramSession) {
+  const email = session.industry;
+  const instagram = session.position_company;
   const { data, error } = await supabase
     .from("registrations")
     .insert({
       event_id: session.event_id!,
       user_id: null,
       name: session.name,
-      email: null,
+      email,
+      phone: session.phone,
+      instagram_nickname: instagram,
       telegram_username: session.telegram_username,
       telegram_user_id: session.telegram_user_id,
       status: "pending"
@@ -514,14 +506,21 @@ async function insertRegistration(supabase: SupabaseClient<Database>, session: T
   }
 
   if (isUndefinedColumn(error)) {
+    logTelegramStateIssue("Telegram registration insert missing optional contact columns", {
+      telegramUserId: session.telegram_user_id,
+      eventId: session.event_id,
+      code: error?.code
+    });
+
     const fallback = await supabase
       .from("registrations")
       .insert({
         event_id: session.event_id!,
         user_id: null,
         name: session.name,
-        email: null,
+        email,
         telegram_username: session.telegram_username,
+        telegram_user_id: session.telegram_user_id,
         status: "pending"
       })
       .select("id,event_id,user_id,status")
@@ -530,15 +529,34 @@ async function insertRegistration(supabase: SupabaseClient<Database>, session: T
     if (!fallback.error && fallback.data) {
       return fallback.data;
     }
+
+    logTelegramStateIssue("Telegram registration fallback insert failed", {
+      telegramUserId: session.telegram_user_id,
+      eventId: session.event_id,
+      code: fallback.error?.code,
+      reason: fallback.error?.message
+    });
   }
 
   if (isUniqueCollision(error)) {
     const recovered = await getRegistrationForSession(supabase, session);
 
     if (recovered) {
+      logTelegramStateIssue("Telegram registration insert reused existing registration", {
+        telegramUserId: session.telegram_user_id,
+        eventId: session.event_id,
+        registrationId: recovered.id
+      });
       return recovered;
     }
   }
+
+  logTelegramStateIssue("Telegram registration insert failed", {
+    telegramUserId: session.telegram_user_id,
+    eventId: session.event_id,
+    code: error?.code,
+    reason: error?.message
+  });
 
   throw new Error(error?.message || "Registration could not be created.");
 }

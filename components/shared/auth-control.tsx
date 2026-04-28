@@ -86,7 +86,7 @@ export function AuthControl() {
 
   if (session) {
     return (
-      <div className="flex items-center gap-2 md:gap-3">
+      <div className="flex min-w-0 items-center gap-2 md:gap-3">
         <span className="hidden max-w-36 truncate font-mono text-[10px] uppercase tracking-[0.16em] text-white/45 sm:block">
           {session.user.email}
         </span>
@@ -106,14 +106,14 @@ export function AuthControl() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="focus-ring min-h-10 border border-primary/30 px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary motion-safe:transition-[background-color,box-shadow,transform] motion-safe:duration-500 motion-safe:ease-out hover:bg-primary/[0.04] hover:shadow-[0_0_24px_rgba(0,255,136,0.08)] active:scale-[0.98]"
+        className="focus-ring min-h-10 border border-primary/30 px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-primary motion-safe:transition-[background-color,box-shadow,transform] motion-safe:duration-500 motion-safe:ease-out hover:bg-primary/[0.04] hover:shadow-[0_0_24px_rgba(0,255,136,0.08)] active:scale-[0.98] sm:tracking-[0.18em]"
       >
         {dictionary.nav.signIn}
       </button>
       {open ? (
         <form
           onSubmit={sendMagicLink}
-          className="absolute right-0 top-12 z-50 w-[min(20rem,calc(100vw-2rem))] border border-white/[0.08] bg-[#020202] p-4 shadow-[0_0_50px_rgba(0,0,0,0.65)]"
+          className="absolute right-0 top-12 z-50 w-[min(20rem,calc(100vw-1rem))] border border-white/[0.08] bg-[#020202] p-4 shadow-[0_0_50px_rgba(0,0,0,0.65)]"
         >
           <div className="flex items-center justify-between gap-3">
             <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">Email login</p>

@@ -26,7 +26,7 @@ function getBadgeClass(value: string) {
 }
 
 export function UserDashboard() {
-  const { dictionary } = useLanguage();
+  const { dictionary, language } = useLanguage();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [profile, setProfile] = useState<AuthProfile | null>(null);
   const [email, setEmail] = useState("");
@@ -61,7 +61,7 @@ export function UserDashboard() {
       const [registrationResult, ticketResult, referralResult] = await Promise.all([
         supabase
           .from("registrations")
-          .select("id,event_id,user_id,name,email,telegram_username,telegram_user_id,referral_code,status,created_at")
+          .select("id,event_id,user_id,name,email,phone,instagram_nickname,telegram_username,telegram_user_id,referral_code,status,created_at")
           .eq("user_id", roleState.user.id)
           .order("created_at", { ascending: false }),
         supabase
@@ -138,12 +138,12 @@ export function UserDashboard() {
   }
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[1fr_0.72fr]">
+    <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.72fr)] lg:gap-10">
       <section className="border-y border-white/[0.05] bg-[#020202] py-8">
         <div className="flex flex-col justify-between gap-5 px-1 sm:flex-row sm:items-end">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.dashboard.profile}</p>
-            <h2 className="mt-3 text-4xl font-black uppercase leading-none text-white md:text-5xl">
+            <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">
               {dictionary.dashboard.accessDashboard}
             </h2>
           </div>
@@ -152,13 +152,13 @@ export function UserDashboard() {
           </span>
         </div>
 
-        <div className="mt-8 grid gap-3 md:grid-cols-3">
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {[
-            [email || "Not signed in", "email"],
+            [email || (language === "ua" ? "Вхід не виконано" : "Not signed in"), "email"],
             [registrations.length.toString(), dictionary.dashboard.registeredEvents],
             [tickets.length.toString(), dictionary.dashboard.tickets]
           ].map(([value, label]) => (
-            <div key={label} className="border border-white/[0.05] bg-[#030303] p-4">
+            <div key={label} className="min-w-0 border border-white/[0.05] bg-[#030303] p-4">
               <p className="truncate font-mono text-lg font-semibold text-white">{value}</p>
               <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{label}</p>
             </div>
@@ -174,7 +174,7 @@ export function UserDashboard() {
         <div className="mt-10 border-t border-white/[0.05]">
           {registrations.length > 0 ? (
             registrations.map((registration) => (
-              <div key={registration.id} className="grid gap-3 border-b border-white/[0.05] py-5 md:grid-cols-[1fr_160px] md:items-center">
+              <div key={registration.id} className="grid gap-3 border-b border-white/[0.05] py-5 md:grid-cols-[minmax(0,1fr)_160px] md:items-center">
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">
                     Event {registration.event_id.slice(0, 8)}
@@ -203,7 +203,7 @@ export function UserDashboard() {
         </div>
       </section>
 
-      <aside className="grid gap-6">
+      <aside className="grid min-w-0 gap-6">
         <section className="border-y border-white/[0.05] bg-[#020202] py-8">
           <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.dashboard.myTickets}</p>
           <div className="mt-6 grid gap-3">
@@ -214,7 +214,7 @@ export function UserDashboard() {
                 const isQrLocked = ticket.status !== "active" || ticket.payment_status !== "paid";
 
                 return (
-                <div key={ticket.id} className="border border-white/[0.05] bg-[#030303] p-4">
+                <div key={ticket.id} className="min-w-0 border border-white/[0.05] bg-[#030303] p-4">
                   <div className="flex items-start justify-between gap-3 border-b border-white/[0.05] pb-4">
                     <div className="min-w-0">
                       {event?.slug ? (
@@ -228,20 +228,20 @@ export function UserDashboard() {
                         <p className="text-lg font-black uppercase leading-none text-white">Event ticket</p>
                       )}
                       <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.16em] text-white/35">
-                        {event?.date ? new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Date TBA"} / {event?.city ?? "City TBA"}
+                        {event?.date ? new Date(event.date).toLocaleDateString(language === "ua" ? "uk-UA" : "en-US", { month: "short", day: "numeric", year: "numeric" }) : language === "ua" ? "Дата уточнюється" : "Date TBA"} / {event?.city ?? (language === "ua" ? "Місто уточнюється" : "City TBA")}
                       </p>
                     </div>
                     <span className={`shrink-0 border px-2 py-1 font-mono text-[9px] uppercase tracking-[0.14em] ${getBadgeClass(ticket.status)}`}>
                       {ticket.status}
                     </span>
                   </div>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="mt-4 grid gap-3 min-[380px]:grid-cols-2">
                     <div>
-                      <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">Ticket code</p>
+                      <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">{language === "ua" ? "Код квитка" : "Ticket code"}</p>
                       <p className="mt-1 font-mono text-sm font-semibold text-white">{ticket.ticket_code}</p>
                     </div>
                     <div>
-                      <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">Payment</p>
+                      <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">{language === "ua" ? "Оплата" : "Payment"}</p>
                       <span className={`mt-1 inline-flex border px-2 py-1 font-mono text-[9px] uppercase tracking-[0.14em] ${getBadgeClass(ticket.payment_status)}`}>
                         {ticket.payment_status}
                       </span>
@@ -254,7 +254,7 @@ export function UserDashboard() {
                       className="focus-ring min-h-11 border border-primary/35 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-primary hover:text-black active:scale-[0.98]"
                       aria-expanded={isQrVisible}
                     >
-                      {isQrVisible ? "Hide QR" : "Show QR"}
+                      {isQrVisible ? (language === "ua" ? "Сховати QR" : "Hide QR") : (language === "ua" ? "Показати QR" : "Show QR")}
                     </button>
                   </div>
                   {isQrVisible ? (
@@ -262,7 +262,7 @@ export function UserDashboard() {
                       <TicketQr
                         ticket={ticket}
                         locked={isQrLocked}
-                        lockedMessage="QR unlocks when this ticket is active and paid."
+                        lockedMessage={language === "ua" ? "QR відкриється, коли квиток стане активним і підтвердженим." : "QR unlocks when this ticket is active and paid."}
                       />
                     </div>
                   ) : null}

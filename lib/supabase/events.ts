@@ -6,7 +6,7 @@ import type { Database, EventStatus } from "@/lib/supabase/types";
 
 type EventRow = Database["public"]["Tables"]["events"]["Row"];
 
-const PUBLIC_EVENT_STATUSES: EventStatus[] = ["live", "limited", "soon"];
+const PUBLIC_EVENT_STATUSES: EventStatus[] = ["published", "live", "limited", "soon"];
 
 export async function getPublicEventsWithFallback(): Promise<RaveeraEvent[]> {
   const supabase = getSupabaseServerClient();

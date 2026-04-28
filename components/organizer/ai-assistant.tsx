@@ -33,7 +33,7 @@ export function AiAssistant() {
         </span>
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">AI operator console</p>
-          <h2 className="mt-2 text-4xl font-black uppercase leading-none text-white md:text-5xl">Campaign OS</h2>
+          <h2 className="mt-2 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">Campaign OS</h2>
         </div>
       </div>
       <div className="mt-10 border-y border-white/[0.05]">
@@ -44,7 +44,7 @@ export function AiAssistant() {
             onClick={() => chooseSuggestion(suggestion)}
             className="focus-ring group flex min-h-12 w-full items-center justify-between gap-4 border-b border-white/[0.05] bg-[#020202] px-1 py-4 text-left motion-safe:transition-[background-color,padding-left] motion-safe:duration-500 motion-safe:ease-out last:border-b-0 hover:bg-primary/[0.04] hover:pl-3"
           >
-            <span className="font-mono text-sm text-white/[0.58] motion-safe:transition-colors motion-safe:duration-500 group-hover:text-primary">
+            <span className="min-w-0 break-words font-mono text-xs leading-5 text-white/[0.58] motion-safe:transition-colors motion-safe:duration-500 group-hover:text-primary sm:text-sm">
               {commandLabels[suggestion.prompt] ?? suggestion.prompt}
             </span>
             <CornerDownRight className="h-4 w-4 shrink-0 text-white/20 motion-safe:transition-colors motion-safe:duration-500 group-hover:text-primary" aria-hidden="true" />

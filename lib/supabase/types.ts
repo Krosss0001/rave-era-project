@@ -159,6 +159,8 @@ export type Database = {
           user_id: string | null;
           name: string | null;
           email: string | null;
+          phone: string | null;
+          instagram_nickname: string | null;
           telegram_username: string | null;
           telegram_user_id: string | null;
           referral_code: string | null;
@@ -171,6 +173,8 @@ export type Database = {
           user_id?: string | null;
           name?: string | null;
           email?: string | null;
+          phone?: string | null;
+          instagram_nickname?: string | null;
           telegram_username?: string | null;
           telegram_user_id?: string | null;
           referral_code?: string | null;
@@ -181,6 +185,8 @@ export type Database = {
           user_id?: string | null;
           name?: string | null;
           email?: string | null;
+          phone?: string | null;
+          instagram_nickname?: string | null;
           telegram_username?: string | null;
           telegram_user_id?: string | null;
           referral_code?: string | null;
