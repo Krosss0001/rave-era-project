@@ -204,6 +204,8 @@ export type Database = {
           status: TicketStatus;
           payment_status: PaymentStatus;
           checked_in: boolean;
+          checked_in_at: string | null;
+          checked_in_by: string | null;
           created_at: string;
         };
         Insert: {
@@ -216,6 +218,8 @@ export type Database = {
           status?: TicketStatus;
           payment_status?: PaymentStatus;
           checked_in?: boolean;
+          checked_in_at?: string | null;
+          checked_in_by?: string | null;
           created_at?: string;
         };
         Update: {
@@ -227,8 +231,17 @@ export type Database = {
           status?: TicketStatus;
           payment_status?: PaymentStatus;
           checked_in?: boolean;
+          checked_in_at?: string | null;
+          checked_in_by?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "tickets_checked_in_by_fkey";
+            columns: ["checked_in_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "tickets_event_id_fkey";
             columns: ["event_id"];
@@ -436,6 +449,19 @@ export type Database = {
       get_event_registration_count: {
         Args: { event_id_input: string };
         Returns: number;
+      };
+      check_in_ticket: {
+        Args: { ticket_code_input: string };
+        Returns: {
+          ticket_id: string;
+          event_id: string;
+          event_title: string;
+          ticket_code: string;
+          status: TicketStatus;
+          payment_status: PaymentStatus;
+          checked_in: boolean;
+          checked_in_at: string | null;
+        }[];
       };
     };
     Enums: Record<string, never>;

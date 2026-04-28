@@ -22,7 +22,7 @@ export const dictionaries = {
       openEvents: "Відкрити події",
       openDashboard: "Мої квитки",
       retry: "Спробувати ще раз",
-      paymentComing: "Оплата буде підключена наступним етапом",
+      paymentComing: "Оплату буде підключено наступним етапом",
       freeConfirmed: "Безкоштовна подія: квиток підтверджується одразу.",
       demoReady: "Готово для демо"
     },
@@ -48,7 +48,7 @@ export const dictionaries = {
       telegramUsername: "Telegram username",
       submitRegistration: "Надіслати реєстрацію",
       submitting: "Надсилання",
-      signInRequired: "Увійдіть, щоб зареєструватися. Поточні RLS правила приймають тільки реєстрації, пов'язані з вашим акаунтом.",
+      signInRequired: "Увійдіть, щоб зареєструватися. Поточні RLS-правила приймають лише реєстрації, пов'язані з вашим акаунтом.",
       alreadyRegistered: "Ви вже зареєстровані на цю подію.",
       registrationReceived: "Реєстрацію отримано.",
       soldOut: "Подія вже sold out.",
@@ -112,7 +112,7 @@ export const dictionaries = {
     },
     superadmin: {
       title: "Суперадмін",
-      copy: "Найвищий рівень керування ролями, аудитом і майбутніми платформними діями.",
+      copy: "Найвищий рівень керування ролями, майбутнім аудитом і платформними діями.",
       roleArchitecture: "Архітектура ролей",
       platformControl: "Контроль платформи",
       queue: "Черга суперадміна",
@@ -124,7 +124,7 @@ export const dictionaries = {
       denied: "Доступ обмежено",
       verifying: "Перевіряємо роль",
       restricted: "Закрита поверхня",
-      checkingCopy: "Перевіряємо ваш Supabase профіль перед відкриттям панелі.",
+      checkingCopy: "Перевіряємо ваш Supabase-профіль перед відкриттям панелі.",
       deniedCopy: "Поточна роль профілю не має доступу до цієї панелі. Ви повертаєтесь до публічної частини.",
       returnHome: "На головну"
     }

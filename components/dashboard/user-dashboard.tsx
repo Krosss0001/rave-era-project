@@ -6,6 +6,7 @@ import { getCurrentRole, type AuthProfile } from "@/lib/auth/get-role";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
+import { TicketQr } from "@/components/shared/ticket-qr";
 
 type RegistrationRow = Database["public"]["Tables"]["registrations"]["Row"];
 type TicketRow = Database["public"]["Tables"]["tickets"]["Row"];
@@ -33,6 +34,7 @@ export function UserDashboard() {
   const [tickets, setTickets] = useState<TicketRow[]>([]);
   const [ticketEvents, setTicketEvents] = useState<Record<string, EventSummary>>({});
   const [referrals, setReferrals] = useState<ReferralRow[]>([]);
+  const [visibleQrTicketId, setVisibleQrTicketId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -64,7 +66,7 @@ export function UserDashboard() {
           .order("created_at", { ascending: false }),
         supabase
           .from("tickets")
-          .select("id,registration_id,event_id,user_id,ticket_code,qr_payload,status,payment_status,checked_in,created_at")
+          .select("id,registration_id,event_id,user_id,ticket_code,qr_payload,status,payment_status,checked_in,checked_in_at,checked_in_by,created_at")
           .eq("user_id", roleState.user.id)
           .order("created_at", { ascending: false }),
         supabase
@@ -208,6 +210,8 @@ export function UserDashboard() {
             {tickets.length > 0 ? (
               tickets.map((ticket) => {
                 const event = ticketEvents[ticket.event_id];
+                const isQrVisible = visibleQrTicketId === ticket.id;
+                const isQrLocked = ticket.status !== "active" || ticket.payment_status !== "paid";
 
                 return (
                 <div key={ticket.id} className="border border-white/[0.05] bg-[#030303] p-4">
@@ -243,6 +247,25 @@ export function UserDashboard() {
                       </span>
                     </div>
                   </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setVisibleQrTicketId((current) => (current === ticket.id ? null : ticket.id))}
+                      className="focus-ring min-h-11 border border-primary/35 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-primary hover:text-black active:scale-[0.98]"
+                      aria-expanded={isQrVisible}
+                    >
+                      {isQrVisible ? "Hide QR" : "Show QR"}
+                    </button>
+                  </div>
+                  {isQrVisible ? (
+                    <div className="mt-4">
+                      <TicketQr
+                        ticket={ticket}
+                        locked={isQrLocked}
+                        lockedMessage="QR unlocks when this ticket is active and paid."
+                      />
+                    </div>
+                  ) : null}
                 </div>
                 );
               })

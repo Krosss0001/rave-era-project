@@ -9,6 +9,7 @@ import { isFreePrice } from "@/lib/format";
 import { buildQrPayload, generateTicketCode } from "@/lib/tickets";
 import { buildTelegramUrl } from "@/lib/telegram";
 import type { Database } from "@/lib/supabase/types";
+import { TicketQr } from "@/components/shared/ticket-qr";
 
 type EventRegistrationFormProps = {
   eventId: string;
@@ -18,7 +19,7 @@ type EventRegistrationFormProps = {
 };
 
 type RegistrationRow = Pick<Database["public"]["Tables"]["registrations"]["Row"], "id" | "event_id" | "user_id" | "status">;
-type TicketPreview = Pick<Database["public"]["Tables"]["tickets"]["Row"], "ticket_code" | "status" | "payment_status">;
+type TicketPreview = Pick<Database["public"]["Tables"]["tickets"]["Row"], "ticket_code" | "qr_payload" | "status" | "payment_status">;
 
 type FormState = {
   name: string;
@@ -170,7 +171,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
 
     const { data, error } = await supabase
       .from("tickets")
-      .select("ticket_code,status,payment_status")
+      .select("ticket_code,qr_payload,status,payment_status")
       .eq("registration_id", registrationId)
       .maybeSingle();
 
@@ -194,7 +195,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           .from("tickets")
           .update({ status: "active", payment_status: "paid" })
           .eq("registration_id", registration.id)
-          .select("ticket_code,status,payment_status")
+          .select("ticket_code,qr_payload,status,payment_status")
           .single();
 
         if (!error && data) {
@@ -220,7 +221,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           status: isFreeEvent ? "active" : "reserved",
           payment_status: isFreeEvent ? "paid" : "pending"
         })
-        .select("ticket_code,status,payment_status")
+        .select("ticket_code,qr_payload,status,payment_status")
         .single();
 
       if (!error && data) {
@@ -379,25 +380,32 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           </div>
           <div className="mt-4 border border-white/[0.05] bg-black px-3 py-3">
             <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">{dictionary.events.ticketCode}</p>
-            <p className="mt-1 font-mono text-xl font-semibold text-white">{ticket.ticket_code}</p>
+            <p className="mt-1 break-words font-mono text-xl font-semibold text-white">{ticket.ticket_code}</p>
             <div className="mt-3 flex flex-wrap gap-2 font-mono text-[9px] uppercase tracking-[0.16em]">
               <span className="border border-[#00FF88]/25 bg-[#00FF88]/[0.035] px-2 py-1 text-[#00FF88]">{ticket.status}</span>
               <span className="border border-white/[0.06] bg-[#020202] px-2 py-1 text-white/45">{dictionary.events.payment} {ticket.payment_status}</span>
             </div>
+          </div>
+          <div className="mt-4">
+            <TicketQr
+              ticket={ticket}
+              locked={ticket.status !== "active" || ticket.payment_status !== "paid"}
+              lockedMessage="QR unlocks when this ticket is active and paid."
+            />
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             <a
               href={telegramUrl}
               target="_blank"
               rel="noreferrer"
-              className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 border border-[#00FF88] px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-[#00FF88] motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-[#00FF88] hover:text-black active:scale-[0.98]"
+              className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 border border-[#00FF88] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.16em] text-[#00FF88] motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-[#00FF88] hover:text-black active:scale-[0.98] sm:tracking-widest"
             >
-              {dictionary.events.continueTelegram}
+              <span className="min-w-0">{dictionary.events.continueTelegram}</span>
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
             </a>
             <Link
               href="/dashboard"
-              className="focus-ring inline-flex min-h-11 items-center justify-center border border-white/[0.08] px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-white/55 motion-safe:transition-[border-color,color,transform] motion-safe:duration-500 hover:border-[#00FF88]/30 hover:text-[#00FF88] active:scale-[0.98]"
+              className="focus-ring inline-flex min-h-11 items-center justify-center border border-white/[0.08] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.16em] text-white/55 motion-safe:transition-[border-color,color,transform] motion-safe:duration-500 hover:border-[#00FF88]/30 hover:text-[#00FF88] active:scale-[0.98] sm:tracking-widest"
             >
               {dictionary.nav.dashboard}
             </Link>
@@ -407,7 +415,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="focus-ring mt-5 min-h-11 w-full bg-[#00FF88] px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-black motion-safe:transition-[filter,transform,box-shadow] motion-safe:duration-500 motion-safe:ease-out hover:brightness-110 hover:shadow-[0_0_34px_rgba(0,255,136,0.16)] active:scale-[0.98]"
+          className="focus-ring mt-5 min-h-11 w-full bg-[#00FF88] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.16em] text-black motion-safe:transition-[filter,transform,box-shadow] motion-safe:duration-500 motion-safe:ease-out hover:brightness-110 hover:shadow-[0_0_34px_rgba(0,255,136,0.16)] active:scale-[0.98] sm:tracking-widest"
         >
           {dictionary.nav.registration}
         </button>
@@ -468,7 +476,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           <button
             type="submit"
             disabled={loading}
-            className="focus-ring min-h-11 bg-[#00FF88] px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-500 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+            className="focus-ring min-h-11 bg-[#00FF88] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.16em] text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-500 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 sm:tracking-widest"
           >
             {loading ? dictionary.events.submitting : dictionary.events.submitRegistration}
           </button>

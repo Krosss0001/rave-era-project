@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Send, UserPlus } from "lucide-react";
+import { ArrowUpRight, Send } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { buildTelegramUrl } from "@/lib/telegram";
 
@@ -29,21 +29,14 @@ export function TelegramCta({ eventSlug, referralCode }: TelegramCtaProps) {
           </p>
         </div>
       </div>
-      <div className="mt-5 grid gap-2 border-y border-white/[0.05] py-3">
-        <div className="flex min-h-12 items-center justify-between gap-3 border border-white/[0.05] bg-[#030303] px-4 text-sm text-white/60">
-          <span className="inline-flex items-center gap-2">
-            <UserPlus className="h-4 w-4 text-white/35" aria-hidden="true" />
-            {dictionary.events.registerWeb}
-          </span>
-          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/30">{dictionary.common.available}</span>
-        </div>
+      <div className="mt-5 border-t border-white/[0.05] pt-4">
         <Link
           href={telegramUrl}
           target="_blank"
           rel="noreferrer"
-          className="focus-ring inline-flex min-h-12 items-center justify-between gap-3 border border-[#00FF88] bg-[#00FF88] px-4 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-black motion-safe:transition-[transform,filter,box-shadow] motion-safe:duration-500 motion-safe:ease-out hover:brightness-110 hover:shadow-[0_0_34px_rgba(0,255,136,0.16)] active:scale-[0.98] motion-safe:hover:-translate-y-0.5"
+          className="focus-ring inline-flex min-h-12 w-full items-center justify-between gap-3 border border-[#00FF88] bg-[#00FF88] px-4 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-black motion-safe:transition-[transform,filter,box-shadow] motion-safe:duration-500 motion-safe:ease-out hover:brightness-110 hover:shadow-[0_0_34px_rgba(0,255,136,0.16)] active:scale-[0.98] motion-safe:hover:-translate-y-0.5 sm:tracking-widest"
         >
-          {dictionary.events.continueTelegram}
+          <span className="min-w-0 text-left leading-5">{dictionary.events.continueTelegram}</span>
           <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
         </Link>
       </div>

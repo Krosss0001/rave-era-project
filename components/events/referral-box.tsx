@@ -69,12 +69,12 @@ export function ReferralBox({ path, activeReferral }: ReferralBoxProps) {
       <button
         type="button"
         onClick={copyReferral}
-        className={`focus-ring mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 border border-[#00FF88] px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-[#00FF88] motion-safe:transition-[transform,color,background-color,box-shadow] motion-safe:duration-500 motion-safe:ease-out hover:bg-[#00FF88] hover:text-black hover:shadow-[0_0_40px_rgba(0,255,136,0.12)] active:scale-[0.98] motion-safe:hover:-translate-y-0.5 ${
+        className={`focus-ring mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 border border-[#00FF88] px-4 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.16em] text-[#00FF88] motion-safe:transition-[transform,color,background-color,box-shadow] motion-safe:duration-500 motion-safe:ease-out hover:bg-[#00FF88] hover:text-black hover:shadow-[0_0_40px_rgba(0,255,136,0.12)] active:scale-[0.98] motion-safe:hover:-translate-y-0.5 sm:tracking-widest ${
           copied ? "bg-[#00FF88] text-black shadow-[0_0_34px_rgba(0,255,136,0.16)] motion-safe:animate-[copyFlash_420ms_cubic-bezier(0.16,1,0.3,1)_both]" : ""
         }`}
       >
         <Copy className="h-4 w-4" aria-hidden="true" />
-        {copied ? (language === "ua" ? "Скопійовано" : "Copied") : (language === "ua" ? "Копіювати реферал" : "Copy referral link")}
+        <span className="min-w-0">{copied ? (language === "ua" ? "Скопійовано" : "Copied") : (language === "ua" ? "Копіювати реферал" : "Copy referral link")}</span>
       </button>
       <style
         dangerouslySetInnerHTML={{
