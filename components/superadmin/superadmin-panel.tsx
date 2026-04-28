@@ -5,6 +5,7 @@ import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { BroadcastAudience, Database } from "@/lib/supabase/types";
 import { TelegramBroadcastPanel } from "@/components/shared/telegram-broadcast-panel";
+import { StatusBadge } from "@/components/shared/status-badge";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type EventOption = Pick<Database["public"]["Tables"]["events"]["Row"], "id" | "title" | "slug">;
@@ -85,32 +86,34 @@ export function SuperadminPanel() {
       <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-10">
         <section className="border-y border-white/[0.05] bg-[#020202] py-8">
           <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.superadmin.roleArchitecture}</p>
-        <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">
-          {dictionary.superadmin.platformControl}
-        </h2>
-        <p className="mt-5 max-w-xl text-sm leading-6 text-white/45">
-          {dictionary.superadmin.roleMeaning}
-        </p>
-        <div className="mt-8 grid gap-3">
-          {["user", "organizer", "admin", "superadmin"].map((role) => (
-            <div key={role} className="flex min-h-12 items-center justify-between border border-white/[0.05] bg-[#030303] px-4">
-              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">{role}</span>
-              <span className="font-mono text-2xl font-semibold tabular-nums text-white">{loading ? "..." : roleCounts[role] ?? 0}</span>
-            </div>
-          ))}
-        </div>
+          <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">
+            {dictionary.superadmin.platformControl}
+          </h2>
+          <p className="mt-5 max-w-xl text-sm leading-6 text-white/45">
+            {dictionary.superadmin.roleMeaning}
+          </p>
+          <div className="mt-8 grid gap-3">
+            {["user", "organizer", "admin", "superadmin"].map((role) => (
+              <div key={role} className="flex min-h-14 items-center justify-between gap-4 border border-white/[0.05] bg-[#030303] px-4 motion-safe:transition-colors motion-safe:duration-300 hover:bg-primary/[0.018]">
+                <StatusBadge label={role} variant={role === "user" ? "pending" : "success"} size="sm" />
+                {loading ? (
+                  <span className="h-8 w-12 bg-white/[0.04] motion-safe:animate-pulse" aria-label="Loading role count" />
+                ) : (
+                  <span className="font-mono text-2xl font-semibold tabular-nums text-white">{roleCounts[role] ?? 0}</span>
+                )}
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="border-y border-white/[0.05] bg-[#020202] py-8">
-        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-          <div>
-            <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">Prepared actions</p>
-            <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">{dictionary.superadmin.queue}</h2>
+          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+            <div>
+              <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">Prepared actions</p>
+              <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">{dictionary.superadmin.queue}</h2>
+            </div>
+            <StatusBadge label={dictionary.superadmin.serverActionsLater} variant="success" size="sm" />
           </div>
-          <span className="border border-primary/25 bg-primary/[0.03] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-primary sm:tracking-[0.18em]">
-            {dictionary.superadmin.serverActionsLater}
-          </span>
-        </div>
         {message ? (
           <p className="mt-6 border border-white/[0.05] bg-[#030303] px-4 py-3 text-sm leading-6 text-white/55" aria-live="polite">
             {message}

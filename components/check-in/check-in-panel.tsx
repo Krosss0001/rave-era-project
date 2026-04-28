@@ -5,6 +5,7 @@ import { Camera, CheckCircle2, Search, TriangleAlert } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 import { parseTicketQrInput } from "@/lib/qr";
+import { StatusBadge, getStatusBadgeVariant } from "@/components/shared/status-badge";
 
 type TicketRow = Pick<
   Database["public"]["Tables"]["tickets"]["Row"],
@@ -22,18 +23,6 @@ type NativeBarcodeDetector = {
 };
 
 type NativeBarcodeDetectorConstructor = new (options?: { formats?: string[] }) => NativeBarcodeDetector;
-
-function getBadgeClass(value: string | boolean | null) {
-  if (value === true || value === "active" || value === "paid") {
-    return "border-primary/30 bg-primary/[0.04] text-primary";
-  }
-
-  if (value === "used" || value === false) {
-    return "border-white/[0.08] bg-white/[0.025] text-white/60";
-  }
-
-  return "border-red-400/25 bg-red-400/[0.035] text-red-100";
-}
 
 function mapCheckInResult(result: CheckInResult): ValidatedTicket {
   return {
@@ -57,7 +46,9 @@ function getBarcodeDetector() {
 }
 
 function logCheckInIssue(message: string, details: Record<string, unknown> = {}) {
-  console.warn(message, details);
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(message, details);
+  }
 }
 
 function getCheckInErrorMessage(message: string) {
@@ -376,8 +367,15 @@ export function CheckInPanel() {
   return (
     <section className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1fr)] lg:gap-8">
       <form onSubmit={validateTicket} className="border-y border-white/[0.05] bg-[#020202] py-8">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.22em] text-primary">Ticket lookup</p>
+            <p className="mt-2 text-sm leading-6 text-white/48">Scan a QR code or enter a ticket code manually.</p>
+          </div>
+          <StatusBadge label={scannerStatus} variant={scannerStatus === "error" ? "danger" : scannerStatus === "scanning" ? "success" : "neutral"} size="sm" />
+        </div>
         <label className="block">
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Код квитка</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Ticket code</span>
           <input
             type="text"
             value={ticketCode}
@@ -400,7 +398,7 @@ export function CheckInPanel() {
             className="focus-ring inline-flex min-h-11 w-full items-center justify-center gap-2 border border-primary/35 px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-primary hover:text-black active:scale-[0.98]"
           >
             <Camera className="h-4 w-4" aria-hidden="true" />
-            {scannerOpen ? "Зупинити" : "Сканувати QR"}
+            {scannerOpen ? "Stop scan" : "Scan QR"}
           </button>
           <button
             type="submit"
@@ -409,7 +407,7 @@ export function CheckInPanel() {
             className="focus-ring inline-flex min-h-11 w-full items-center justify-center gap-2 bg-primary px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-500 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
           >
             <Search className="h-4 w-4" aria-hidden="true" />
-            {loading ? "Перевірка" : "Перевірити"}
+            {loading ? "Checking" : "Validate"}
           </button>
         </div>
 
@@ -420,7 +418,7 @@ export function CheckInPanel() {
             </div>
             <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] px-3 py-2">
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">
-                {scannerStatus === "starting" ? "Запуск камери" : "Сканування"}
+                {scannerStatus === "starting" ? "Starting camera" : "Scanning"}
               </p>
               <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_14px_rgba(0,255,136,0.55)] motion-safe:animate-pulse" aria-hidden="true" />
             </div>
@@ -472,16 +470,14 @@ export function CheckInPanel() {
             </div>
             <div className="grid gap-3 min-[380px]:grid-cols-2">
               {[
-                ["Код квитка", ticket.ticket_code],
-                ["Статус", ticket.status],
-                ["Оплата", ticket.payment_status],
-                ["Вхід", ticket.checked_in ? "так" : "ні"]
-              ].map(([label, value]) => (
-                <div key={label} className="border border-white/[0.05] bg-[#030303] p-4">
+                ["Ticket code", ticket.ticket_code, ticket.ticket_code],
+                ["Ticket status", ticket.status, ticket.status],
+                ["Payment", ticket.payment_status, ticket.payment_status],
+                ["Door entry", ticket.checked_in ? "checked in" : "not checked in", ticket.checked_in]
+              ].map(([label, value, badgeValue]) => (
+                <div key={String(label)} className="border border-white/[0.05] bg-[#030303] p-4">
                   <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">{label}</p>
-                  <span className={`mt-2 inline-flex border px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] ${getBadgeClass(value === "так" ? true : value === "ні" ? false : value)}`}>
-                    {value}
-                  </span>
+                  <StatusBadge label={String(value)} variant={getStatusBadgeVariant(badgeValue)} size="sm" className="mt-2" />
                 </div>
               ))}
             </div>
@@ -492,13 +488,13 @@ export function CheckInPanel() {
               aria-busy={checkingIn}
               className="focus-ring min-h-11 bg-primary px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-500 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
             >
-              {checkingIn ? "Підтвердження" : "Підтвердити вхід"}
+              {checkingIn ? "Confirming" : "Confirm check-in"}
             </button>
           </div>
         ) : (
           <div className="border border-white/[0.05] bg-[#030303] p-6">
-            <p className="text-xl font-black uppercase text-white">Квиток не обрано</p>
-            <p className="mt-3 text-sm leading-6 text-white/45">Перевірте код квитка, щоб побачити подію та статус входу.</p>
+            <p className="text-xl font-black uppercase text-white">No ticket selected</p>
+            <p className="mt-3 text-sm leading-6 text-white/45">Validate a ticket code to see the event, payment state, and door status.</p>
           </div>
         )}
       </div>

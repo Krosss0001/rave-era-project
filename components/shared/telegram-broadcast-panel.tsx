@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import { Send, UsersRound } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { BroadcastAudience } from "@/lib/supabase/types";
+import { StatusBadge } from "@/components/shared/status-badge";
 
 type BroadcastEventOption = {
   id: string;
@@ -55,12 +57,12 @@ function formatPreviewMessage(input: {
   message: string;
   event: BroadcastEventOption | null;
 }) {
-  const header = "Повідомлення від Rave'era Group";
-  const footer = "/stop щоб відписатися";
+  const header = "Message from Rave'era Group";
+  const footer = "/stop to unsubscribe";
   const eventUrl = input.event?.slug ? `${getAppUrl()}/events/${input.event.slug}` : `${getAppUrl()}/events`;
   const eventLines = input.event ? [input.event.title, eventUrl] : [eventUrl];
 
-  return [header, "", ...eventLines, "", input.message || "Попередній перегляд повідомлення", "", footer].join("\n");
+  return [header, "", ...eventLines, "", input.message || "Message preview", "", footer].join("\n");
 }
 
 export function TelegramBroadcastPanel({
@@ -87,7 +89,7 @@ export function TelegramBroadcastPanel({
 
   async function callBroadcastApi<T>(path: string): Promise<T> {
     if (!supabase) {
-      throw new Error("Supabase не налаштовано.");
+      throw new Error("Supabase is not configured.");
     }
 
     const {
@@ -95,7 +97,7 @@ export function TelegramBroadcastPanel({
     } = await supabase.auth.getSession();
 
     if (!session?.access_token) {
-      throw new Error("Увійдіть, щоб користуватися розсилками.");
+      throw new Error("Sign in to use broadcasts.");
     }
 
     const response = await fetch(path, {
@@ -113,7 +115,7 @@ export function TelegramBroadcastPanel({
     const result = (await response.json()) as T & { error?: string };
 
     if (!response.ok) {
-      throw new Error(result.error || "Запит розсилки не виконано.");
+      throw new Error(result.error || "Broadcast request failed.");
     }
 
     return result;
@@ -121,11 +123,11 @@ export function TelegramBroadcastPanel({
 
   function validateForm() {
     if (!message.trim()) {
-      throw new Error("Вкажіть повідомлення.");
+      throw new Error("Enter a message.");
     }
 
     if (eventRequired && !eventId) {
-      throw new Error("Оберіть подію.");
+      throw new Error("Select an event.");
     }
   }
 
@@ -140,7 +142,7 @@ export function TelegramBroadcastPanel({
       setPreview(await callBroadcastApi<PreviewResponse>("/api/telegram/broadcast/preview"));
     } catch (requestError) {
       setPreview(null);
-      setError(requestError instanceof Error ? requestError.message : "Не вдалося підготувати перегляд.");
+      setError(requestError instanceof Error ? requestError.message : "Preview could not be prepared.");
     } finally {
       setBusy(null);
     }
@@ -155,7 +157,7 @@ export function TelegramBroadcastPanel({
       setSendResult(await callBroadcastApi<SendResponse>("/api/telegram/broadcast/send"));
     } catch (requestError) {
       setSendResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Не вдалося надіслати розсилку.");
+      setError(requestError instanceof Error ? requestError.message : "Broadcast could not be sent.");
     } finally {
       setBusy(null);
     }
@@ -169,7 +171,10 @@ export function TelegramBroadcastPanel({
           <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">{title}</h2>
           <p className="mt-5 max-w-xl text-sm leading-6 text-white/50">{description}</p>
           <div className="mt-8 border border-white/[0.06] bg-[#030303] p-4">
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">Перегляд повідомлення</p>
+            <p className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/42">
+              <Send className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+              Message preview
+            </p>
             <pre className="mt-4 whitespace-pre-wrap break-words font-sans text-sm leading-6 text-white/70">{previewMessage}</pre>
           </div>
         </div>
@@ -177,11 +182,11 @@ export function TelegramBroadcastPanel({
         <form onSubmit={previewAudience} className="min-w-0 border border-white/[0.06] bg-[#030303] p-4 sm:p-5">
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">Аудиторія</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">Audience</span>
               <select
                 value={audience}
                 onChange={(event) => setAudience(event.target.value as BroadcastAudience)}
-                className="mt-2 min-h-11 w-full border border-white/[0.08] bg-[#020202] px-3 font-mono text-xs uppercase text-white outline-none motion-safe:transition-colors motion-safe:duration-300 focus:border-primary"
+                className="mt-2 min-h-11 w-full border border-white/[0.08] bg-[#020202] px-3 font-mono text-xs uppercase text-white outline-none motion-safe:transition-colors motion-safe:duration-300 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 {audienceOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -192,13 +197,13 @@ export function TelegramBroadcastPanel({
             </label>
             {eventRequired ? (
               <label className="block md:col-span-2">
-                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">Подія</span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">Event</span>
                 <select
                   value={eventId}
                   onChange={(event) => setEventId(event.target.value)}
-                  className="mt-2 min-h-11 w-full border border-white/[0.08] bg-[#020202] px-3 text-sm text-white outline-none motion-safe:transition-colors motion-safe:duration-300 focus:border-primary"
+                  className="mt-2 min-h-11 w-full border border-white/[0.08] bg-[#020202] px-3 text-sm text-white outline-none motion-safe:transition-colors motion-safe:duration-300 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
-                  {events.length === 0 ? <option value="">Немає доступних подій</option> : null}
+                  {events.length === 0 ? <option value="">No available events</option> : null}
                   {events.map((event) => (
                     <option key={event.id} value={event.id}>
                       {event.title}
@@ -209,13 +214,13 @@ export function TelegramBroadcastPanel({
             ) : null}
 
             <label className="block md:col-span-2">
-              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">Повідомлення</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">Message</span>
               <textarea
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
                 rows={6}
                 required
-                className="mt-2 w-full resize-y border border-white/[0.08] bg-[#020202] px-3 py-3 text-sm leading-6 text-white outline-none motion-safe:transition-colors motion-safe:duration-300 focus:border-primary"
+                className="mt-2 w-full resize-y border border-white/[0.08] bg-[#020202] px-3 py-3 text-sm leading-6 text-white outline-none motion-safe:transition-colors motion-safe:duration-300 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               />
             </label>
           </div>
@@ -226,7 +231,7 @@ export function TelegramBroadcastPanel({
               disabled={busy !== null}
               className="focus-ring min-h-11 border border-primary px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-widest text-primary motion-safe:transition-[background-color,color,transform,opacity] motion-safe:duration-300 hover:bg-primary hover:text-black active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
             >
-              {busy === "preview" ? "Готуємо" : "Перегляд"}
+              {busy === "preview" ? "Preparing" : "Preview audience"}
             </button>
             <button
               type="button"
@@ -234,7 +239,7 @@ export function TelegramBroadcastPanel({
               disabled={busy !== null}
               className="focus-ring min-h-11 bg-primary px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-widest text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-300 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
             >
-              {busy === "send" ? "Надсилання" : "Надіслати"}
+              {busy === "send" ? "Sending" : "Send broadcast"}
             </button>
           </div>
 
@@ -247,20 +252,23 @@ export function TelegramBroadcastPanel({
           {preview?.ok ? (
             <div className="mt-5 grid gap-3 border border-white/[0.06] bg-[#020202] p-4" aria-live="polite">
               <div className="flex items-center justify-between gap-4">
-                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">{preview.audienceLabel}</p>
+                <p className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/42">
+                  <UsersRound className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                  {preview.audienceLabel}
+                </p>
                 <p className="font-mono text-2xl font-semibold tabular-nums text-white">{preview.estimatedRecipientCount ?? 0}</p>
               </div>
               <p className="text-xs leading-5 text-white/45">
-                Приклад: {(preview.sampleRecipients ?? []).map((recipient) => recipient.chat_id).join(", ") || "Немає отримувачів"}
+                Sample: {(preview.sampleRecipients ?? []).map((recipient) => recipient.chat_id).join(", ") || "No recipients yet"}
               </p>
             </div>
           ) : null}
 
           {sendResult?.ok ? (
             <div className="mt-5 grid gap-3 border border-primary/25 bg-primary/[0.035] p-4" aria-live="polite">
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">Результат надсилання</p>
+              <StatusBadge label="Send result" variant="success" size="sm" className="justify-self-start" />
               <p className="text-sm leading-6 text-white/70">
-                Надіслано {sendResult.sent ?? 0} з {sendResult.total ?? 0}. Помилок: {sendResult.failed ?? 0}.
+                Sent {sendResult.sent ?? 0} of {sendResult.total ?? 0}. Failed: {sendResult.failed ?? 0}.
               </p>
               <p className="break-all font-mono text-[10px] uppercase tracking-[0.12em] text-white/35">
                 {sendResult.broadcastId}

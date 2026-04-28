@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, CircleDot, RadioTower, WalletCards } from "lucide-react";
 import { metrics, referrals, registrations } from "@/data/dashboard";
 import { useLanguage } from "@/lib/i18n/use-language";
+import { StatusBadge, getStatusBadgeVariant } from "@/components/shared/status-badge";
 
 function CountUpValue({ value }: { value: string }) {
   const target = useMemo(() => Number(value.replace(/[^0-9.]/g, "")) || 0, [value]);
@@ -98,10 +99,7 @@ export function SystemStatusRow() {
       {items.map(([label, status]) => (
         <div key={label} className="flex min-h-12 min-w-0 items-center justify-between gap-3 border border-white/[0.05] bg-[#030303] px-4 font-mono text-[10px] uppercase tracking-[0.14em] text-white/[0.42] sm:tracking-[0.16em]">
           <span>{label}</span>
-          <span className={status === "standby" ? "text-white/35" : "text-primary"}>
-            <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-current shadow-[0_0_10px_currentColor] motion-safe:animate-pulse" aria-hidden="true" />
-            {status}
-          </span>
+          <StatusBadge label={status} variant={getStatusBadgeVariant(status)} size="sm" />
         </div>
       ))}
     </div>
@@ -119,7 +117,7 @@ export function RegistrationTable() {
             {language === "ua" ? "Операції з гостями" : "Attendee operations"}
           </h2>
         </div>
-        <span className="border border-white/[0.05] bg-[#030303] px-3 py-1.5 font-mono text-xs uppercase tracking-[0.18em] text-white/[0.35]">
+        <span className="border border-white/[0.05] bg-[#030303] px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-white/[0.45]">
           {language === "ua" ? "Demo дані" : "Demo data"}
         </span>
       </div>
@@ -146,9 +144,7 @@ export function RegistrationTable() {
                 <td className="py-4 text-white/[0.42]">{registration.event}</td>
                 <td className="py-4 font-mono text-white/[0.42]">{registration.source}</td>
                 <td className="py-4">
-                  <span className="border border-primary/25 bg-primary/[0.03] px-2.5 py-1 font-mono text-xs font-semibold uppercase tracking-[0.14em] text-primary">
-                    {registration.status}
-                  </span>
+                  <StatusBadge label={registration.status} variant={getStatusBadgeVariant(registration.status)} size="sm" />
                 </td>
               </tr>
             ))}

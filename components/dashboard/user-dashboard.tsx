@@ -7,23 +7,12 @@ import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 import { TicketQr } from "@/components/shared/ticket-qr";
+import { StatusBadge, getStatusBadgeVariant } from "@/components/shared/status-badge";
 
 type RegistrationRow = Database["public"]["Tables"]["registrations"]["Row"];
 type TicketRow = Database["public"]["Tables"]["tickets"]["Row"];
 type ReferralRow = Database["public"]["Tables"]["referrals"]["Row"];
 type EventSummary = Pick<Database["public"]["Tables"]["events"]["Row"], "id" | "slug" | "title" | "date" | "city">;
-
-function getBadgeClass(value: string) {
-  if (value === "active" || value === "paid" || value === "confirmed") {
-    return "border-[#00FF88]/30 bg-[#00FF88]/[0.04] text-[#00FF88]";
-  }
-
-  if (value === "failed" || value === "cancelled") {
-    return "border-red-400/25 bg-red-400/[0.035] text-red-100";
-  }
-
-  return "border-white/[0.08] bg-white/[0.025] text-white/60";
-}
 
 export function UserDashboard() {
   const { dictionary, language } = useLanguage();
@@ -131,7 +120,12 @@ export function UserDashboard() {
     return (
       <div className="grid gap-4 md:grid-cols-3">
         {[0, 1, 2].map((item) => (
-          <div key={item} className="h-32 border border-white/[0.05] bg-[#020202] motion-safe:animate-pulse" />
+          <div key={item} className="border border-white/[0.05] bg-[#020202] p-4">
+            <div className="h-3 w-24 bg-primary/15 motion-safe:animate-pulse" />
+            <div className="mt-5 h-8 w-3/4 bg-white/[0.04] motion-safe:animate-pulse" />
+            <div className="mt-4 h-4 w-full bg-white/[0.035] motion-safe:animate-pulse" />
+            <div className="mt-2 h-4 w-2/3 bg-white/[0.035] motion-safe:animate-pulse" />
+          </div>
         ))}
       </div>
     );
@@ -172,6 +166,10 @@ export function UserDashboard() {
         ) : null}
 
         <div className="mt-10 border-t border-white/[0.05]">
+          <div className="flex items-center justify-between gap-3 py-4">
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">{dictionary.dashboard.registeredEvents}</p>
+            <StatusBadge label={`${registrations.length}`} variant={registrations.length > 0 ? "success" : "neutral"} size="sm" />
+          </div>
           {registrations.length > 0 ? (
             registrations.map((registration) => (
               <div key={registration.id} className="grid gap-3 border-b border-white/[0.05] py-5 md:grid-cols-[minmax(0,1fr)_160px] md:items-center">
@@ -181,20 +179,18 @@ export function UserDashboard() {
                   </p>
                   <p className="mt-2 text-xl font-black uppercase text-white">{registration.name || dictionary.events.registration}</p>
                 </div>
-                <span className={`border px-3 py-2 text-center font-mono text-[10px] uppercase tracking-[0.16em] ${getBadgeClass(registration.status)}`}>
-                  {registration.status}
-                </span>
+                <StatusBadge label={registration.status} variant={getStatusBadgeVariant(registration.status)} size="sm" />
               </div>
             ))
           ) : (
-            <div className="py-10">
+            <div className="border border-white/[0.05] bg-[#030303] p-6">
               <p className="text-xl font-black uppercase text-white">{dictionary.dashboard.noRegistrationsTitle}</p>
               <p className="mt-3 max-w-lg text-sm leading-6 text-white/45">
                 {dictionary.dashboard.noRegistrationsCopy}
               </p>
               <Link
                 href="/events"
-                className="focus-ring mt-5 inline-flex min-h-11 items-center border border-primary px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-primary hover:text-black active:scale-[0.98]"
+                className="focus-ring mt-5 inline-flex min-h-11 items-center border border-primary/45 bg-primary/[0.025] px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-300 hover:bg-primary hover:text-black active:scale-[0.98]"
               >
                 {dictionary.common.openEvents}
               </Link>
@@ -231,9 +227,7 @@ export function UserDashboard() {
                         {event?.date ? new Date(event.date).toLocaleDateString(language === "ua" ? "uk-UA" : "en-US", { month: "short", day: "numeric", year: "numeric" }) : language === "ua" ? "Дата уточнюється" : "Date TBA"} / {event?.city ?? (language === "ua" ? "Місто уточнюється" : "City TBA")}
                       </p>
                     </div>
-                    <span className={`shrink-0 border px-2 py-1 font-mono text-[9px] uppercase tracking-[0.14em] ${getBadgeClass(ticket.status)}`}>
-                      {ticket.status}
-                    </span>
+                    <StatusBadge label={ticket.status} variant={getStatusBadgeVariant(ticket.status)} size="sm" className="shrink-0" />
                   </div>
                   <div className="mt-4 grid gap-3 min-[380px]:grid-cols-2">
                     <div>
@@ -242,9 +236,7 @@ export function UserDashboard() {
                     </div>
                     <div>
                       <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">{language === "ua" ? "Оплата" : "Payment"}</p>
-                      <span className={`mt-1 inline-flex border px-2 py-1 font-mono text-[9px] uppercase tracking-[0.14em] ${getBadgeClass(ticket.payment_status)}`}>
-                        {ticket.payment_status}
-                      </span>
+                      <StatusBadge label={ticket.payment_status} variant={getStatusBadgeVariant(ticket.payment_status)} size="sm" className="mt-1" />
                     </div>
                   </div>
                   <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -270,7 +262,15 @@ export function UserDashboard() {
                 );
               })
             ) : (
-              <p className="text-sm leading-6 text-white/45">{dictionary.dashboard.noTickets}</p>
+              <div className="border border-white/[0.05] bg-[#030303] p-5">
+                <p className="text-sm leading-6 text-white/48">{dictionary.dashboard.noTickets}</p>
+                <Link
+                  href="/events"
+                  className="focus-ring mt-4 inline-flex min-h-10 items-center border border-white/[0.08] px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white/58 motion-safe:transition-[border-color,color,background-color] motion-safe:duration-300 hover:border-primary/35 hover:bg-primary/[0.035] hover:text-primary"
+                >
+                  {dictionary.common.openEvents}
+                </Link>
+              </div>
             )}
           </div>
         </section>

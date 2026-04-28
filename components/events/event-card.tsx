@@ -5,6 +5,7 @@ import { SafeEventImage } from "@/components/events/safe-event-image";
 import { LocalizedEventDate } from "@/components/shared/localized-event-date";
 import { LocalizedPrice } from "@/components/shared/localized-price";
 import { LocalizedText } from "@/components/shared/localized-text";
+import { StatusBadge } from "@/components/shared/status-badge";
 
 type EventCardProps = {
   event: RaveeraEvent;
@@ -53,7 +54,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
           sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/10" />
-        <p className={`absolute left-4 top-4 border bg-[#020202]/95 px-3 py-1 font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-[#00FF88] ${
+        <p className={`absolute left-4 top-4 border bg-[#020202]/95 px-3 py-1 font-mono text-[9px] font-semibold uppercase tracking-[0.18em] text-[#00FF88] ${
           urgent ? "border-[#00FF88]/40 shadow-[0_0_24px_rgba(0,255,136,0.12)] motion-safe:animate-[signalPulse_1.8s_ease-out_infinite]" : "border-white/[0.05]"
         }`}>
           <LocalizedText ua={statusLabel.ua} en={statusLabel.en} />
@@ -61,9 +62,12 @@ export function EventCard({ event, featured = false }: EventCardProps) {
       </div>
       <div className={`flex flex-col justify-between border-t border-white/[0.05] p-5 ${featured ? "lg:border-l lg:border-t-0 lg:p-7" : ""}`}>
         <div>
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">
-            <LocalizedEventDate date={event.date} /> / {event.city} / <span className="text-[#00FF88]"><LocalizedText ua={statusLabel.ua} en={statusLabel.en} /></span>
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">
+              <LocalizedEventDate date={event.date} /> / {event.city}
+            </p>
+            <StatusBadge label={event.status} variant={urgent ? "limited" : event.status} size="sm" />
+          </div>
           <h3 className={`mt-3 break-words font-black uppercase leading-[0.98] text-white [text-shadow:0_0_40px_rgba(255,255,255,0.06)] ${featured ? "text-[clamp(2rem,11vw,4.5rem)] lg:leading-[0.94]" : "text-[clamp(1.75rem,9vw,2.25rem)]"}`}>
             {event.title}
           </h3>
@@ -101,7 +105,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
             />
           </div>
         </div>
-        <div className="mt-5 flex min-h-11 items-center justify-between gap-4 border-t border-white/[0.05] pt-4 font-mono text-[10px] font-bold uppercase tracking-[0.16em]">
+        <div className="mt-5 flex min-h-11 items-center justify-between gap-4 border-t border-white/[0.05] pt-4 font-mono text-[10px] font-bold uppercase tracking-[0.14em]">
           <span className="text-white/45"><LocalizedText ua="Відкрити подію" en="Open event" /></span>
           <span className="text-[#00FF88] motion-safe:transition-transform motion-safe:duration-300 group-hover:translate-x-1" aria-hidden="true">
             -&gt;

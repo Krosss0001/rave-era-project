@@ -7,7 +7,7 @@ const STORAGE_KEY = "raveera-language";
 
 function detectLanguage(): Language {
   if (typeof window === "undefined") {
-    return "ua";
+    return "en";
   }
 
   const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -16,11 +16,11 @@ function detectLanguage(): Language {
     return stored;
   }
 
-  return window.navigator.language.toLowerCase().startsWith("en") ? "en" : "ua";
+  return window.navigator.language.toLowerCase().startsWith("uk") ? "ua" : "en";
 }
 
 export function useLanguage() {
-  const [language, setLanguageState] = useState<Language>("ua");
+  const [language, setLanguageState] = useState<Language>("en");
 
   useEffect(() => {
     setLanguageState(detectLanguage());

@@ -7,7 +7,9 @@ import {
   buildSummaryMessage,
   escapeHtml,
   formatTelegramStatus,
+  getEventSpecificConfirmationMessage,
   getTelegramCopy,
+  ZEEKR_FINAL_REGISTRATION_URL,
   type BotLanguage
 } from "@/lib/telegram/messages";
 import {
@@ -103,7 +105,9 @@ function isValidEmail(value: string) {
 }
 
 function logTelegramIssue(message: string, details: Record<string, unknown> = {}) {
-  console.warn(message, details);
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(message, details);
+  }
 }
 
 function normalizeInstagramNickname(value: string | undefined) {
@@ -320,6 +324,15 @@ async function finishRegistration(chatId: string, session: TelegramSession, lang
       removeKeyboard: true
     }
   );
+
+  const eventSpecificConfirmation = getEventSpecificConfirmationMessage(event?.slug);
+
+  if (eventSpecificConfirmation) {
+    await sendTelegramMessage(chatId, eventSpecificConfirmation, {
+      inlineKeyboard: [[{ text: "Пройти фінальну реєстрацію", url: ZEEKR_FINAL_REGISTRATION_URL }]],
+      parseMode: null
+    });
+  }
 }
 
 async function handleStart(message: TelegramMessage, payload: string | undefined) {
@@ -744,7 +757,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("Telegram webhook error", error instanceof Error ? error.message : error);
+    if (process.env.NODE_ENV !== "production") {
+      console.error("Telegram webhook error", error instanceof Error ? error.message : error);
+    }
     return NextResponse.json({ ok: false }, { status: 200 });
   }
 }

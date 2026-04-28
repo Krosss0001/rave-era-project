@@ -17,16 +17,16 @@ export function TelegramCta({ eventSlug, referralCode }: TelegramCtaProps) {
     language === "ua"
       ? {
           kicker: "Основний шлях",
-          title: "Telegram",
-          body: "Швидке підтвердження, статус квитка і QR в одному місці.",
-          button: "Продовжити в Telegram",
+          title: "Confirm in Telegram",
+          body: "Open the bot to finish confirmation, track payment status, and receive the QR when the ticket is ready.",
+          button: "Open Telegram bot",
           referral: "Реферал застосовано"
         }
       : {
           kicker: "Primary path",
-          title: "Telegram",
-          body: "Fast confirmation, ticket status, and QR in one place.",
-          button: "Continue in Telegram",
+          title: "Confirm in Telegram",
+          body: "Open the bot to finish confirmation, track payment status, and receive the QR when the ticket is ready.",
+          button: "Open Telegram bot",
           referral: "Referral applied"
         };
 
@@ -52,6 +52,9 @@ export function TelegramCta({ eventSlug, referralCode }: TelegramCtaProps) {
         <span className="min-w-0 text-left leading-5">{copy.button}</span>
         <ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden="true" />
       </Link>
+      <p className="mt-3 text-xs leading-5 text-white/42">
+        Telegram opens in a new tab. The bot keeps your confirmation and ticket updates together.
+      </p>
       {referralCode ? (
         <p className="mt-3 break-words font-mono text-[10px] uppercase tracking-[0.16em] text-white/35">
           {copy.referral}: <span className="text-[#00FF88]">{referralCode}</span>

@@ -13,6 +13,7 @@ type SendMessageOptions = {
   inlineKeyboard?: TelegramInlineButton[][];
   replyKeyboard?: TelegramReplyButton[][];
   removeKeyboard?: boolean;
+  parseMode?: "HTML" | null;
 };
 
 type SendPhotoOptions = SendMessageOptions & {
@@ -87,10 +88,12 @@ function getReplyMarkup(options: SendMessageOptions) {
 }
 
 export async function sendTelegramMessage(chatId: string, text: string, options: SendMessageOptions = {}) {
+  const parseMode = options.parseMode === undefined ? "HTML" : options.parseMode;
+
   return telegramApi("sendMessage", {
     chat_id: chatId,
     text,
-    parse_mode: "HTML",
+    ...(parseMode ? { parse_mode: parseMode } : {}),
     disable_web_page_preview: true,
     reply_markup: getReplyMarkup(options)
   });

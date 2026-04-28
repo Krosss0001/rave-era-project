@@ -10,6 +10,7 @@ import { buildQrPayload, generateTicketCode } from "@/lib/tickets";
 import { buildTelegramUrl } from "@/lib/telegram";
 import type { Database } from "@/lib/supabase/types";
 import { TicketQr } from "@/components/shared/ticket-qr";
+import { StatusBadge, getStatusBadgeVariant } from "@/components/shared/status-badge";
 
 type EventRegistrationFormProps = {
   eventId: string;
@@ -415,9 +416,9 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           <div className="mt-4 border border-white/[0.05] bg-black px-3 py-3">
             <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">{copy.ticketCode}</p>
             <p className="mt-1 break-words font-mono text-xl font-semibold text-white">{ticket.ticket_code}</p>
-            <div className="mt-3 flex flex-wrap gap-2 font-mono text-[9px] uppercase tracking-[0.16em]">
-              <span className="border border-[#00FF88]/25 bg-[#00FF88]/[0.035] px-2 py-1 text-[#00FF88]">{ticket.status}</span>
-              <span className="border border-white/[0.06] bg-[#020202] px-2 py-1 text-white/45">{copy.payment} {ticket.payment_status}</span>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <StatusBadge label={ticket.status} variant={getStatusBadgeVariant(ticket.status)} size="sm" />
+              <StatusBadge label={`${copy.payment} ${ticket.payment_status}`} variant={getStatusBadgeVariant(ticket.payment_status)} size="sm" />
             </div>
           </div>
           <div className="mt-4">
@@ -449,7 +450,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="focus-ring mt-5 min-h-11 w-full border border-white/[0.1] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.14em] text-white/55 transition duration-200 hover:border-[#00FF88]/35 hover:text-[#00FF88] active:scale-[0.99]"
+          className="focus-ring mt-5 min-h-11 w-full border border-primary/35 bg-primary/[0.025] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.14em] text-primary transition duration-200 hover:bg-primary hover:text-black active:scale-[0.99]"
         >
           {copy.open}
         </button>
@@ -510,7 +511,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           <button
             type="submit"
             disabled={loading}
-            className="focus-ring min-h-11 border border-[#00FF88]/55 px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.14em] text-[#00FF88] transition duration-200 hover:bg-[#00FF88] hover:text-black active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45"
+            className="focus-ring min-h-11 border border-[#00FF88]/55 bg-[#00FF88]/[0.025] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.14em] text-[#00FF88] transition duration-200 hover:bg-[#00FF88] hover:text-black active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45"
           >
             {loading ? copy.submitting : copy.submit}
           </button>

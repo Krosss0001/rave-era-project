@@ -14,6 +14,7 @@ import { SafeEventImage } from "@/components/events/safe-event-image";
 import { LocalizedText } from "@/components/shared/localized-text";
 import { LocalizedEventDate } from "@/components/shared/localized-event-date";
 import { LocalizedPrice } from "@/components/shared/localized-price";
+import { StatusBadge } from "@/components/shared/status-badge";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -113,9 +114,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
         <div className="relative mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-end gap-8 px-4 pb-10 pt-16 sm:px-6 sm:pt-20 md:min-h-[680px] md:px-10 md:pb-16 lg:grid-cols-[minmax(0,0.98fr)_minmax(320px,0.72fr)] lg:items-center lg:px-12 2xl:max-w-[1500px]">
           <div className="w-full max-w-[860px]">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex min-h-8 items-center border border-[#00FF88]/40 bg-[#00FF88]/5 px-4 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#00FF88]">
-                <LocalizedText ua={eventStatusLabel.ua} en={eventStatusLabel.en} />
-              </span>
+              <StatusBadge label={eventStatusLabel.en} variant={event.status === "limited" ? "limited" : event.status === "soon" ? "soon" : "live"} />
               {referralCode ? (
                 <span className="inline-flex min-h-8 items-center border border-white/[0.06] bg-black/80 px-4 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">
                   Ref {referralCode}
@@ -153,7 +152,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
                 className="focus-ring inline-flex min-h-12 w-full items-center justify-center gap-3 bg-[#00FF88] px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-black shadow-[0_0_34px_rgba(0,255,136,0.16)] transition duration-200 hover:scale-[1.01] hover:brightness-110 hover:shadow-[0_0_44px_rgba(0,255,136,0.22)] active:scale-[0.99] sm:w-auto"
               >
                 <Send className="h-4 w-4" aria-hidden="true" />
-                <LocalizedText ua="Продовжити в Telegram" en="Continue in Telegram" />
+                <LocalizedText ua="Відкрити Telegram bot" en="Open Telegram bot" />
               </Link>
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/42">
                 {event.urgencyNote || <LocalizedText ua="Telegram-підтвердження активне" en="Telegram confirmation active" />}
@@ -179,9 +178,12 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
       <section className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:px-10 md:py-20 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10 lg:px-12 xl:grid-cols-[minmax(0,1fr)_384px] 2xl:max-w-[1500px]">
         <div className="space-y-10">
           <article className="max-w-[700px] border-y border-white/[0.05] py-7 md:py-10">
-            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#00FF88]">
-              <LocalizedText ua="Про подію" en="About event" />
-            </p>
+            <div className="flex items-center justify-between gap-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#00FF88]">
+                <LocalizedText ua="Про подію" en="About event" />
+              </p>
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/30">01</span>
+            </div>
             <div className="mt-6 space-y-5 text-base leading-7 text-white/68 sm:text-lg sm:leading-[1.7]">
               {(aboutParagraphs.length ? aboutParagraphs : [event.description]).filter(Boolean).map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
@@ -190,7 +192,10 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           </article>
 
           <article className="border-y border-white/[0.05] py-8 md:py-10">
-            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#00FF88]"><LocalizedText ua="Інформація" en="Event info" /></p>
+            <div className="flex items-center justify-between gap-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#00FF88]"><LocalizedText ua="Інформація" en="Event info" /></p>
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/30">02</span>
+            </div>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               {eventInfo.map(({ key, label, value, Icon }) => (
                 <div key={key} className="group flex min-h-24 items-start gap-4 border border-white/[0.06] bg-[#020202] p-4 transition duration-200 hover:-translate-y-0.5 hover:border-[#00FF88]/25">
@@ -205,7 +210,10 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           </article>
 
           <article className="border-y border-white/[0.05] py-8 md:py-10">
-            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-[#00FF88]"><LocalizedText ua="Лайнап / програма" en="Lineup / agenda" /></p>
+            <div className="flex items-center justify-between gap-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#00FF88]"><LocalizedText ua="Лайнап / програма" en="Lineup / agenda" /></p>
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/30">03</span>
+            </div>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               {event.lineup.map((artist, index) => (
                 <div key={artist} className="group flex min-h-32 flex-col justify-between border border-white/[0.06] bg-[#020202] p-5 transition duration-200 hover:-translate-y-0.5 hover:border-[#00FF88]/35 hover:bg-[#00FF88]/[0.025]">

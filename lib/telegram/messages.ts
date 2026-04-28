@@ -24,6 +24,29 @@ type SummaryInput = {
   email: string | null;
 };
 
+export const ZEEKR_FINAL_REGISTRATION_URL = "https://avtoexpo.ua/cat/registration";
+
+export function getEventSpecificConfirmationMessage(eventSlug: string | null | undefined) {
+  if (eventSlug !== "zeekr-9x") {
+    return null;
+  }
+
+  return [
+    "РЕЄСТРАЦІЮ ПІДТВЕРДЖЕНО🤝",
+    "",
+    " ЗВЕРНІТЬ УВАГУ ",
+    "",
+    "Реєстрація в цьому боті підтверджує вашу участь у презентації, але не є вхідним квитком на територію виставки. Щоб ви змогли потрапити до павільйону МВЦ (12-14 травня), обовязково отримайте офіційний бейдж відвідувача виставки Com Auto Trans.",
+    "",
+    "ПРОЙДІТЬ ОБОВʼЯЗКОВУ ФІНАЛЬНУ РЕЄСТРАЦІЮ НА САЙТІ ВИСТАВКИ",
+    "",
+    "За промокодом Zeekr відвідування виставки буде безкоштовним:",
+    ZEEKR_FINAL_REGISTRATION_URL,
+    "",
+    "Без реєстрації вхід на територію експоцентру буде не можливим."
+  ].join("\n");
+}
+
 export const TELEGRAM_COPY = {
   welcome:
     "Привіт! Я бот Rave'era Group.\n" +

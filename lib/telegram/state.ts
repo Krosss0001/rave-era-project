@@ -44,7 +44,9 @@ function isUndefinedColumn(error: { code?: string } | null) {
 }
 
 function logTelegramStateIssue(message: string, details: Record<string, unknown> = {}) {
-  console.warn(message, details);
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(message, details);
+  }
 }
 
 export function getTelegramSupabaseClient() {

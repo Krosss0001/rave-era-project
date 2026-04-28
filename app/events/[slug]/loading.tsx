@@ -3,7 +3,7 @@ export default function EventDetailLoading() {
     <div className="bg-[#000000]">
       <section className="relative min-h-[90vh] overflow-hidden border-b border-white/[0.05]">
         <div className="absolute inset-0 bg-[#020202]" />
-        <div className="absolute right-[-14%] top-[10%] h-[45vw] w-[45vw] bg-[#00FF88]/10 blur-[160px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.014)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.014)_1px,transparent_1px)] bg-[size:80px_80px] opacity-45" />
         <div className="relative mx-auto flex min-h-[90vh] max-w-7xl items-end px-4 pb-14 pt-32 sm:px-6 md:px-10 lg:px-12 2xl:max-w-[1500px]">
           <div className="w-full max-w-4xl">
             <div className="h-8 w-44 border border-[#00FF88]/20 bg-[#00FF88]/5 motion-safe:animate-pulse" />

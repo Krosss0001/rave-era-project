@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database, UserRole } from "@/lib/supabase/types";
+import { StatusBadge, getStatusBadgeVariant } from "@/components/shared/status-badge";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -75,9 +76,7 @@ export function AdminPanel() {
             {dictionary.admin.roleControl}
           </h2>
         </div>
-        <span className="border border-white/[0.05] bg-[#030303] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">
-          {dictionary.admin.protected}
-        </span>
+        <StatusBadge label={dictionary.admin.protected} variant="neutral" size="sm" />
       </div>
 
       {message ? (
@@ -102,7 +101,11 @@ export function AdminPanel() {
               [0, 1, 2].map((item) => (
                 <tr key={item}>
                   <td colSpan={5} className="py-4">
-                    <div className="h-10 bg-white/[0.035] motion-safe:animate-pulse" />
+                    <div className="grid grid-cols-[minmax(0,1fr)_120px_100px] gap-4">
+                      <div className="h-10 bg-white/[0.035] motion-safe:animate-pulse" />
+                      <div className="h-10 bg-white/[0.03] motion-safe:animate-pulse" />
+                      <div className="h-10 bg-white/[0.025] motion-safe:animate-pulse" />
+                    </div>
                   </td>
                 </tr>
               ))
@@ -115,9 +118,7 @@ export function AdminPanel() {
                     <td className="max-w-56 break-all py-4 pr-4 font-mono text-white/[0.72]">{profile.email ?? "No email"}</td>
                     <td className="py-4 text-white/[0.45]">{profile.full_name ?? "Not set"}</td>
                     <td className="py-4">
-                      <span className="border border-primary/25 bg-primary/[0.03] px-2.5 py-1 font-mono text-xs font-semibold uppercase tracking-[0.14em] text-primary">
-                        {profile.role}
-                      </span>
+                      <StatusBadge label={profile.role} variant={getStatusBadgeVariant(profile.role === "user" ? "pending" : "active")} size="sm" />
                     </td>
                     <td className="py-4 font-mono text-white/[0.35]">{new Date(profile.created_at).toLocaleDateString("en-US")}</td>
                     <td className="py-4 text-right">
@@ -130,7 +131,7 @@ export function AdminPanel() {
                           Make {upgradeRole}
                         </button>
                       ) : (
-                        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/25">Locked</span>
+                        <StatusBadge label="Locked" variant="neutral" size="sm" />
                       )}
                     </td>
                   </tr>
@@ -138,8 +139,11 @@ export function AdminPanel() {
               })
             ) : (
               <tr>
-                <td colSpan={5} className="py-10 text-white/45">
-                  {dictionary.admin.noProfiles}
+                <td colSpan={5} className="py-10">
+                  <div className="border border-white/[0.05] bg-[#030303] p-5 text-white/48">
+                    <p className="text-sm leading-6">{dictionary.admin.noProfiles}</p>
+                    <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.16em] text-white/30">Check role policies and reload this panel.</p>
+                  </div>
                 </td>
               </tr>
             )}
