@@ -154,8 +154,8 @@ export default function HomePage() {
   const capacityPercent = getCapacityPercent(featuredEvent.registered, featuredEvent.capacity);
   const heroLines = [
     { ua: "СТВОРЮЄМО", en: "WE BUILD" },
-    { ua: "ПОДІЇ", en: "EVENTS" },
-    { ua: "ЩО ПРОДАЮТЬ", en: "THAT SELL" }
+    { ua: "ПОДІЇ, ЯКІ", en: "EVENTS" },
+    { ua: "ПРОДАЮТЬ", en: "THAT SELL" }
   ];
   const heroStats = [
     { value: "8.4K", label: { ua: "охоплення спільноти", en: "community reach" } },
@@ -171,16 +171,16 @@ export default function HomePage() {
       <section className="relative overflow-hidden">
         <div className="absolute right-[-18%] top-[4%] -z-10 h-[55vw] w-[55vw] bg-[#00FF88]/10 blur-[150px] motion-safe:animate-[heroGlow_9s_cubic-bezier(0.16,1,0.3,1)_infinite_alternate]" />
         <div className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-center gap-10 px-3 py-14 sm:px-6 sm:py-24 md:px-10 md:py-28 lg:grid-cols-[1.1fr_0.9fr] lg:px-12 2xl:max-w-[1500px]">
-          <div className="max-w-3xl">
+          <div className="max-w-4xl">
             <p className="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 border border-white/[0.05] bg-[#020202] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/55 sm:px-4 sm:tracking-[0.24em]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#00FF88] shadow-[0_0_16px_rgba(0,255,136,0.75)] motion-safe:animate-[softPulse_2.2s_ease-out_infinite]" aria-hidden="true" />
               <span className="whitespace-nowrap">Rave<span className="text-[#00FF88]">&apos;</span>era</span> Group <span className="text-[#00FF88]" aria-hidden="true">{"\u00B7"}</span> Concerts <span className="text-[#00FF88]">&amp;</span> Marketing Agency
             </p>
-            <h1 className="mt-7 text-[clamp(2.5rem,13vw,9.5rem)] font-black uppercase leading-[0.88] text-white sm:mt-8 sm:text-[clamp(4.2rem,9.2vw,10rem)] sm:leading-[0.8]">
+            <h1 className="mt-7 max-w-[980px] whitespace-normal break-normal text-[clamp(2.15rem,10.8vw,8.25rem)] font-black uppercase leading-[0.92] tracking-normal text-white [hyphens:none] [overflow-wrap:normal] [text-wrap:balance] [word-break:normal] sm:mt-8 sm:text-[clamp(3.65rem,8vw,9rem)] sm:leading-[0.82]">
               {heroLines.map((line, index) => (
                 <span
                   key={line.en}
-                  className={`block motion-safe:animate-[revealLine_700ms_cubic-bezier(0.16,1,0.3,1)_both] ${
+                  className={`block whitespace-normal break-normal [hyphens:none] [overflow-wrap:normal] [text-wrap:balance] [word-break:normal] motion-safe:animate-[revealLine_700ms_cubic-bezier(0.16,1,0.3,1)_both] ${
                     index === 2 ? "text-[#00FF88] [text-shadow:0_0_80px_rgba(0,255,136,0.28)]" : ""
                   }`}
                   style={revealStyle(index)}
