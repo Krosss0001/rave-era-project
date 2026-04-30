@@ -348,6 +348,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           name,
           email,
           telegram_username: telegramUsername || null,
+          referral_code: referralCode || null,
           status: isFreeEvent ? "confirmed" : "pending"
         })
         .select("id,event_id,user_id,status")
