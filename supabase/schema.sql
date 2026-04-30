@@ -84,7 +84,8 @@ create table if not exists public.referrals (
   id uuid primary key default gen_random_uuid(),
   event_id uuid references public.events(id) on delete cascade,
   owner_user_id uuid references public.profiles(id) on delete cascade,
-  code text not null unique,
+  code text not null,
+  source text,
   clicks int not null default 0,
   registrations int not null default 0,
   confirmed int not null default 0,
@@ -108,6 +109,10 @@ on public.tickets(registration_id)
 where registration_id is not null;
 create index if not exists referrals_owner_user_id_idx on public.referrals(owner_user_id);
 create index if not exists referrals_event_id_idx on public.referrals(event_id);
+create index if not exists referrals_code_idx on public.referrals(code);
+create unique index if not exists referrals_event_id_code_unique_idx
+on public.referrals(event_id, code)
+where event_id is not null;
 
 create or replace function public.current_user_role()
 returns text

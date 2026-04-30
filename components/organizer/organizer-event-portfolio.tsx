@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Copy } from "lucide-react";
+import { Copy, CreditCard, Gauge, QrCode, Share2, Users } from "lucide-react";
 import { events as mockEvents, type RaveeraEvent } from "@/data/events";
 import { getCurrentRole } from "@/lib/auth/get-role";
 import { canManagePlatform } from "@/lib/auth/roles";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { formatEventDate, getCapacityPercent } from "@/lib/format";
+import { getPaymentPlaceholderCopy } from "@/lib/payment-placeholder";
 import { slugify } from "@/lib/slugify";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { EVENT_SELECT_FIELDS } from "@/lib/supabase/event-fields";
@@ -27,7 +28,7 @@ type TicketRow = Pick<
 >;
 type ReferralRow = Pick<
   Database["public"]["Tables"]["referrals"]["Row"],
-  "id" | "event_id" | "code" | "clicks" | "registrations" | "confirmed"
+  "id" | "event_id" | "code" | "source" | "clicks" | "registrations" | "confirmed"
 >;
 type EventRow = Database["public"]["Tables"]["events"]["Row"];
 type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
@@ -176,7 +177,7 @@ export function OrganizerEventPortfolio() {
         eventIds.length > 0
           ? await supabase
               .from("referrals")
-              .select("id,event_id,code,clicks,registrations,confirmed")
+              .select("id,event_id,code,source,clicks,registrations,confirmed")
               .in("event_id", eventIds)
           : { data: [] };
 
@@ -557,9 +558,9 @@ export function OrganizerEventPortfolio() {
     URL.revokeObjectURL(url);
   }
 
-  function getEventReferralLink(event: OrganizerEvent) {
+  function getEventReferralLink(event: OrganizerEvent, code = event.slug) {
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://rave-era-project.vercel.app").replace(/\/+$/, "");
-    return `${appUrl}/events/${event.slug}?ref=${encodeURIComponent(event.slug)}`;
+    return `${appUrl}/events/${event.slug}?ref=${encodeURIComponent(code)}`;
   }
 
   async function copyEventReferralLink(event: OrganizerEvent) {
@@ -1015,29 +1016,49 @@ export function OrganizerEventPortfolio() {
           const relatedReferrals = referrals.filter((referral) => referral.event_id === event.id);
           const registrationsWithReferral = relatedRegistrations.filter((registration) => registration.referral_code);
           const confirmedRegistrationsWithReferral = registrationsWithReferral.filter((registration) => registration.status === "confirmed");
-          const registrationReferralCounts = registrationsWithReferral.reduce<Record<string, number>>((counts, registration) => {
+          const registrationReferralCounts = registrationsWithReferral.reduce<Record<string, { registrations: number; confirmed: number }>>((counts, registration) => {
             const code = registration.referral_code;
 
             if (code) {
-              counts[code] = (counts[code] ?? 0) + 1;
+              const current = counts[code] ?? { registrations: 0, confirmed: 0 };
+              counts[code] = {
+                registrations: current.registrations + 1,
+                confirmed: current.confirmed + (registration.status === "confirmed" ? 1 : 0)
+              };
             }
 
             return counts;
           }, {});
-          const topReferralFromRegistrations = Object.entries(registrationReferralCounts).sort((first, second) => second[1] - first[1])[0];
-          const topReferralFromTable = [...relatedReferrals].sort(
-            (first, second) => second.confirmed - first.confirmed || second.registrations - first.registrations || second.clicks - first.clicks
-          )[0];
+          const referralCodes = Array.from(
+            new Set([event.slug, ...relatedReferrals.map((referral) => referral.code), ...Object.keys(registrationReferralCounts)])
+          );
+          const referralRowsByCode = new Map(relatedReferrals.map((referral) => [referral.code, referral]));
+          const referralLeaderboard = referralCodes
+            .map((code) => {
+              const referral = referralRowsByCode.get(code);
+              const registrationCounts = registrationReferralCounts[code];
+              const registrationsForCode = registrationCounts?.registrations ?? referral?.registrations ?? 0;
+              const confirmedForCode = registrationCounts?.confirmed ?? referral?.confirmed ?? 0;
+              const clicksForCode = referral?.clicks ?? 0;
+              const conversion = clicksForCode > 0 ? Math.round((registrationsForCode / clicksForCode) * 100) : 0;
+
+              return {
+                code,
+                source: referral?.source ?? (code === event.slug ? "default" : "registration"),
+                clicks: clicksForCode,
+                registrations: registrationsForCode,
+                confirmed: confirmedForCode,
+                conversion
+              };
+            })
+            .filter((referral) => referral.clicks > 0 || referral.registrations > 0 || referral.confirmed > 0 || referral.code === event.slug)
+            .sort((first, second) => second.confirmed - first.confirmed || second.registrations - first.registrations || second.clicks - first.clicks);
+          const topReferral = referralLeaderboard.find((referral) => referral.clicks > 0 || referral.registrations > 0 || referral.confirmed > 0);
           const referralClicks = relatedReferrals.reduce((sum, referral) => sum + referral.clicks, 0);
-          const referralRegistrations =
-            relatedReferrals.length > 0
-              ? relatedReferrals.reduce((sum, referral) => sum + referral.registrations, 0)
-              : registrationsWithReferral.length;
-          const confirmedReferralRegistrations =
-            relatedReferrals.length > 0
-              ? relatedReferrals.reduce((sum, referral) => sum + referral.confirmed, 0)
-              : confirmedRegistrationsWithReferral.length;
-          const topReferralCode = topReferralFromTable?.code ?? topReferralFromRegistrations?.[0] ?? null;
+          const referralRegistrations = registrationsWithReferral.length;
+          const confirmedReferralRegistrations = confirmedRegistrationsWithReferral.length;
+          const referralConversion = referralClicks > 0 ? Math.round((referralRegistrations / referralClicks) * 100) : 0;
+          const topReferralCode = topReferral?.code ?? null;
           const hasReferralActivity = referralClicks > 0 || referralRegistrations > 0 || confirmedReferralRegistrations > 0 || Boolean(topReferralCode);
           const activeFilter = registrationFilterByEvent[event.id] ?? "all";
           const registrationRows = relatedRegistrations.map((registration) => {
@@ -1083,15 +1104,80 @@ export function OrganizerEventPortfolio() {
 
             return true;
           });
-          const analytics = [
-            [registrationCopy.total, registrationRows.length.toString()],
-            [registrationCopy.confirmed, registrationRows.filter((row) => row.registration.status === "confirmed").length.toString()],
-            [registrationCopy.pending, registrationRows.filter((row) => row.registration.status === "pending").length.toString()],
-            [registrationCopy.paid, registrationRows.filter((row) => row.paymentStatus === "paid").length.toString()],
-            [registrationCopy.checkedIn, registrationRows.filter((row) => row.checkInStatus === "used").length.toString()]
-          ];
+          const totalRegistrations = registrationRows.length;
+          const confirmedRegistrations = registrationRows.filter((row) => row.registration.status === "confirmed").length;
+          const pendingRegistrations = registrationRows.filter((row) => row.registration.status === "pending").length;
+          const paidTickets = registrationRows.filter((row) => row.paymentStatus === "paid").length;
+          const checkedInTickets = registrationRows.filter((row) => row.checkInStatus === "used").length;
           const registered = relatedRegistrations.length || event.registered;
           const capacity = getCapacityPercent(registered, event.capacity);
+          const performancePanels = [
+            {
+              key: "registrations",
+              title: language === "ua" ? "Реєстрації" : "Registrations",
+              value: totalRegistrations.toString(),
+              detail:
+                totalRegistrations > 0
+                  ? `${confirmedRegistrations} ${language === "ua" ? "підтверджено" : "confirmed"} / ${pendingRegistrations} ${language === "ua" ? "очікують" : "pending"}`
+                  : language === "ua"
+                    ? "Поки немає реєстрацій"
+                    : "No registrations yet",
+              Icon: Users,
+              progress: event.capacity > 0 ? Math.min(100, Math.round((totalRegistrations / event.capacity) * 100)) : 0
+            },
+            {
+              key: "paid",
+              title: language === "ua" ? "Оплати" : "Paid",
+              value: paidTickets.toString(),
+              detail:
+                paidTickets > 0
+                  ? `${paidTickets}/${totalRegistrations || 0} ${language === "ua" ? "квитків оплачено" : "tickets paid"}`
+                  : language === "ua"
+                    ? "Оплачених квитків ще немає"
+                    : "No paid tickets yet",
+              Icon: CreditCard,
+              progress: totalRegistrations > 0 ? Math.round((paidTickets / totalRegistrations) * 100) : 0
+            },
+            {
+              key: "check-in",
+              title: "Check-in",
+              value: checkedInTickets.toString(),
+              detail:
+                checkedInTickets > 0
+                  ? `${checkedInTickets}/${paidTickets || totalRegistrations || 0} ${language === "ua" ? "пройшли вхід" : "checked in"}`
+                  : language === "ua"
+                    ? "Вхід ще не зафіксовано"
+                    : "No check-ins yet",
+              Icon: QrCode,
+              progress: (paidTickets || totalRegistrations) > 0 ? Math.round((checkedInTickets / (paidTickets || totalRegistrations)) * 100) : 0
+            },
+            {
+              key: "referrals",
+              title: language === "ua" ? "Реферали" : "Referrals",
+              value: referralRegistrations.toString(),
+              detail:
+                referralClicks > 0
+                  ? `${referralClicks} ${language === "ua" ? "кліків" : "clicks"} / ${referralConversion}% ${language === "ua" ? "конверсія" : "conversion"}`
+                  : language === "ua"
+                    ? "Реферальних кліків ще немає"
+                    : "No referral clicks yet",
+              Icon: Share2,
+              progress: referralConversion
+            },
+            {
+              key: "capacity",
+              title: language === "ua" ? "Місткість" : "Capacity",
+              value: `${capacity}%`,
+              detail:
+                registered > 0
+                  ? `${registered}/${event.capacity} ${language === "ua" ? "місць зайнято" : "capacity filled"}`
+                  : language === "ua"
+                    ? "Місткість ще не заповнюється"
+                    : "Capacity is still empty",
+              Icon: Gauge,
+              progress: capacity
+            }
+          ];
 
           return (
             <div
@@ -1129,11 +1215,12 @@ export function OrganizerEventPortfolio() {
                   <div className="min-w-0">
                     <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">{registrationCopy.referralTitle}</p>
                     {hasReferralActivity ? (
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
                         {[
                           [registrationCopy.referralClicks, referralClicks.toString()],
                           [registrationCopy.referralRegistrations, referralRegistrations.toString()],
                           [registrationCopy.referralConfirmed, confirmedReferralRegistrations.toString()],
+                          ["Conversion / Конверсія", `${referralConversion}%`],
                           [registrationCopy.topReferral, topReferralCode ?? "-"]
                         ].map(([label, value]) => (
                           <div key={label} className="border border-white/[0.05] bg-[#020202] p-3">
@@ -1145,6 +1232,41 @@ export function OrganizerEventPortfolio() {
                     ) : (
                       <p className="mt-3 text-sm leading-6 text-white/[0.45]">{registrationCopy.noReferralActivity}</p>
                     )}
+                    <div className="mt-5 border-t border-white/[0.05] pt-4">
+                      <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/[0.42]">Referral leaderboard / Лідерборд</p>
+                        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary">
+                          Default code / Код: {event.slug}
+                        </p>
+                      </div>
+                      <div className="-mx-1 mt-3 overflow-x-auto [scrollbar-width:thin]">
+                        <table className="w-full min-w-[620px] text-left text-xs">
+                          <thead className="font-mono uppercase tracking-[0.13em] text-white/[0.34]">
+                            <tr>
+                              <th className="py-3 pr-4 font-medium">Code / source</th>
+                              <th className="py-3 pr-4 font-medium">Clicks</th>
+                              <th className="py-3 pr-4 font-medium">Registrations</th>
+                              <th className="py-3 pr-4 font-medium">Confirmed</th>
+                              <th className="py-3 font-medium">Conversion</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/[0.05]">
+                            {referralLeaderboard.map((referral) => (
+                              <tr key={referral.code} className="motion-safe:transition-colors motion-safe:duration-300 hover:bg-primary/[0.018]">
+                                <td className="py-3 pr-4">
+                                  <p className="break-words font-mono text-sm font-semibold text-white">{referral.code}</p>
+                                  <p className="mt-1 break-words font-mono text-[10px] uppercase tracking-[0.12em] text-white/[0.35]">{referral.source}</p>
+                                </td>
+                                <td className="py-3 pr-4 font-mono tabular-nums text-white/[0.62]">{referral.clicks}</td>
+                                <td className="py-3 pr-4 font-mono tabular-nums text-white/[0.62]">{referral.registrations}</td>
+                                <td className="py-3 pr-4 font-mono tabular-nums text-primary">{referral.confirmed}</td>
+                                <td className="py-3 font-mono tabular-nums text-white/[0.62]">{referral.conversion}%</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
                   <div className="w-full min-w-0 lg:max-w-[360px]">
                     <div className="border border-white/[0.06] bg-black p-3">
@@ -1325,10 +1447,24 @@ export function OrganizerEventPortfolio() {
                   </div>
                 </div>
                 <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
-                  {analytics.map(([label, value]) => (
-                    <div key={label} className="border border-white/[0.05] bg-[#030303] p-3">
-                      <p className="font-mono text-2xl font-semibold tabular-nums text-white">{value}</p>
-                      <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.13em] text-white/[0.38]">{label}</p>
+                  {performancePanels.map(({ key, title, value, detail, Icon, progress }) => (
+                    <div key={key} className="group/panel min-w-0 border border-white/[0.05] bg-[#030303] p-3 transition-colors hover:border-primary/30">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-mono text-[9px] uppercase tracking-[0.13em] text-white/[0.38]">{title}</p>
+                          <p className="mt-2 break-words font-mono text-2xl font-semibold tabular-nums text-white">{value}</p>
+                        </div>
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-primary/20 bg-black text-primary">
+                          <Icon className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                      </div>
+                      <div className="mt-3 h-1 overflow-hidden bg-white/[0.06]">
+                        <div
+                          className="h-full bg-primary transition-[width,box-shadow] duration-500 group-hover/panel:shadow-[0_0_16px_rgba(0,255,136,0.35)]"
+                          style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+                        />
+                      </div>
+                      <p className="mt-3 min-h-8 text-xs leading-4 text-white/[0.45]">{detail}</p>
                     </div>
                   ))}
                 </div>
@@ -1405,7 +1541,10 @@ export function OrganizerEventPortfolio() {
                                 <StatusBadge label={registration.status} variant={getStatusBadgeVariant(registration.status)} size="sm" />
                               </td>
                               <td className="py-4 pr-4">
-                                <StatusBadge label={paymentStatus} variant={getStatusBadgeVariant(paymentStatus)} size="sm" />
+                                <StatusBadge label={Number(event.price) <= 0 && paymentStatus === "paid" ? "paid/free" : paymentStatus} variant={getStatusBadgeVariant(paymentStatus)} size="sm" />
+                                {Number(event.price) > 0 && paymentStatus === "pending" ? (
+                                  <p className="mt-2 max-w-[260px] text-xs leading-5 text-white/[0.42]">{getPaymentPlaceholderCopy(language)}</p>
+                                ) : null}
                               </td>
                               <td className="py-4 pr-4">
                                 <StatusBadge label={ticketStatus} variant={getStatusBadgeVariant(ticketStatus)} size="sm" />

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { QrCode } from "lucide-react";
+import { PAYMENT_PLACEHOLDER_UA } from "@/lib/payment-placeholder";
 import { generateTicketQrDataUrl, type QrTicketSource } from "@/lib/qr";
 
 type TicketQrProps = {
@@ -10,7 +11,7 @@ type TicketQrProps = {
   lockedMessage?: string;
 };
 
-export function TicketQr({ ticket, locked = false, lockedMessage = "QR відкриється після підтвердження квитка." }: TicketQrProps) {
+export function TicketQr({ ticket, locked = false, lockedMessage = PAYMENT_PLACEHOLDER_UA }: TicketQrProps) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 

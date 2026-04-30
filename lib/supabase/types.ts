@@ -286,6 +286,7 @@ export type Database = {
           id: string;
           event_id: string | null;
           code: string;
+          source: string | null;
           owner_user_id: string | null;
           clicks: number;
           registrations: number;
@@ -296,6 +297,7 @@ export type Database = {
           id?: string;
           event_id?: string | null;
           code: string;
+          source?: string | null;
           owner_user_id?: string | null;
           clicks?: number;
           registrations?: number;
@@ -306,6 +308,7 @@ export type Database = {
           event_id?: string | null;
           owner_user_id?: string | null;
           code?: string;
+          source?: string | null;
           clicks?: number;
           registrations?: number;
           confirmed?: number;

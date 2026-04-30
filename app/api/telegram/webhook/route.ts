@@ -276,7 +276,9 @@ async function sendMyTickets(
         `<b>${escapeHtml(eventTitle)}</b>`,
         "",
         `${copy.ticketLabel}: ${escapeHtml(item.ticket.ticket_code)}`,
-        `${copy.statusLabel}: ${escapeHtml(formatTelegramStatus(item.ticket.status))}`
+        `${copy.statusLabel}: ${escapeHtml(formatTelegramStatus(item.ticket.status))}`,
+        `${copy.paymentLabel}: ${escapeHtml(formatTelegramStatus(item.ticket.payment_status))}`,
+        ...(item.ticket.payment_status === "pending" ? ["", copy.qrLocked] : [])
       ].join("\n"),
       {
         inlineKeyboard: [
@@ -305,7 +307,8 @@ async function finishRegistration(chatId: string, session: TelegramSession, lang
       "",
       `${copy.ticketLabel}: ${escapeHtml(ticket.ticket_code)}`,
       `${copy.statusLabel}: ${escapeHtml(formatTelegramStatus(ticket.status))}`,
-      `${copy.paymentLabel}: ${escapeHtml(formatTelegramStatus(ticket.payment_status))}`
+      `${copy.paymentLabel}: ${escapeHtml(formatTelegramStatus(ticket.payment_status))}`,
+      ...(isFreeEvent ? [] : ["", copy.qrLocked])
     ].join("\n"),
     {
       inlineKeyboard: isFreeEvent

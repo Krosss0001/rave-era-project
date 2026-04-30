@@ -86,11 +86,11 @@ const demoSteps = [
     copy: { ua: "Перегляньте публічну сторінку події.", en: "Browse the curated public event page." }
   },
   {
-    title: { ua: "Зареєструватися", en: "Register on web" },
-    copy: { ua: "Залиште заявку через легкий веб-флоу.", en: "Commit through the lightweight web flow." }
+    title: { ua: "Запустити Telegram-бот", en: "Start Telegram bot" },
+    copy: { ua: "Реєстрація проходить через Telegram-бот.", en: "Registration continues in the Telegram bot." }
   },
   {
-    title: { ua: "Продовжити в Telegram", en: "Continue in Telegram" },
+    title: { ua: "Отримати статус квитка", en: "Get ticket status" },
     copy: {
       ua: "Отримайте статус і підтвердження там, де вже живе ком'юніті.",
       en: "Receive status and confirmation where the community already lives."

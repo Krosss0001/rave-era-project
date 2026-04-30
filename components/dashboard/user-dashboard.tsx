@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getCurrentRole, type AuthProfile } from "@/lib/auth/get-role";
 import { useLanguage } from "@/lib/i18n/use-language";
+import { getPaymentPlaceholderCopy } from "@/lib/payment-placeholder";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 import { TicketQr } from "@/components/shared/ticket-qr";
@@ -12,7 +13,11 @@ import { StatusBadge, getStatusBadgeVariant } from "@/components/shared/status-b
 type RegistrationRow = Database["public"]["Tables"]["registrations"]["Row"];
 type TicketRow = Database["public"]["Tables"]["tickets"]["Row"];
 type ReferralRow = Database["public"]["Tables"]["referrals"]["Row"];
-type EventSummary = Pick<Database["public"]["Tables"]["events"]["Row"], "id" | "slug" | "title" | "date" | "city">;
+type EventSummary = Pick<Database["public"]["Tables"]["events"]["Row"], "id" | "slug" | "title" | "date" | "city" | "price">;
+
+function isString(value: string | null): value is string {
+  return Boolean(value);
+}
 
 export function UserDashboard() {
   const { dictionary, language } = useLanguage();
@@ -60,7 +65,7 @@ export function UserDashboard() {
           .order("created_at", { ascending: false }),
         supabase
           .from("referrals")
-          .select("id,event_id,owner_user_id,code,clicks,registrations,confirmed,created_at")
+          .select("id,event_id,owner_user_id,code,source,clicks,registrations,confirmed,created_at")
           .eq("owner_user_id", roleState.user.id)
           .order("created_at", { ascending: false })
       ]);
@@ -75,13 +80,23 @@ export function UserDashboard() {
         return;
       }
 
+      const visibleRegistrations = registrationResult.data ?? [];
       const visibleTickets = ticketResult.data ?? [];
-      const eventIds = Array.from(new Set(visibleTickets.map((ticket) => ticket.event_id).filter(Boolean)));
+      const visibleReferrals = referralResult.data ?? [];
+      const eventIds = Array.from(
+        new Set(
+          [
+            ...visibleRegistrations.map((registration) => registration.event_id),
+            ...visibleTickets.map((ticket) => ticket.event_id),
+            ...visibleReferrals.map((referral) => referral.event_id)
+          ].filter(isString)
+        )
+      );
       const eventResult =
         eventIds.length > 0
           ? await supabase
               .from("events")
-              .select("id,slug,title,date,city")
+              .select("id,slug,title,date,city,price")
               .in("id", eventIds)
           : { data: [] };
 
@@ -91,7 +106,7 @@ export function UserDashboard() {
 
       setProfile(roleState.profile);
       setEmail(roleState.user.email ?? roleState.profile?.email ?? "");
-      setRegistrations(registrationResult.data ?? []);
+      setRegistrations(visibleRegistrations);
       setTickets(visibleTickets);
       setTicketEvents(
         (eventResult.data ?? []).reduce<Record<string, EventSummary>>((items, event) => {
@@ -99,7 +114,7 @@ export function UserDashboard() {
           return items;
         }, {})
       );
-      setReferrals(referralResult.data ?? []);
+      setReferrals(visibleReferrals);
       setErrorMessage(eventResult && "error" in eventResult && eventResult.error ? dictionary.dashboard.eventDetailsError : null);
       setLoading(false);
     }
@@ -130,6 +145,15 @@ export function UserDashboard() {
       </div>
     );
   }
+
+  const primaryReferral = referrals[0] ?? null;
+  const primaryReferralEvent = primaryReferral?.event_id ? ticketEvents[primaryReferral.event_id] : null;
+  const primaryReferralPath =
+    primaryReferral?.code && primaryReferralEvent?.slug
+      ? `/events/${primaryReferralEvent.slug}?ref=${primaryReferral.code}`
+      : language === "ua"
+        ? "Реферальне посилання ще не створено"
+        : "No referral link yet";
 
   return (
     <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.72fr)] lg:gap-10">
@@ -175,7 +199,7 @@ export function UserDashboard() {
               <div key={registration.id} className="grid gap-3 border-b border-white/[0.05] py-5 md:grid-cols-[minmax(0,1fr)_160px] md:items-center">
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">
-                    Event {registration.event_id.slice(0, 8)}
+                    {ticketEvents[registration.event_id]?.title ?? `Event ${registration.event_id.slice(0, 8)}`}
                   </p>
                   <p className="mt-2 text-xl font-black uppercase text-white">{registration.name || dictionary.events.registration}</p>
                 </div>
@@ -211,6 +235,8 @@ export function UserDashboard() {
                 const event = ticketEvents[ticket.event_id];
                 const isQrVisible = visibleQrTicketId === ticket.id;
                 const isQrLocked = ticket.status !== "active" || ticket.payment_status !== "paid";
+                const isFreeTicket = Number(event?.price ?? 1) <= 0;
+                const paymentLabel = isFreeTicket && ticket.payment_status === "paid" ? "paid/free" : ticket.payment_status;
 
                 return (
                 <div key={ticket.id} className="min-w-0 border border-white/[0.06] bg-[#030303] p-4">
@@ -239,9 +265,14 @@ export function UserDashboard() {
                     </div>
                     <div>
                       <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">{language === "ua" ? "Оплата" : "Payment"}</p>
-                      <StatusBadge label={ticket.payment_status} variant={getStatusBadgeVariant(ticket.payment_status)} size="sm" className="mt-1" />
+                      <StatusBadge label={paymentLabel} variant={getStatusBadgeVariant(ticket.payment_status)} size="sm" className="mt-1" />
                     </div>
                   </div>
+                  {ticket.payment_status === "pending" ? (
+                    <p className="mt-4 border border-white/[0.05] bg-black px-3 py-2 text-sm leading-6 text-white/58">
+                      {getPaymentPlaceholderCopy(language)}
+                    </p>
+                  ) : null}
                   <div className="mt-4 grid gap-2 min-[380px]:grid-cols-2">
                     <button
                       type="button"
@@ -263,7 +294,7 @@ export function UserDashboard() {
                       <TicketQr
                         ticket={ticket}
                         locked={isQrLocked}
-                        lockedMessage={language === "ua" ? "QR відкриється, коли квиток стане активним і підтвердженим." : "QR unlocks when this ticket is active and paid."}
+                        lockedMessage={getPaymentPlaceholderCopy(language)}
                       />
                     </div>
                   ) : null}
@@ -288,7 +319,7 @@ export function UserDashboard() {
           <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.dashboard.referralLink}</p>
           <div className="mt-6 border border-white/[0.05] bg-[#030303] p-4">
             <p className="break-all font-mono text-xs text-white/50">
-              {referrals[0]?.code ? `/events/noir-signal?ref=${referrals[0].code}` : "/events/noir-signal?ref=RAVE-CREW"}
+              {primaryReferralPath}
             </p>
           </div>
           <p className="mt-4 text-sm leading-6 text-white/45">

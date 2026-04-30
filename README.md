@@ -11,7 +11,7 @@ https://rave-era-project.vercel.app
 ## Current Features
 
 - Public event discovery with Supabase data and mock fallback
-- Event detail pages with responsive hero, safe image fallback, web registration, Telegram continuation, referrals, and organizer details
+- Event detail pages with responsive hero, safe image fallback, Telegram-only registration continuation, referrals, live Supabase stats, and organizer details
 - UA/EN website language toggle with localStorage persistence
 - Ukrainian-only Telegram bot menu, event search, event deep links, registration flow, QR tickets, and My Tickets
 - Telegram broadcast preview and server-side sending for superadmins and organizer event campaigns
@@ -36,7 +36,7 @@ https://rave-era-project.vercel.app
 
 - `/` - product positioning and premium event platform overview
 - `/events` - public event discovery
-- `/events/[slug]` - event detail, web registration, referral support, Telegram deep link
+- `/events/[slug]` - event detail, Telegram registration path, referral support, live ticket/registration stats
 - `/dashboard` - registrations, tickets, and referrals for signed-in users
 - `/organizer` - organizer event creation and operating panels
 - `/admin` - admin role-management foundation
@@ -82,9 +82,10 @@ supabase/patches/008_telegram_language_and_polish.sql
 supabase/patches/009_qr_checkin.sql
 supabase/patches/010_telegram_broadcasts.sql
 supabase/patches/011_registration_contact_fields.sql
+supabase/patches/012_referral_tracking.sql
 ```
 
-Patch `006` creates server-managed Telegram registration sessions. Patch `007` adds Telegram identity linking plus `registrations.telegram_user_id`. Patch `008` keeps legacy language columns defaulted to `uk`. Patch `009` adds QR check-in support. Patch `010` adds Telegram broadcast tables, recipient tracking, and `telegram_users.is_subscribed`. Patch `011` adds `registrations.phone` and `registrations.instagram_nickname`.
+Patch `006` creates server-managed Telegram registration sessions. Patch `007` adds Telegram identity linking plus `registrations.telegram_user_id`. Patch `008` keeps legacy language columns defaulted to `uk`. Patch `009` adds QR check-in support. Patch `010` adds Telegram broadcast tables, recipient tracking, and `telegram_users.is_subscribed`. Patch `011` adds `registrations.phone` and `registrations.instagram_nickname`. Patch `012` adds referral source/counter support and per-event referral code indexing.
 
 ## Telegram Webhook Setup
 
@@ -113,7 +114,7 @@ The bot is Ukrainian-only. `/start` opens the main menu:
 
 ## Telegram Registration Fields
 
-Registration starts from an event deep link or an event card. The bot confirms the event, then collects:
+Registration starts from an event page deep link or an event card. Website event pages no longer show the fallback web registration form; registration and the future payment step continue through Telegram. The bot confirms the event, then collects:
 
 1. Mobile phone, required.
 2. Full name, required.
@@ -189,7 +190,7 @@ Broadcast safety:
 1. Open the website.
 2. Browse events.
 3. Create an event as organizer.
-4. Register on the event page or continue in Telegram.
+4. Continue registration through Telegram from the event page.
 5. Search events in the bot.
 6. View My Tickets.
 7. Use `Показати QR` for active paid/free tickets.

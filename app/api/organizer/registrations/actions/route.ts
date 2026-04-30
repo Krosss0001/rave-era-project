@@ -239,7 +239,7 @@ export async function POST(request: Request) {
 
     const { data: updatedRegistration, error: registrationError } = await supabase
       .from("registrations")
-      .select("id,event_id,name,email,phone,instagram_nickname,telegram_username,status,created_at")
+      .select("id,event_id,name,email,phone,instagram_nickname,telegram_username,referral_code,status,created_at")
       .eq("id", registrationId)
       .single();
 

@@ -9,6 +9,7 @@ import { isFreePrice } from "@/lib/format";
 import { buildQrPayload, generateTicketCode } from "@/lib/tickets";
 import { buildTelegramUrl } from "@/lib/telegram";
 import { isValidEmail } from "@/lib/validation";
+import { getPaymentPlaceholderCopy } from "@/lib/payment-placeholder";
 import type { Database } from "@/lib/supabase/types";
 import { TicketQr } from "@/components/shared/ticket-qr";
 import { StatusBadge, getStatusBadgeVariant } from "@/components/shared/status-badge";
@@ -20,7 +21,7 @@ type EventRegistrationFormProps = {
   referralCode?: string | null;
 };
 
-type RegistrationRow = Pick<Database["public"]["Tables"]["registrations"]["Row"], "id" | "event_id" | "user_id" | "status">;
+type RegistrationRow = Pick<Database["public"]["Tables"]["registrations"]["Row"], "id" | "event_id" | "user_id" | "referral_code" | "status">;
 type TicketPreview = Pick<Database["public"]["Tables"]["tickets"]["Row"], "ticket_code" | "qr_payload" | "status" | "payment_status">;
 
 type FormState = {
@@ -59,6 +60,35 @@ function getCleanErrorMessage(error: unknown, fallback: string) {
   }
 
   return fallback;
+}
+
+async function trackReferralRegistration(input: {
+  eventId: string;
+  referralCode: string | null | undefined;
+  confirmed: boolean;
+}) {
+  const code = input.referralCode?.trim();
+
+  if (!code) {
+    return;
+  }
+
+  try {
+    await fetch("/api/referrals/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eventId: input.eventId,
+        code,
+        source: "web_registration",
+        action: "registration",
+        confirmed: input.confirmed
+      }),
+      keepalive: true
+    });
+  } catch {
+    // Referral counters are analytics only; registration must still succeed.
+  }
 }
 
 export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referralCode }: EventRegistrationFormProps) {
@@ -101,7 +131,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
         }
       : {
           title: "Secondary web registration",
-          description: isFreeEvent ? "Free event: registration is saved and the ticket appears in your dashboard." : "Payment will be connected next.",
+          description: isFreeEvent ? "Free event: registration is confirmed and QR is available immediately." : getPaymentPlaceholderCopy("en"),
           open: "Register on web",
           registered: "You are registered",
           nextTelegram: "Next step: continue in Telegram",
@@ -177,7 +207,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
 
     const { data, error } = await supabase
       .from("registrations")
-      .select("id,event_id,user_id,status")
+      .select("id,event_id,user_id,referral_code,status")
       .eq("event_id", eventId)
       .eq("user_id", currentUserId)
       .maybeSingle();
@@ -238,6 +268,21 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
     const existingTicket = await getTicketForRegistration(registration.id);
 
     if (existingTicket) {
+      if (isFreeEvent && (existingTicket.status !== "active" || existingTicket.payment_status !== "paid")) {
+        const { data, error } = await supabase
+          .from("tickets")
+          .update({ status: "active", payment_status: "paid" })
+          .eq("registration_id", registration.id)
+          .select("ticket_code,qr_payload,status,payment_status")
+          .single();
+
+        if (error || !data) {
+          throw new Error(error?.message || "Ticket could not be activated.");
+        }
+
+        return data;
+      }
+
       return existingTicket;
     }
 
@@ -245,6 +290,8 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const nextTicketCode = generateTicketCode();
+      const ticketStatus = isFreeEvent ? "active" : "reserved";
+      const paymentStatus = isFreeEvent ? "paid" : "pending";
       const { data, error } = await supabase
         .from("tickets")
         .insert({
@@ -253,8 +300,8 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           user_id: currentUserId,
           ticket_code: nextTicketCode,
           qr_payload: buildQrPayload(nextTicketCode, registration.event_id, currentUserId),
-          status: "reserved",
-          payment_status: "pending"
+          status: ticketStatus,
+          payment_status: paymentStatus
         })
         .select("ticket_code,qr_payload,status,payment_status")
         .single();
@@ -351,7 +398,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           referral_code: referralCode || null,
           status: isFreeEvent ? "confirmed" : "pending"
         })
-        .select("id,event_id,user_id,status")
+        .select("id,event_id,user_id,referral_code,status")
         .single();
 
       if (registrationError || !registration) {
@@ -376,6 +423,12 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
 
       const nextTicket = await createTicketForRegistration(registration, userId);
 
+      await trackReferralRegistration({
+        eventId,
+        referralCode: registration.referral_code,
+        confirmed: registration.status === "confirmed"
+      });
+
       setTicket(nextTicket);
       setMessage({ type: "success", text: copy.registrationReceived });
       setForm((current) => ({
@@ -395,7 +448,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
       <div className="flex flex-col gap-3 min-[380px]:flex-row min-[380px]:items-start min-[380px]:justify-between">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/52 sm:tracking-[0.2em]">{copy.title}</p>
-          <p className="mt-2 text-sm leading-6 text-white/58">{copy.description}</p>
+          <p className="mt-2 text-sm leading-6 text-white/58">{isFreeEvent ? copy.description : getPaymentPlaceholderCopy(language)}</p>
         </div>
         <span className="w-fit shrink-0 border border-white/[0.06] bg-[#030303] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-white/52 sm:tracking-[0.14em]">
           {language === "ua" ? "Додатково" : "Secondary"}
@@ -409,6 +462,9 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
             <div>
               <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em]">{copy.registered}</p>
               <p className="mt-2 text-sm leading-6 text-white/65">{copy.nextTelegram}</p>
+              {ticket.payment_status === "pending" ? (
+                <p className="mt-2 text-sm leading-6 text-white/65">{getPaymentPlaceholderCopy(language)}</p>
+              ) : null}
             </div>
           </div>
           <div className="mt-4 border border-white/[0.05] bg-black px-3 py-3">
@@ -416,14 +472,14 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
             <p className="mt-1 break-words font-mono text-xl font-semibold text-white">{ticket.ticket_code}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <StatusBadge label={ticket.status} variant={getStatusBadgeVariant(ticket.status)} size="sm" />
-              <StatusBadge label={`${copy.payment} ${ticket.payment_status}`} variant={getStatusBadgeVariant(ticket.payment_status)} size="sm" />
+              <StatusBadge label={`${copy.payment} ${isFreeEvent && ticket.payment_status === "paid" ? "paid/free" : ticket.payment_status}`} variant={getStatusBadgeVariant(ticket.payment_status)} size="sm" />
             </div>
           </div>
           <div className="mt-4">
             <TicketQr
               ticket={ticket}
               locked={ticket.status !== "active" || ticket.payment_status !== "paid"}
-              lockedMessage={language === "ua" ? "QR відкриється, коли квиток стане активним і підтвердженим." : "QR unlocks when this ticket is active and paid."}
+              lockedMessage={getPaymentPlaceholderCopy(language)}
             />
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">

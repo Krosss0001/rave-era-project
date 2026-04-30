@@ -1,4 +1,5 @@
 import type { Database } from "@/lib/supabase/types";
+import { PAYMENT_PLACEHOLDER_UA } from "@/lib/payment-placeholder";
 
 export type BotLanguage = "uk";
 
@@ -86,7 +87,7 @@ export const TELEGRAM_COPY = {
   ticketsMissing: "У вас ще немає квитків",
   unknownCommand: "Оберіть дію:",
   free: "Безкоштовно",
-  qrLocked: "QR буде доступний після підтвердження квитка.",
+  qrLocked: PAYMENT_PLACEHOLDER_UA,
   qrUsed: "Цей квиток уже використано або він пройшов check-in.",
   qrInstructions: "Покажіть цей QR на вході. Організатор сканує його на сторінці Check-in.",
   qrFallback: "QR не вдалося надіслати як фото. Покажіть цей код на вході.",

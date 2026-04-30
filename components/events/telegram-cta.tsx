@@ -18,7 +18,7 @@ export function TelegramCta({ eventSlug, referralCode }: TelegramCtaProps) {
       ? {
           kicker: "Основний шлях",
           title: "Підтвердження в Telegram",
-          body: "Відкрийте бот, щоб завершити підтвердження, стежити за статусом квитка та отримати QR.",
+          body: "Реєстрація проходить через Telegram-бот.",
           button: "Відкрити Telegram bot",
           referral: "Реферал застосовано",
           newTab: "Telegram відкриється в новій вкладці. Бот зберігає підтвердження та оновлення квитка в одному місці."
@@ -26,7 +26,7 @@ export function TelegramCta({ eventSlug, referralCode }: TelegramCtaProps) {
       : {
           kicker: "Primary path",
           title: "Confirm in Telegram",
-          body: "Open the bot to finish confirmation, track payment status, and receive the QR when the ticket is ready.",
+          body: "Registration continues in the Telegram bot.",
           button: "Open Telegram bot",
           referral: "Referral applied",
           newTab: "Telegram opens in a new tab. The bot keeps confirmation and ticket updates together."

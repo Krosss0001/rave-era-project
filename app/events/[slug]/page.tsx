@@ -3,11 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Activity, CalendarDays, Clock, MapPin, Mic2, Send, Tags, UserRound, Users } from "lucide-react";
 import { organizer } from "@/data/organizers";
-import { getCapacityPercent } from "@/lib/format";
-import { getPublicEventBySlugWithFallback } from "@/lib/supabase/events";
+import { getEventDetailStatsWithFallback, getPublicEventBySlugWithFallback } from "@/lib/supabase/events";
 import { buildTelegramUrl } from "@/lib/telegram";
 import { TelegramCta } from "@/components/events/telegram-cta";
-import { EventRegistrationForm } from "@/components/events/event-registration-form";
+import { ReferralClickTracker } from "@/components/events/referral-click-tracker";
 import { ReferralBox } from "@/components/events/referral-box";
 import { WalletPlaceholder } from "@/components/events/wallet-placeholder";
 import { SafeEventImage } from "@/components/events/safe-event-image";
@@ -60,7 +59,9 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
     notFound();
   }
 
-  const referralCode = searchParams?.ref;
+  const referralCode = searchParams?.ref?.trim() || null;
+  const stats = await getEventDetailStatsWithFallback(event);
+  const registeredCount = stats.totalRegistrations;
   const telegramUrl = buildTelegramUrl(event.slug, referralCode);
   const eventStatusLabel =
     event.status === "soon"
@@ -69,7 +70,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
         ? { ua: "Обмежено", en: "LIMITED" }
         : { ua: "Наживо", en: "LIVE" };
   const aboutParagraphs = getEventParagraphs(event.description);
-  const capacityPercent = getCapacityPercent(event.registered, event.capacity);
+  const capacityPercent = stats.capacityFillPercent;
   const urgent = capacityPercent >= 60;
   const locationLabel = [event.city, event.venue].filter(Boolean).join(", ") || event.address || "Локація уточнюється";
   const capacityTone =
@@ -99,6 +100,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
 
   return (
     <div className="overflow-x-hidden bg-[#000000] text-white">
+      <ReferralClickTracker eventId={event.id} referralCode={referralCode} />
       <section className="group relative overflow-hidden border-b border-white/[0.05]">
         <SafeEventImage
           src={event.image}
@@ -135,7 +137,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
                 { key: "date", Icon: CalendarDays, text: <LocalizedEventDate date={event.date} /> },
                 { key: "location", Icon: MapPin, text: locationLabel },
                 { key: "price", Icon: Tags, text: <LocalizedPrice price={event.price} currency={event.currency} /> },
-                { key: "capacity", Icon: Users, text: <LocalizedText ua={`${event.registered}/${event.capacity} зареєстровано`} en={`${event.registered}/${event.capacity} registered`} /> }
+                { key: "capacity", Icon: Users, text: <LocalizedText ua={`${registeredCount}/${event.capacity} зареєстровано`} en={`${registeredCount}/${event.capacity} registered`} /> }
               ].map(({ key, Icon, text }) => (
                 <div key={key} className="flex min-h-14 min-w-0 items-center gap-3 border border-white/[0.06] bg-black/74 px-4 py-3 backdrop-blur-sm">
                   <Icon className="h-4 w-4 shrink-0 text-[#00FF88]" aria-hidden="true" />
@@ -155,7 +157,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
                 <LocalizedText ua="Відкрити Telegram bot" en="Open Telegram bot" />
               </Link>
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/42">
-                {event.urgencyNote || <LocalizedText ua="Telegram-підтвердження активне" en="Telegram confirmation active" />}
+                <LocalizedText ua="Реєстрація проходить через Telegram-бот." en="Registration continues in the Telegram bot." />
               </p>
             </div>
           </div>
@@ -263,11 +265,25 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
             <div className="mt-5 grid gap-2 border-y border-white/[0.05] py-4 min-[360px]:grid-cols-2">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35"><LocalizedText ua="Зареєстровано" en="Registered" /></p>
-                <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-white">{event.registered}</p>
+                <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-white">{registeredCount}</p>
               </div>
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35"><LocalizedText ua="Місткість" en="Capacity" /></p>
                 <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-white">{event.capacity}</p>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-2 border-b border-white/[0.05] pb-4 min-[360px]:grid-cols-2">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35"><LocalizedText ua="Підтверджено / очікують" en="Confirmed / pending" /></p>
+                <p className="mt-1 font-mono text-sm font-semibold tabular-nums text-white">
+                  {stats.confirmedRegistrations} / {stats.pendingRegistrations}
+                </p>
+              </div>
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35"><LocalizedText ua="Оплачено / резерв" en="Paid / reserved" /></p>
+                <p className="mt-1 font-mono text-sm font-semibold tabular-nums text-white">
+                  {stats.paidTickets} / {stats.reservedTickets}
+                </p>
               </div>
             </div>
             <div className="mt-5">
@@ -284,7 +300,6 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           <TelegramCta eventSlug={event.slug} referralCode={referralCode} />
           <ReferralBox path={`/events/${event.slug}`} activeReferral={referralCode} />
           <WalletPlaceholder />
-          <EventRegistrationForm eventId={event.id} eventSlug={event.slug} eventPrice={event.price} referralCode={referralCode} />
         </aside>
       </section>
 
