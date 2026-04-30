@@ -97,14 +97,17 @@ const demoSteps = [
     }
   },
   {
-    title: { ua: "Поділитися", en: "Share referral" },
-    copy: { ua: "Запросіть друзів через відстежуване посилання.", en: "Invite trusted friends through a tracked link." }
+    title: { ua: "Унікальні реферальні посилання", en: "Unique referral links" },
+    copy: {
+      ua: "Кожен користувач отримує персональне посилання для запрошення друзів та зростання події.",
+      en: "Each user gets a personal invite link to grow the event and track conversions."
+    }
   },
   {
-    title: { ua: "Отримати доступ", en: "Unlock access" },
+    title: { ua: "AI-помічник для організаторів (скоро)", en: "AI assistant for organizers (coming soon)" },
     copy: {
-      ua: "Приходьте з підтвердженим статусом сьогодні та wallet-ready доступом у наступних етапах.",
-      en: "Arrive with verified status today and wallet-ready access later."
+      ua: "Рекомендації по продажах, аналітика та автоматичні повідомлення для зростання івентів.",
+      en: "Sales insights, analytics, and automated messaging to scale events."
     }
   }
 ];
@@ -448,7 +451,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#020202] px-4 py-16 sm:px-6 md:px-10 md:py-28 lg:px-12 2xl:max-w-[1500px]">
+      <section className="mx-auto h-auto max-w-7xl overflow-visible border-t border-white/[0.05] bg-[#020202] px-4 pb-24 pt-16 sm:px-6 md:px-10 md:pb-32 md:pt-28 lg:px-12 2xl:max-w-[1500px]">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <SectionLabel index="04" label={<LocalizedText ua="Демо-флоу" en="Demo Flow" />} />
@@ -463,11 +466,11 @@ export default function HomePage() {
             />
           </p>
         </div>
-        <div className="mt-12 grid gap-3">
+        <div className="mt-12 h-auto w-full space-y-4 overflow-visible">
           {demoSteps.map((step, index) => (
             <article
               key={step.title.en}
-              className="scroll-card group relative grid gap-4 overflow-hidden border border-white/[0.05] bg-[#030303] p-4 transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-[#00FF88]/30 hover:bg-[#00FF88]/[0.02] sm:p-5 md:grid-cols-[120px_0.7fr_1fr] md:items-center"
+              className="group relative grid h-auto w-full translate-y-0 gap-4 overflow-visible border border-white/[0.05] bg-[#030303] p-4 opacity-100 transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-[#00FF88]/30 hover:bg-[#00FF88]/[0.02] sm:p-5 md:grid-cols-[120px_0.7fr_1fr] md:items-center"
               style={revealStyle(index)}
             >
               <CornerBrackets />
