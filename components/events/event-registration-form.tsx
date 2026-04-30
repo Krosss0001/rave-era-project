@@ -8,6 +8,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isFreePrice } from "@/lib/format";
 import { buildQrPayload, generateTicketCode } from "@/lib/tickets";
 import { buildTelegramUrl } from "@/lib/telegram";
+import { isValidEmail } from "@/lib/validation";
 import type { Database } from "@/lib/supabase/types";
 import { TicketQr } from "@/components/shared/ticket-qr";
 import { StatusBadge, getStatusBadgeVariant } from "@/components/shared/status-badge";
@@ -33,10 +34,6 @@ const initialForm: FormState = {
   email: "",
   telegramUsername: ""
 };
-
-function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
 
 function isTicketCodeCollision(error: { code?: string; message?: string } | null) {
   return error?.code === "23505" || Boolean(error?.message?.toLowerCase().includes("ticket_code"));
@@ -103,9 +100,9 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           submitting: "Надсилання"
         }
       : {
-          title: "Web fallback registration",
+          title: "Secondary web registration",
           description: isFreeEvent ? "Free event: registration is saved and the ticket appears in your dashboard." : "Payment will be connected next.",
-          open: "Web fallback registration",
+          open: "Register on web",
           registered: "You are registered",
           nextTelegram: "Next step: continue in Telegram",
           ticketCode: "Ticket code",
@@ -394,13 +391,13 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
 
   return (
     <section className="group relative border border-white/[0.06] bg-[#020202] p-4">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 min-[380px]:flex-row min-[380px]:items-start min-[380px]:justify-between">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/42">{copy.title}</p>
-          <p className="mt-2 text-sm leading-6 text-white/45">{copy.description}</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/52 sm:tracking-[0.2em]">{copy.title}</p>
+          <p className="mt-2 text-sm leading-6 text-white/58">{copy.description}</p>
         </div>
-        <span className="shrink-0 border border-white/[0.06] bg-[#030303] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.16em] text-white/35">
-          Web
+        <span className="w-fit shrink-0 border border-white/[0.06] bg-[#030303] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-white/52 sm:tracking-[0.14em]">
+          {language === "ua" ? "Додатково" : "Secondary"}
         </span>
       </div>
 
@@ -433,14 +430,14 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
               href={telegramUrl}
               target="_blank"
               rel="noreferrer"
-              className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 border border-[#00FF88] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.16em] text-[#00FF88] transition duration-200 hover:bg-[#00FF88] hover:text-black active:scale-[0.99] sm:tracking-widest"
+              className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 bg-[#00FF88] px-5 py-3 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.13em] text-black transition duration-200 hover:brightness-110 active:scale-[0.99] sm:tracking-widest"
             >
               <span className="min-w-0">{copy.continueTelegram}</span>
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
             </a>
             <Link
               href="/dashboard"
-              className="focus-ring inline-flex min-h-11 items-center justify-center border border-white/[0.08] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.16em] text-white/55 transition duration-200 hover:border-[#00FF88]/30 hover:text-[#00FF88] active:scale-[0.99] sm:tracking-widest"
+              className="focus-ring inline-flex min-h-12 items-center justify-center border border-white/[0.08] px-5 py-3 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.13em] text-white/62 transition duration-200 hover:border-[#00FF88]/30 hover:text-[#00FF88] active:scale-[0.99] sm:tracking-widest"
             >
               {copy.dashboard}
             </Link>
@@ -450,7 +447,7 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="focus-ring mt-5 min-h-11 w-full border border-primary/35 bg-primary/[0.025] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.14em] text-primary transition duration-200 hover:bg-primary hover:text-black active:scale-[0.99]"
+          className="focus-ring mt-5 min-h-12 w-full border border-white/[0.1] bg-white/[0.018] px-5 py-3 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.12em] text-white/70 transition duration-200 hover:border-primary/35 hover:bg-primary/[0.035] hover:text-primary active:scale-[0.99] sm:tracking-[0.14em]"
         >
           {copy.open}
         </button>
@@ -511,7 +508,8 @@ export function EventRegistrationForm({ eventId, eventSlug, eventPrice, referral
           <button
             type="submit"
             disabled={loading}
-            className="focus-ring min-h-11 border border-[#00FF88]/55 bg-[#00FF88]/[0.025] px-5 py-2.5 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.14em] text-[#00FF88] transition duration-200 hover:bg-[#00FF88] hover:text-black active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45"
+            aria-busy={loading}
+            className="focus-ring min-h-12 border border-white/[0.1] bg-white/[0.018] px-5 py-3 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.12em] text-white/72 transition duration-200 hover:border-[#00FF88]/45 hover:bg-[#00FF88]/[0.045] hover:text-[#00FF88] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45 sm:tracking-[0.14em]"
           >
             {loading ? copy.submitting : copy.submit}
           </button>

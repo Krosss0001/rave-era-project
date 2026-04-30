@@ -165,13 +165,13 @@ export function TelegramBroadcastPanel({
 
   return (
     <section className="border-y border-white/[0.05] bg-[#020202] py-8">
-      <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-8">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{eyebrow}</p>
-          <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">{title}</h2>
-          <p className="mt-5 max-w-xl text-sm leading-6 text-white/50">{description}</p>
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">{eyebrow}</p>
+          <h2 className="mt-3 text-[clamp(1.85rem,9vw,3rem)] font-black uppercase leading-[0.98] text-white">{title}</h2>
+          <p className="mt-5 max-w-xl text-sm leading-6 text-white/58">{description}</p>
           <div className="mt-8 border border-white/[0.06] bg-[#030303] p-4">
-            <p className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/42">
+            <p className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-white/52 sm:tracking-[0.18em]">
               <Send className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
               Message preview
             </p>
@@ -186,7 +186,7 @@ export function TelegramBroadcastPanel({
               <select
                 value={audience}
                 onChange={(event) => setAudience(event.target.value as BroadcastAudience)}
-                className="mt-2 min-h-11 w-full border border-white/[0.08] bg-[#020202] px-3 font-mono text-xs uppercase text-white outline-none motion-safe:transition-colors motion-safe:duration-300 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="mt-2 min-h-12 w-full border border-white/[0.08] bg-[#020202] px-3 font-mono text-xs uppercase text-white outline-none motion-safe:transition-colors motion-safe:duration-300 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 {audienceOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -201,7 +201,7 @@ export function TelegramBroadcastPanel({
                 <select
                   value={eventId}
                   onChange={(event) => setEventId(event.target.value)}
-                  className="mt-2 min-h-11 w-full border border-white/[0.08] bg-[#020202] px-3 text-sm text-white outline-none motion-safe:transition-colors motion-safe:duration-300 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  className="mt-2 min-h-12 w-full border border-white/[0.08] bg-[#020202] px-3 text-sm text-white outline-none motion-safe:transition-colors motion-safe:duration-300 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   {events.length === 0 ? <option value="">No available events</option> : null}
                   {events.map((event) => (
@@ -225,11 +225,11 @@ export function TelegramBroadcastPanel({
             </label>
           </div>
 
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <button
               type="submit"
               disabled={busy !== null}
-              className="focus-ring min-h-11 border border-primary px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-widest text-primary motion-safe:transition-[background-color,color,transform,opacity] motion-safe:duration-300 hover:bg-primary hover:text-black active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+              className="focus-ring min-h-12 border border-primary px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-primary motion-safe:transition-[background-color,color,transform,opacity] motion-safe:duration-300 hover:bg-primary hover:text-black active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
             >
               {busy === "preview" ? "Preparing" : "Preview audience"}
             </button>
@@ -237,7 +237,7 @@ export function TelegramBroadcastPanel({
               type="button"
               onClick={sendBroadcast}
               disabled={busy !== null}
-              className="focus-ring min-h-11 bg-primary px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-widest text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-300 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+              className="focus-ring min-h-12 bg-primary px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-300 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
             >
               {busy === "send" ? "Sending" : "Send broadcast"}
             </button>

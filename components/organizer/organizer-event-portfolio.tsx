@@ -254,14 +254,14 @@ export function OrganizerEventPortfolio() {
     <section className="org-reveal border-y border-white/[0.05] bg-[#020202] py-8">
       <div className="flex flex-col justify-between gap-5 px-1 sm:flex-row sm:items-end">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.organizer.eventPortfolio}</p>
-          <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">{dictionary.organizer.activeEvents}</h2>
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">{dictionary.organizer.eventPortfolio}</p>
+          <h2 className="mt-3 text-[clamp(1.85rem,9vw,3rem)] font-black uppercase leading-[0.98] text-white">{dictionary.organizer.activeEvents}</h2>
         </div>
         <button
           type="button"
           onClick={() => setFormOpen((value) => !value)}
           aria-expanded={formOpen}
-          className="focus-ring min-h-11 border border-primary px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-widest text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-primary hover:text-black active:scale-[0.98]"
+          className="focus-ring min-h-12 border border-primary px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-300 hover:bg-primary hover:text-black active:scale-[0.98]"
         >
           {formOpen ? dictionary.organizer.closeForm : dictionary.organizer.createEvent}
         </button>
@@ -274,7 +274,7 @@ export function OrganizerEventPortfolio() {
         >
           <p>{message.text}</p>
           {message.type === "success" && createdSlug ? (
-            <Link href={`/events/${createdSlug}`} className="focus-ring mt-3 inline-flex min-h-10 items-center border border-primary px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary hover:text-black">
+            <Link href={`/events/${createdSlug}`} className="focus-ring mt-3 inline-flex min-h-11 items-center border border-primary px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-primary hover:bg-primary hover:text-black">
               {dictionary.organizer.openCreatedEvent}
             </Link>
           ) : null}
@@ -282,7 +282,7 @@ export function OrganizerEventPortfolio() {
       ) : null}
 
       {formOpen ? (
-        <form onSubmit={createEvent} className="mt-8 border-y border-white/[0.05] bg-[#030303] px-3 py-6 sm:px-1">
+        <form onSubmit={createEvent} className="mt-8 border-y border-white/[0.05] bg-[#030303] px-3 py-6 sm:px-4">
           <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.24em] text-primary">{dictionary.organizer.basicProfile}</p>
           <p className="mb-5 text-sm leading-6 text-white/45">{dictionary.organizer.publicHint}</p>
           <div className="grid gap-4 md:grid-cols-2">
@@ -378,8 +378,8 @@ export function OrganizerEventPortfolio() {
             <label className="block">
               <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Price</span>
               <input
-                type="number"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 value={form.price}
                 onChange={(event) => updateField("price", event.target.value)}
                 className="mt-2 min-h-11 w-full border border-white/[0.08] bg-[#020202] px-3 font-mono text-sm text-white outline-none motion-safe:transition-colors motion-safe:duration-500 focus:border-primary"
@@ -397,8 +397,9 @@ export function OrganizerEventPortfolio() {
             <label className="block">
               <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Capacity</span>
               <input
-                type="number"
-                min="1"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={form.capacity}
                 onChange={(event) => updateField("capacity", event.target.value)}
                 required
@@ -535,7 +536,7 @@ export function OrganizerEventPortfolio() {
           <button
             type="submit"
             disabled={saving}
-            className="focus-ring mt-5 min-h-11 w-full bg-primary px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-500 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto sm:tracking-widest"
+            className="focus-ring mt-5 min-h-12 w-full bg-primary px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.13em] text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-300 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto sm:tracking-widest"
           >
             {saving ? dictionary.organizer.saving : dictionary.organizer.saveSupabase}
           </button>
@@ -550,7 +551,7 @@ export function OrganizerEventPortfolio() {
         ].map(([value, label]) => (
           <div key={label} className="min-w-0 border border-white/[0.05] bg-[#030303] p-4">
             <p className="font-mono text-3xl font-semibold tabular-nums text-white">{loading ? "..." : value}</p>
-            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{label}</p>
+            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.13em] text-white/45 sm:tracking-[0.18em]">{label}</p>
           </div>
         ))}
       </div>
@@ -581,8 +582,8 @@ export function OrganizerEventPortfolio() {
               <div className="absolute left-0 top-0 h-px w-0 bg-primary motion-safe:transition-[width] motion-safe:duration-500 motion-safe:ease-out group-hover:w-full" />
               <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
                 <div className="min-w-0">
-                  <h3 className="text-[clamp(1.5rem,8vw,1.5rem)] font-black uppercase leading-none text-white">{event.title}</h3>
-                  <p className="mt-3 font-mono text-xs uppercase tracking-[0.18em] text-white/[0.38]">
+                  <h3 className="break-words text-[clamp(1.35rem,7vw,1.5rem)] font-black uppercase leading-tight text-white">{event.title}</h3>
+                  <p className="mt-3 break-words font-mono text-xs uppercase leading-5 tracking-[0.12em] text-white/[0.48] sm:tracking-[0.18em]">
                     {formatEventDate(event.date)} / {event.time} / {event.city} / {event.venue} / {event.dbStatus ?? event.status}
                   </p>
                 </div>

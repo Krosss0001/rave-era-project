@@ -1,12 +1,13 @@
 import { EventBrowser } from "@/components/events/event-browser";
 import { LocalizedText } from "@/components/shared/localized-text";
 import { getPublicEventsWithFallback } from "@/lib/supabase/events";
+import type { ReactNode } from "react";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
-function SectionLabel({ index, label }: { index: string; label: string }) {
+function SectionLabel({ index, label }: { index: string; label: ReactNode }) {
   return (
     <p className="event-reveal flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.24em] text-[#00FF88]">
       <span className="text-white/20">{index}</span>
@@ -24,14 +25,14 @@ export default async function EventsPage() {
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.018)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.018)_1px,transparent_1px)] bg-[size:80px_80px]" />
       <div className="pointer-events-none absolute right-[-20%] top-[-8%] -z-10 h-[45vw] w-[45vw] bg-[#00FF88]/10 blur-[150px]" />
 
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 md:px-10 md:py-28 lg:px-12 2xl:max-w-[1500px]">
+      <section className="mx-auto max-w-7xl px-3 py-14 sm:px-6 sm:py-20 md:px-10 md:py-24 lg:px-12 2xl:max-w-[1500px]">
         <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
           <div className="max-w-3xl">
-            <SectionLabel index="00" label="Event Discovery" />
-            <h1 className="event-reveal mt-5 text-[clamp(2.75rem,14vw,7.5rem)] font-black uppercase leading-[0.9] text-white sm:leading-[0.82]">
+            <SectionLabel index="00" label={<LocalizedText ua="Пошук подій" en="Event discovery" />} />
+            <h1 className="event-reveal mt-5 text-[clamp(2.35rem,13vw,6.75rem)] font-black uppercase leading-[0.95] text-white sm:leading-[0.86]">
               <LocalizedText ua="Події Rave'era" en="Curated Rave'era events" />
             </h1>
-            <p className="event-reveal mt-6 max-w-2xl text-base font-light leading-7 text-white/55 md:mt-7 md:text-lg">
+            <p className="event-reveal mt-6 max-w-2xl text-base font-light leading-7 text-white/62 md:mt-7 md:text-lg">
               <LocalizedText
                 ua="Концерти, фестивалі, конференції, корпоративні та культурні події для продажу квитків, зростання аудиторії й Telegram-підтверджень."
                 en="Concerts, festivals, conferences, corporate events, and cultural programs built for ticket sales, audience growth, and Telegram-supported confirmation."

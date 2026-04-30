@@ -54,7 +54,7 @@ export function ReferralBox({ path, activeReferral }: ReferralBoxProps) {
         </div>
       </div>
       <div className="mt-4 border border-white/[0.06] bg-black p-3">
-        <p className="break-all font-mono text-xs leading-5 text-white/38">
+        <p className="break-anywhere font-mono text-xs leading-5 text-white/42">
           <span className="text-[#00FF88]">{code}</span> / {referralUrl}
         </p>
       </div>

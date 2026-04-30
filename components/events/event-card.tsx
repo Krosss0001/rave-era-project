@@ -38,7 +38,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
     <Link
       href={`/events/${event.slug}`}
       aria-label={`Open event ${event.title}`}
-      className={`focus-ring group relative grid overflow-hidden border border-white/[0.06] bg-[#020202] motion-safe:animate-[fadeUp_620ms_cubic-bezier(0.16,1,0.3,1)_both] motion-safe:transition-[transform,border-color,background-color,box-shadow] motion-safe:duration-300 motion-safe:ease-out hover:border-[#00FF88]/35 hover:bg-[#00FF88]/[0.025] hover:shadow-[0_0_42px_rgba(0,255,136,0.06)] motion-safe:hover:-translate-y-0.5 ${
+      className={`focus-ring group relative grid min-w-0 overflow-hidden border border-white/[0.06] bg-[#020202] motion-safe:animate-[fadeUp_620ms_cubic-bezier(0.16,1,0.3,1)_both] motion-safe:transition-[transform,border-color,background-color,box-shadow] motion-safe:duration-300 motion-safe:ease-out hover:border-[#00FF88]/35 hover:bg-[#00FF88]/[0.025] hover:shadow-[0_0_42px_rgba(0,255,136,0.06)] motion-safe:hover:-translate-y-0.5 ${
         featured ? "lg:grid-cols-[1.08fr_0.92fr]" : ""
       }`}
     >
@@ -46,21 +46,21 @@ export function EventCard({ event, featured = false }: EventCardProps) {
       <span className="pointer-events-none absolute left-3 top-3 z-20 h-4 w-4 border-l border-t border-[#00FF88]/45 opacity-0 motion-safe:transition-opacity motion-safe:duration-500 group-hover:opacity-100" aria-hidden="true" />
       <span className="pointer-events-none absolute bottom-3 right-3 z-20 h-4 w-4 border-b border-r border-[#00FF88]/45 opacity-0 motion-safe:transition-opacity motion-safe:duration-500 group-hover:opacity-100" aria-hidden="true" />
 
-      <div className={`relative overflow-hidden bg-black ${featured ? "aspect-[4/3] min-h-[220px] sm:min-h-[280px] lg:aspect-auto lg:min-h-[440px]" : "aspect-[4/3] sm:aspect-[16/10]"}`}>
+      <div className={`relative overflow-hidden bg-black ${featured ? "aspect-[3/4] min-h-[300px] sm:aspect-[4/3] sm:min-h-[320px] lg:aspect-auto lg:min-h-[460px]" : "aspect-[3/4] min-h-[300px] sm:aspect-[4/3]"}`}>
         <SafeEventImage
           src={event.image}
           alt={`${event.title} event poster`}
-          className="object-contain object-center opacity-90 grayscale motion-safe:transition-[transform,opacity,filter] motion-safe:duration-300 motion-safe:ease-out group-hover:scale-[1.01] group-hover:opacity-100 group-hover:grayscale-0"
+          className="object-contain object-center opacity-95 motion-safe:transition-[transform,opacity,filter] motion-safe:duration-300 motion-safe:ease-out group-hover:scale-[1.01] group-hover:opacity-100"
           sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/10" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/22 via-transparent to-black/5" />
         <p className={`absolute left-4 top-4 border bg-[#020202]/95 px-3 py-1 font-mono text-[9px] font-semibold uppercase tracking-[0.18em] text-[#00FF88] ${
           urgent ? "border-[#00FF88]/40 shadow-[0_0_24px_rgba(0,255,136,0.12)] motion-safe:animate-[signalPulse_1.8s_ease-out_infinite]" : "border-white/[0.05]"
         }`}>
           <LocalizedText ua={statusLabel.ua} en={statusLabel.en} />
         </p>
       </div>
-      <div className={`flex flex-col justify-between border-t border-white/[0.05] p-5 ${featured ? "lg:border-l lg:border-t-0 lg:p-7" : ""}`}>
+      <div className={`flex min-w-0 flex-col justify-between border-t border-white/[0.05] p-4 sm:p-5 ${featured ? "lg:border-l lg:border-t-0 lg:p-7" : ""}`}>
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">
@@ -68,14 +68,14 @@ export function EventCard({ event, featured = false }: EventCardProps) {
             </p>
             <StatusBadge label={event.status} variant={urgent ? "limited" : event.status} size="sm" />
           </div>
-          <h3 className={`mt-3 break-words font-black uppercase leading-[0.98] text-white [text-shadow:0_0_40px_rgba(255,255,255,0.06)] ${featured ? "text-[clamp(2rem,11vw,4.5rem)] lg:leading-[0.94]" : "text-[clamp(1.75rem,9vw,2.25rem)]"}`}>
+          <h3 className={`mt-3 break-words font-black uppercase leading-[0.98] text-white [text-shadow:0_0_40px_rgba(255,255,255,0.06)] ${featured ? "text-[clamp(1.9rem,10vw,4.25rem)] lg:leading-[0.94]" : "text-[clamp(1.55rem,8vw,2.1rem)]"}`}>
             {event.title}
           </h3>
           <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/45">
             {event.subtitle}
           </p>
-          <p className="mt-4 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/[0.38]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#00FF88] shadow-[0_0_12px_rgba(0,255,136,0.5)] motion-safe:animate-[signalPulse_1.8s_ease-out_infinite]" aria-hidden="true" />
+          <p className="mt-4 inline-flex items-start gap-2 font-mono text-[10px] uppercase leading-5 tracking-[0.14em] text-white/[0.46] sm:tracking-[0.18em]">
+            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#00FF88] shadow-[0_0_12px_rgba(0,255,136,0.5)] motion-safe:animate-[signalPulse_1.8s_ease-out_infinite]" aria-hidden="true" />
             <LocalizedText ua={`${recentSales} квитків за останню хвилю продажів`} en={`${recentSales} tickets sold in the latest sales window`} />
           </p>
         </div>
@@ -86,7 +86,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
             { id: "time", value: event.time, label: <LocalizedText ua="час" en="time" /> }
           ].map(({ id, value, label }) => (
             <div key={id} className="min-w-0 border border-white/[0.05] bg-[#030303] p-3 motion-safe:transition-colors motion-safe:duration-300 group-hover:border-white/[0.08]">
-              <p className="truncate font-mono text-xs font-semibold uppercase text-white">{value}</p>
+              <p className="break-words font-mono text-xs font-semibold uppercase leading-5 text-white">{value}</p>
               <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.18em] text-white/35">{label}</p>
             </div>
           ))}

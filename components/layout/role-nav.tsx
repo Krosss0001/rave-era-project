@@ -61,9 +61,9 @@ export function RoleNav() {
         <Link
           key={item.href}
           href={item.href}
-          className="focus-ring group relative min-h-10 shrink-0 px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35 motion-safe:transition-colors motion-safe:duration-500 hover:text-primary md:tracking-[0.22em]"
+          className="focus-ring group relative min-h-11 shrink-0 px-3 py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.11em] text-white/42 motion-safe:transition-colors motion-safe:duration-300 hover:text-primary md:tracking-[0.18em]"
         >
-          <span className="absolute left-3 right-3 top-0 h-px scale-x-0 bg-primary motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out group-hover:scale-x-100" aria-hidden="true" />
+          <span className="absolute left-3 right-3 top-0 h-px scale-x-0 bg-primary motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out group-hover:scale-x-100" aria-hidden="true" />
           {item.label}
         </Link>
       ))}

@@ -27,7 +27,25 @@ export async function generateTicketQrDataUrl(ticket: QrTicketSource) {
   });
 }
 
-export function parseTicketQrInput(value: string): ParsedTicketQrInput {
+function parseTicketPayloadObject(
+  payload: { ticket_code?: unknown; event_id?: unknown; qr_payload?: unknown },
+  depth: number
+): ParsedTicketQrInput {
+  const ticketCode = typeof payload.ticket_code === "string" ? payload.ticket_code.trim().toUpperCase() : "";
+  const eventId = typeof payload.event_id === "string" && payload.event_id.trim() ? payload.event_id.trim() : null;
+
+  if (ticketCode) {
+    return { ticketCode, eventId, error: null };
+  }
+
+  if (typeof payload.qr_payload === "string" && payload.qr_payload.trim() && depth < 2) {
+    return parseTicketQrInputValue(payload.qr_payload, depth + 1);
+  }
+
+  return { ticketCode: null, eventId: null, error: "Некоректний QR-код." };
+}
+
+function parseTicketQrInputValue(value: string, depth: number): ParsedTicketQrInput {
   const input = value.trim();
 
   if (!input) {
@@ -39,16 +57,12 @@ export function parseTicketQrInput(value: string): ParsedTicketQrInput {
   }
 
   try {
-    const payload = JSON.parse(input) as { ticket_code?: unknown; event_id?: unknown };
-    const ticketCode = typeof payload.ticket_code === "string" ? payload.ticket_code.trim().toUpperCase() : "";
-    const eventId = typeof payload.event_id === "string" && payload.event_id.trim() ? payload.event_id.trim() : null;
-
-    if (!ticketCode) {
-      return { ticketCode: null, eventId: null, error: "Некоректний QR-код." };
-    }
-
-    return { ticketCode, eventId, error: null };
+    return parseTicketPayloadObject(JSON.parse(input) as { ticket_code?: unknown; event_id?: unknown; qr_payload?: unknown }, depth);
   } catch {
     return { ticketCode: null, eventId: null, error: "Некоректний QR-код." };
   }
+}
+
+export function parseTicketQrInput(value: string): ParsedTicketQrInput {
+  return parseTicketQrInputValue(value, 0);
 }

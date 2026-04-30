@@ -57,14 +57,14 @@ export function StatusBadge({ label, variant = "planned", size = "md", className
   return (
     <span
       className={clsx(
-        "inline-flex items-center justify-center gap-2 border font-mono font-semibold uppercase",
-        size === "sm" ? "min-h-7 px-2.5 py-1 text-[9px] tracking-[0.14em]" : "min-h-8 px-4 py-2 text-[10px] tracking-[0.2em]",
+        "inline-flex max-w-full items-center justify-center gap-2 border font-mono font-semibold uppercase leading-4",
+        size === "sm" ? "min-h-7 px-2.5 py-1 text-[9px] tracking-[0.1em] sm:tracking-[0.14em]" : "min-h-8 px-3 py-2 text-[10px] tracking-[0.14em] sm:px-4 sm:tracking-[0.18em]",
         variants[variant],
         className
       )}
     >
-      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current shadow-[0_0_12px_currentColor] motion-safe:animate-pulse" aria-hidden="true" />
-      {label}
+      <span className="h-1.5 w-1.5 shrink-0 bg-current shadow-[0_0_12px_currentColor] motion-safe:animate-pulse" aria-hidden="true" />
+      <span className="min-w-0 truncate">{label}</span>
     </span>
   );
 }

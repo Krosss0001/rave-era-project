@@ -10,13 +10,13 @@ type EventGridProps = {
 };
 
 export function EventGrid({ events }: EventGridProps) {
-  const { dictionary } = useLanguage();
+  const { dictionary, language } = useLanguage();
 
   if (events.length === 0) {
     return (
       <div className="border border-white/[0.05] bg-[#020202] p-6 text-center sm:p-8">
         <p className="mx-auto mb-4 inline-flex border border-white/[0.06] bg-white/[0.025] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/40">
-          Empty calendar
+          {language === "ua" ? "Календар порожній" : "Empty calendar"}
         </p>
         <h3 className="text-xl font-black uppercase">{dictionary.events.noEventsTitle}</h3>
         <p className="mt-2 text-sm text-white/45">

@@ -170,13 +170,13 @@ export default function HomePage() {
       <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.045] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:4px_4px]" />
       <section className="relative overflow-hidden">
         <div className="absolute right-[-18%] top-[4%] -z-10 h-[55vw] w-[55vw] bg-[#00FF88]/10 blur-[150px] motion-safe:animate-[heroGlow_9s_cubic-bezier(0.16,1,0.3,1)_infinite_alternate]" />
-        <div className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 sm:py-24 md:px-10 md:py-28 lg:grid-cols-[1.1fr_0.9fr] lg:px-12 2xl:max-w-[1500px]">
+        <div className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-center gap-10 px-3 py-14 sm:px-6 sm:py-24 md:px-10 md:py-28 lg:grid-cols-[1.1fr_0.9fr] lg:px-12 2xl:max-w-[1500px]">
           <div className="max-w-3xl">
             <p className="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 border border-white/[0.05] bg-[#020202] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/55 sm:px-4 sm:tracking-[0.24em]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#00FF88] shadow-[0_0_16px_rgba(0,255,136,0.75)] motion-safe:animate-[softPulse_2.2s_ease-out_infinite]" aria-hidden="true" />
               <span className="whitespace-nowrap">Rave<span className="text-[#00FF88]">&apos;</span>era</span> Group <span className="text-[#00FF88]" aria-hidden="true">{"\u00B7"}</span> Concerts <span className="text-[#00FF88]">&amp;</span> Marketing Agency
             </p>
-            <h1 className="mt-7 text-[clamp(2.8rem,15vw,10.5rem)] font-black uppercase leading-[0.84] text-white sm:mt-8 sm:text-[clamp(4.5rem,9.6vw,10.5rem)] sm:leading-[0.78]">
+            <h1 className="mt-7 text-[clamp(2.5rem,13vw,9.5rem)] font-black uppercase leading-[0.88] text-white sm:mt-8 sm:text-[clamp(4.2rem,9.2vw,10rem)] sm:leading-[0.8]">
               {heroLines.map((line, index) => (
                 <span
                   key={line.en}
@@ -210,7 +210,7 @@ export default function HomePage() {
             <div className="mt-10 flex flex-col gap-3 motion-safe:animate-[fadeUp_520ms_cubic-bezier(0.16,1,0.3,1)_460ms_both] sm:flex-row">
               <Link
                 href="/events"
-                className="focus-ring group relative inline-flex min-h-11 items-center justify-center overflow-hidden border border-[#00FF88] px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[#00FF88] transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:text-black hover:shadow-[0_0_30px_rgba(0,255,136,0.12)] active:scale-[0.98]"
+                className="focus-ring group relative inline-flex min-h-12 items-center justify-center overflow-hidden border border-[#00FF88] px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.13em] text-[#00FF88] transition duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:text-black hover:shadow-[0_0_30px_rgba(0,255,136,0.12)] active:scale-[0.98] sm:tracking-widest"
               >
                 <span className="absolute inset-0 -translate-x-full bg-[#00FF88] transition-transform duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0" aria-hidden="true" />
                 <span className="relative z-10 inline-flex items-center">
@@ -220,7 +220,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/organizer"
-                className="focus-ring group relative inline-flex min-h-11 items-center justify-center overflow-hidden bg-[#00FF88] px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-black transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_0_30px_rgba(0,255,136,0.14)] active:scale-[0.98]"
+                className="focus-ring group relative inline-flex min-h-12 items-center justify-center overflow-hidden bg-[#00FF88] px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.13em] text-black transition duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_0_30px_rgba(0,255,136,0.14)] active:scale-[0.98] sm:tracking-widest"
               >
                 <span className="absolute inset-0 -translate-x-full bg-white transition-transform duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0" aria-hidden="true" />
                 <span className="relative z-10"><LocalizedText ua="Панель організатора" en="Organizer OS" /></span>

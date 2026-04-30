@@ -71,8 +71,8 @@ export function AdminPanel() {
     <section className="border-y border-white/[0.05] bg-[#020202] py-8">
       <div className="flex flex-col justify-between gap-5 px-1 sm:flex-row sm:items-end">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.admin.profiles}</p>
-          <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">{dictionary.admin.profiles}</p>
+          <h2 className="mt-3 text-[clamp(1.85rem,9vw,3rem)] font-black uppercase leading-[0.98] text-white">
             {dictionary.admin.roleControl}
           </h2>
         </div>
@@ -85,7 +85,7 @@ export function AdminPanel() {
         </p>
       ) : null}
 
-      <div className="-mx-4 mt-8 overflow-x-auto border-t border-white/[0.05] px-4 sm:mx-0 sm:mt-10 sm:px-0">
+      <div className="-mx-3 mt-8 overflow-x-auto border-t border-white/[0.05] px-3 [scrollbar-width:thin] sm:mx-0 sm:mt-10 sm:px-0">
         <table className="w-full min-w-[680px] text-left text-sm">
           <thead className="font-mono text-xs uppercase tracking-[0.18em] text-white/[0.34]">
             <tr>
@@ -126,7 +126,7 @@ export function AdminPanel() {
                         <button
                           type="button"
                           onClick={() => changeRole(profile, upgradeRole)}
-                          className="focus-ring min-h-10 border border-white/[0.05] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white/45 motion-safe:transition-[border-color,color,transform] motion-safe:duration-500 hover:border-primary/35 hover:text-primary active:scale-[0.98]"
+                          className="focus-ring min-h-11 border border-white/[0.05] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-white/58 motion-safe:transition-[border-color,color,transform] motion-safe:duration-300 hover:border-primary/35 hover:text-primary active:scale-[0.98]"
                         >
                           Make {upgradeRole}
                         </button>

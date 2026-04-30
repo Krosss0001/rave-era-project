@@ -30,6 +30,7 @@ import {
   type EventRow,
   type TelegramSession
 } from "@/lib/telegram/state";
+import { isValidEmail } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -98,10 +99,6 @@ function getEventUrl(eventSlug: string) {
 function getEventShareUrl(eventSlug: string, title: string) {
   const eventUrl = getEventUrl(eventSlug);
   return `https://t.me/share/url?url=${encodeURIComponent(eventUrl)}&text=${encodeURIComponent(title)}`;
-}
-
-function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 function logTelegramIssue(message: string, details: Record<string, unknown> = {}) {

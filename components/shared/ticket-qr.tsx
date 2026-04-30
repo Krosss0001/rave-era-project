@@ -44,10 +44,10 @@ export function TicketQr({ ticket, locked = false, lockedMessage = "QR відк�
 
   if (locked) {
     return (
-      <div className="flex min-h-40 items-center justify-center border border-white/[0.06] bg-black p-4 text-center">
+      <div className="flex min-h-48 items-center justify-center border border-white/[0.06] bg-black p-5 text-center sm:min-h-56">
         <div>
-          <QrCode className="mx-auto h-8 w-8 text-white/25" aria-hidden="true" />
-          <p className="mt-3 text-sm leading-6 text-white/45">{lockedMessage}</p>
+          <QrCode className="mx-auto h-9 w-9 text-primary/70" aria-hidden="true" />
+          <p className="mt-3 max-w-sm text-sm leading-6 text-white/58">{lockedMessage}</p>
         </div>
       </div>
     );
@@ -62,12 +62,12 @@ export function TicketQr({ ticket, locked = false, lockedMessage = "QR відк�
   }
 
   return (
-    <div className="flex min-h-40 items-center justify-center border border-white/[0.06] bg-black p-4">
+    <div className="flex min-h-48 items-center justify-center border border-white/[0.06] bg-black p-4 sm:min-h-56">
       {dataUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={dataUrl} alt={`QR квитка ${ticket.ticket_code}`} className="h-40 w-40 bg-white p-2" />
+        <img src={dataUrl} alt={`QR квитка ${ticket.ticket_code}`} className="h-44 w-44 bg-white p-2 sm:h-52 sm:w-52" />
       ) : (
-        <div className="h-40 w-40 border border-white/[0.05] bg-white/[0.03] motion-safe:animate-pulse" aria-label="Створення QR" />
+        <div className="h-44 w-44 border border-white/[0.05] bg-white/[0.03] motion-safe:animate-pulse sm:h-52 sm:w-52" aria-label="Створення QR" />
       )}
     </div>
   );

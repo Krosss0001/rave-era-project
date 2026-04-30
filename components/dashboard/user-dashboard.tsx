@@ -201,7 +201,10 @@ export function UserDashboard() {
 
       <aside className="grid min-w-0 gap-6">
         <section className="border-y border-white/[0.05] bg-[#020202] py-8">
-          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.dashboard.myTickets}</p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">{dictionary.dashboard.myTickets}</p>
+            <StatusBadge label={`${tickets.length}`} variant={tickets.length > 0 ? "success" : "neutral"} size="sm" />
+          </div>
           <div className="mt-6 grid gap-3">
             {tickets.length > 0 ? (
               tickets.map((ticket) => {
@@ -210,18 +213,18 @@ export function UserDashboard() {
                 const isQrLocked = ticket.status !== "active" || ticket.payment_status !== "paid";
 
                 return (
-                <div key={ticket.id} className="min-w-0 border border-white/[0.05] bg-[#030303] p-4">
-                  <div className="flex items-start justify-between gap-3 border-b border-white/[0.05] pb-4">
+                <div key={ticket.id} className="min-w-0 border border-white/[0.06] bg-[#030303] p-4">
+                  <div className="flex flex-col gap-3 border-b border-white/[0.05] pb-4 min-[390px]:flex-row min-[390px]:items-start min-[390px]:justify-between">
                     <div className="min-w-0">
                       {event?.slug ? (
                         <Link
                           href={`/events/${event.slug}`}
-                          className="focus-ring block text-lg font-black uppercase leading-none text-white underline decoration-transparent underline-offset-4 motion-safe:transition-colors motion-safe:duration-500 hover:text-primary hover:decoration-primary/40"
+                          className="focus-ring block break-words text-lg font-black uppercase leading-tight text-white underline decoration-transparent underline-offset-4 motion-safe:transition-colors motion-safe:duration-300 hover:text-primary hover:decoration-primary/40"
                         >
                           {event.title}
                         </Link>
                       ) : (
-                        <p className="text-lg font-black uppercase leading-none text-white">Event ticket</p>
+                        <p className="text-lg font-black uppercase leading-tight text-white">Event ticket</p>
                       )}
                       <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.16em] text-white/35">
                         {event?.date ? new Date(event.date).toLocaleDateString(language === "ua" ? "uk-UA" : "en-US", { month: "short", day: "numeric", year: "numeric" }) : language === "ua" ? "Дата уточнюється" : "Date TBA"} / {event?.city ?? (language === "ua" ? "Місто уточнюється" : "City TBA")}
@@ -239,15 +242,21 @@ export function UserDashboard() {
                       <StatusBadge label={ticket.payment_status} variant={getStatusBadgeVariant(ticket.payment_status)} size="sm" className="mt-1" />
                     </div>
                   </div>
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <div className="mt-4 grid gap-2 min-[380px]:grid-cols-2">
                     <button
                       type="button"
                       onClick={() => setVisibleQrTicketId((current) => (current === ticket.id ? null : ticket.id))}
-                      className="focus-ring min-h-11 border border-primary/35 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-primary hover:text-black active:scale-[0.98]"
+                      className="focus-ring min-h-12 border border-primary/35 px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-300 hover:bg-primary hover:text-black active:scale-[0.98]"
                       aria-expanded={isQrVisible}
                     >
                       {isQrVisible ? (language === "ua" ? "Сховати QR" : "Hide QR") : (language === "ua" ? "Показати QR" : "Show QR")}
                     </button>
+                    <Link
+                      href={event?.slug ? `/events/${event.slug}` : "/events"}
+                      className="focus-ring inline-flex min-h-12 items-center justify-center border border-white/[0.08] px-4 py-2.5 text-center font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-white/58 motion-safe:transition-[border-color,color,background-color,transform] motion-safe:duration-300 hover:border-primary/35 hover:bg-primary/[0.035] hover:text-primary active:scale-[0.98]"
+                    >
+                      {language === "ua" ? "Подія" : "Event"}
+                    </Link>
                   </div>
                   {isQrVisible ? (
                     <div className="mt-4">
@@ -266,7 +275,7 @@ export function UserDashboard() {
                 <p className="text-sm leading-6 text-white/48">{dictionary.dashboard.noTickets}</p>
                 <Link
                   href="/events"
-                  className="focus-ring mt-4 inline-flex min-h-10 items-center border border-white/[0.08] px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white/58 motion-safe:transition-[border-color,color,background-color] motion-safe:duration-300 hover:border-primary/35 hover:bg-primary/[0.035] hover:text-primary"
+                  className="focus-ring mt-4 inline-flex min-h-11 items-center border border-white/[0.08] px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-white/58 motion-safe:transition-[border-color,color,background-color] motion-safe:duration-300 hover:border-primary/35 hover:bg-primary/[0.035] hover:text-primary"
                 >
                   {dictionary.common.openEvents}
                 </Link>

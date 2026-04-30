@@ -38,7 +38,7 @@ export function WalletPlaceholder() {
         type="button"
         onClick={() => setConnected((value) => !value)}
         aria-pressed={connected}
-        className="focus-ring mt-4 inline-flex min-h-10 w-full items-center justify-between gap-2 border border-white/[0.08] bg-black px-4 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45 transition duration-200 hover:border-[#00FF88]/30 hover:text-[#00FF88] active:scale-[0.99]"
+        className="focus-ring mt-4 inline-flex min-h-11 w-full items-center justify-between gap-2 border border-white/[0.08] bg-black px-4 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.13em] text-white/58 transition duration-200 hover:border-[#00FF88]/30 hover:text-[#00FF88] active:scale-[0.99]"
       >
         <span>{connected ? copy.connected : copy.standby}</span>
         <span className="h-1.5 w-1.5 rounded-full bg-[#00FF88] shadow-[0_0_12px_rgba(0,255,136,0.5)]" aria-hidden="true" />
@@ -50,7 +50,7 @@ export function WalletPlaceholder() {
             href="https://phantom.app/"
             target="_blank"
             rel="noreferrer"
-            className="focus-ring inline-flex min-h-10 shrink-0 items-center gap-2 px-2 text-white/40 transition duration-200 hover:text-[#00FF88]"
+            className="focus-ring inline-flex min-h-11 shrink-0 items-center gap-2 px-2 text-white/52 transition duration-200 hover:text-[#00FF88]"
           >
             Phantom
             <ExternalLink className="h-4 w-4" aria-hidden="true" />

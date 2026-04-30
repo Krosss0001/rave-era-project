@@ -104,14 +104,14 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           src={event.image}
           alt={`${event.title} atmosphere`}
           priority
-          className="object-cover object-center opacity-20 grayscale motion-safe:transition-[transform,opacity,filter] motion-safe:duration-300 motion-safe:ease-out group-hover:scale-[1.01] group-hover:opacity-28 group-hover:grayscale-0"
+          className="object-cover object-center opacity-48 motion-safe:transition-[transform,opacity,filter] motion-safe:duration-300 motion-safe:ease-out group-hover:scale-[1.01] group-hover:opacity-60"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(0,0,0,0.98)_0%,rgba(0,0,0,0.86)_46%,rgba(0,0,0,0.28)_100%)]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/38 to-transparent" />
+        <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(0,0,0,0.92)_0%,rgba(0,0,0,0.68)_46%,rgba(0,0,0,0.18)_100%)]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.014)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.014)_1px,transparent_1px)] bg-[size:80px_80px] opacity-45" />
 
-        <div className="relative mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-end gap-8 px-4 pb-10 pt-16 sm:px-6 sm:pt-20 md:min-h-[680px] md:px-10 md:pb-16 lg:grid-cols-[minmax(0,0.98fr)_minmax(320px,0.72fr)] lg:items-center lg:px-12 2xl:max-w-[1500px]">
+        <div className="relative mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-end gap-8 px-3 pb-10 pt-12 sm:px-6 sm:pt-20 md:min-h-[680px] md:px-10 md:pb-16 lg:grid-cols-[minmax(0,0.98fr)_minmax(320px,0.72fr)] lg:items-center lg:px-12 2xl:max-w-[1500px]">
           <div className="w-full max-w-[860px]">
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge label={eventStatusLabel.en} variant={event.status === "limited" ? "limited" : event.status === "soon" ? "soon" : "live"} />
@@ -122,7 +122,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
               ) : null}
             </div>
 
-            <h1 className="mt-6 max-w-[900px] whitespace-normal text-[clamp(2rem,12vw,4.5rem)] font-black uppercase leading-[1] tracking-normal text-white [hyphens:none] [overflow-wrap:anywhere] [text-wrap:balance] [word-break:normal] lg:leading-[0.96]">
+            <h1 className="mt-6 max-w-[900px] whitespace-normal text-[clamp(2rem,11vw,4.25rem)] font-black uppercase leading-[1] tracking-normal text-white [hyphens:none] [overflow-wrap:anywhere] [text-wrap:balance] [word-break:normal] lg:leading-[0.96]">
               {event.title}
             </h1>
 
@@ -130,7 +130,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
               <p className="mt-5 max-w-[700px] text-base font-light leading-7 text-white/70 sm:text-lg sm:leading-8">{event.subtitle}</p>
             ) : null}
 
-            <div className="mt-8 grid gap-3 font-mono text-[10px] uppercase tracking-[0.11em] text-white/72 sm:grid-cols-2 sm:tracking-[0.13em] lg:grid-cols-4">
+            <div className="mt-8 grid gap-3 font-mono text-[10px] uppercase tracking-[0.09em] text-white/78 sm:grid-cols-2 sm:tracking-[0.13em] lg:grid-cols-4">
               {[
                 { key: "date", Icon: CalendarDays, text: <LocalizedEventDate date={event.date} /> },
                 { key: "location", Icon: MapPin, text: locationLabel },
@@ -144,12 +144,12 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
               ))}
             </div>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-8 grid gap-3 sm:flex sm:items-center">
               <Link
                 href={telegramUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="focus-ring inline-flex min-h-12 w-full items-center justify-center gap-3 bg-[#00FF88] px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-black shadow-[0_0_34px_rgba(0,255,136,0.16)] transition duration-200 hover:scale-[1.01] hover:brightness-110 hover:shadow-[0_0_44px_rgba(0,255,136,0.22)] active:scale-[0.99] sm:w-auto"
+                className="focus-ring inline-flex min-h-12 w-full items-center justify-center gap-3 bg-[#00FF88] px-5 py-3 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.12em] text-black shadow-[0_0_34px_rgba(0,255,136,0.16)] transition duration-200 hover:scale-[1.01] hover:brightness-110 hover:shadow-[0_0_44px_rgba(0,255,136,0.22)] active:scale-[0.99] sm:w-auto sm:px-6 sm:tracking-[0.16em]"
               >
                 <Send className="h-4 w-4" aria-hidden="true" />
                 <LocalizedText ua="Відкрити Telegram bot" en="Open Telegram bot" />
@@ -161,7 +161,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           </div>
 
           <div className="order-first w-full lg:order-none">
-            <div className="relative mx-auto aspect-[4/3] max-h-[560px] max-w-[620px] overflow-hidden border border-white/[0.08] bg-black shadow-[0_0_80px_rgba(0,255,136,0.08)] sm:aspect-[16/10] lg:ml-auto lg:aspect-[4/3]">
+            <div className="relative mx-auto aspect-[3/4] max-h-[68vh] min-h-[300px] max-w-[620px] overflow-hidden border border-white/[0.08] bg-black shadow-[0_0_80px_rgba(0,255,136,0.08)] sm:aspect-[4/3] lg:ml-auto lg:max-h-[560px]">
               <SafeEventImage
                 src={event.image}
                 alt={`${event.title} event poster`}
@@ -175,7 +175,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:px-10 md:py-20 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10 lg:px-12 xl:grid-cols-[minmax(0,1fr)_384px] 2xl:max-w-[1500px]">
+      <section className="mx-auto grid max-w-7xl gap-8 px-3 py-10 sm:px-6 md:px-10 md:py-20 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10 lg:px-12 xl:grid-cols-[minmax(0,1fr)_384px] 2xl:max-w-[1500px]">
         <div className="space-y-10">
           <article className="max-w-[700px] border-y border-white/[0.05] py-7 md:py-10">
             <div className="flex items-center justify-between gap-4">

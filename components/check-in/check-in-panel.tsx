@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type RefObject } from "react";
 import { Camera, CheckCircle2, Search, TriangleAlert } from "lucide-react";
+import jsQR from "jsqr";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 import { parseTicketQrInput } from "@/lib/qr";
 import { StatusBadge, getStatusBadgeVariant } from "@/components/shared/status-badge";
+import { useLanguage } from "@/lib/i18n/use-language";
 
 type TicketRow = Pick<
   Database["public"]["Tables"]["tickets"]["Row"],
@@ -45,6 +47,45 @@ function getBarcodeDetector() {
   return (window as Window & { BarcodeDetector?: NativeBarcodeDetectorConstructor }).BarcodeDetector ?? null;
 }
 
+function waitForScannerVideo(videoRef: RefObject<HTMLVideoElement>, timeoutMs = 1200) {
+  const startedAt = Date.now();
+
+  return new Promise<HTMLVideoElement | null>((resolve) => {
+    const check = () => {
+      if (videoRef.current) {
+        resolve(videoRef.current);
+        return;
+      }
+
+      if (Date.now() - startedAt >= timeoutMs) {
+        resolve(null);
+        return;
+      }
+
+      window.requestAnimationFrame(check);
+    };
+
+    check();
+  });
+}
+
+function createNativeQrDetector() {
+  const BarcodeDetector = getBarcodeDetector();
+
+  if (!BarcodeDetector) {
+    return null;
+  }
+
+  try {
+    return new BarcodeDetector({ formats: ["qr_code"] });
+  } catch (error) {
+    logCheckInIssue("Native BarcodeDetector unavailable for QR format", {
+      reason: error instanceof Error ? error.message : "unknown"
+    });
+    return null;
+  }
+}
+
 function logCheckInIssue(message: string, details: Record<string, unknown> = {}) {
   if (process.env.NODE_ENV !== "production") {
     console.warn(message, details);
@@ -74,8 +115,10 @@ function getCheckInErrorMessage(message: string) {
 }
 
 export function CheckInPanel() {
+  const { language } = useLanguage();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanFrameRef = useRef<number | null>(null);
   const scanActiveRef = useRef(false);
@@ -87,6 +130,60 @@ export function CheckInPanel() {
   const [scannerStatus, setScannerStatus] = useState<"idle" | "starting" | "scanning" | "detected" | "unsupported" | "error">("idle");
   const [scannerMessage, setScannerMessage] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error" | "warning"; text: string } | null>(null);
+  const copy =
+    language === "ua"
+      ? {
+          lookup: "Перевірка квитка",
+          lookupCopy: "Скануйте QR або введіть код квитка вручну.",
+          ticketCode: "Код квитка",
+          scanQr: "Сканувати QR",
+          stopScan: "Зупинити",
+          validate: "Перевірити",
+          checking: "Перевірка",
+          starting: "Запуск камери",
+          scanning: "Сканування",
+          cameraUnsupported: "Камера не підтримується, введіть код вручну",
+          invalidQr: "Некоректний QR-код.",
+          qrDetected: "QR знайдено",
+          scanFailed: "Не вдалося просканувати, введіть код вручну",
+          previewUnavailable: "Попередній перегляд камери недоступний.",
+          eventTitle: "Подія",
+          ticketStatus: "Статус квитка",
+          payment: "Оплата",
+          doorEntry: "Вхід",
+          checkedIn: "check-in виконано",
+          notCheckedIn: "без check-in",
+          confirming: "Підтвердження",
+          confirm: "Підтвердити вхід",
+          noTicket: "Квиток не вибрано",
+          noTicketCopy: "Перевірте код квитка, щоб побачити подію, оплату та статус входу."
+        }
+      : {
+          lookup: "Ticket lookup",
+          lookupCopy: "Scan a QR code or enter a ticket code manually.",
+          ticketCode: "Ticket code",
+          scanQr: "Scan QR",
+          stopScan: "Stop scan",
+          validate: "Validate",
+          checking: "Checking",
+          starting: "Starting camera",
+          scanning: "Scanning",
+          cameraUnsupported: "Camera is not supported. Enter the code manually.",
+          invalidQr: "Invalid QR code.",
+          qrDetected: "QR detected",
+          scanFailed: "Could not scan the QR. Enter the code manually.",
+          previewUnavailable: "Camera preview is unavailable.",
+          eventTitle: "Event title",
+          ticketStatus: "Ticket status",
+          payment: "Payment",
+          doorEntry: "Door entry",
+          checkedIn: "checked in",
+          notCheckedIn: "not checked in",
+          confirming: "Confirming",
+          confirm: "Confirm check-in",
+          noTicket: "No ticket selected",
+          noTicketCopy: "Validate a ticket code to see the event, payment state, and door status."
+        };
 
   const canCheckIn = ticket?.status === "active" && ticket.payment_status === "paid" && !ticket.checked_in;
 
@@ -220,7 +317,7 @@ export function CheckInPanel() {
       if (parsedInput.error) {
         logCheckInIssue("Check-in scanned QR parse failed", { reason: parsedInput.error });
         setScannerStatus("error");
-        setScannerMessage("Некоректний QR-код.");
+        setScannerMessage(copy.invalidQr);
         return;
       }
 
@@ -228,26 +325,24 @@ export function CheckInPanel() {
 
       if (!scannedTicketCode) {
         setScannerStatus("error");
-        setScannerMessage("Некоректний QR-код.");
+        setScannerMessage(copy.invalidQr);
         return;
       }
 
       setTicketCode(scannedTicketCode);
       setScannerStatus("detected");
-      setScannerMessage("QR знайдено");
+      setScannerMessage(copy.qrDetected);
       stopScanner(true);
       await validateTicketInput(value);
     },
-    [stopScanner, validateTicketInput]
+    [copy.invalidQr, copy.qrDetected, stopScanner, validateTicketInput]
   );
 
   const startScanner = useCallback(async () => {
-    const BarcodeDetector = getBarcodeDetector();
-
-    if (!navigator.mediaDevices?.getUserMedia || !BarcodeDetector) {
+    if (!navigator.mediaDevices?.getUserMedia) {
       setScannerOpen(false);
       setScannerStatus("unsupported");
-      setScannerMessage("Камера не підтримується, введіть код вручну");
+      setScannerMessage(copy.cameraUnsupported);
       return;
     }
 
@@ -265,17 +360,19 @@ export function CheckInPanel() {
 
       streamRef.current = stream;
 
-      if (!videoRef.current) {
-        throw new Error("Попередній перегляд камери недоступний.");
+      const videoElement = await waitForScannerVideo(videoRef);
+
+      if (!videoElement) {
+        throw new Error(copy.previewUnavailable);
       }
 
-      videoRef.current.srcObject = stream;
-      await videoRef.current.play();
+      videoElement.srcObject = stream;
+      await videoElement.play();
 
-      const detector = new BarcodeDetector({ formats: ["qr_code"] });
+      const detector = createNativeQrDetector();
       scanActiveRef.current = true;
       setScannerStatus("scanning");
-      setScannerMessage("Scanning...");
+      setScannerMessage(detector ? "Scanning..." : "Scanning with fallback...");
 
       const scan = async () => {
         if (!scanActiveRef.current || !videoRef.current) {
@@ -283,8 +380,32 @@ export function CheckInPanel() {
         }
 
         try {
-          const codes = await detector.detect(videoRef.current);
-          const rawValue = codes.find((code) => typeof code.rawValue === "string" && code.rawValue.trim())?.rawValue;
+          let rawValue: string | undefined;
+
+          if (detector) {
+            const codes = await detector.detect(videoRef.current);
+            rawValue = codes.find((code) => typeof code.rawValue === "string" && code.rawValue.trim())?.rawValue;
+          } else {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+            const width = video.videoWidth;
+            const height = video.videoHeight;
+
+            if (canvas && width > 0 && height > 0) {
+              canvas.width = width;
+              canvas.height = height;
+
+              const context = canvas.getContext("2d", { willReadFrequently: true });
+
+              if (context) {
+                context.drawImage(video, 0, 0, width, height);
+                const imageData = context.getImageData(0, 0, width, height);
+                rawValue = jsQR(imageData.data, imageData.width, imageData.height, {
+                  inversionAttempts: "attemptBoth"
+                })?.data;
+              }
+            }
+          }
 
           if (rawValue) {
             scanActiveRef.current = false;
@@ -296,7 +417,7 @@ export function CheckInPanel() {
             reason: error instanceof Error ? error.message : "unknown"
           });
           setScannerStatus("error");
-          setScannerMessage("Не вдалося просканувати, введіть код вручну");
+          setScannerMessage(copy.scanFailed);
           stopScanner();
           return;
         }
@@ -311,11 +432,11 @@ export function CheckInPanel() {
       });
       setScannerOpen(false);
       setScannerStatus("error");
-      setScannerMessage("Камера не підтримується, введіть код вручну");
+      setScannerMessage(copy.cameraUnsupported);
       streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
-  }, [handleScannedValue, stopScanner]);
+  }, [copy.cameraUnsupported, copy.previewUnavailable, copy.scanFailed, handleScannedValue, stopScanner]);
 
   useEffect(() => {
     return () => {
@@ -365,24 +486,25 @@ export function CheckInPanel() {
   }
 
   return (
-    <section className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1fr)] lg:gap-8">
-      <form onSubmit={validateTicket} className="border-y border-white/[0.05] bg-[#020202] py-8">
+    <section className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,0.76fr)_minmax(0,1fr)] lg:gap-8">
+      <form onSubmit={validateTicket} className="border-y border-white/[0.05] bg-[#020202] py-6 sm:py-8">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <p className="font-mono text-xs uppercase tracking-[0.22em] text-primary">Ticket lookup</p>
-            <p className="mt-2 text-sm leading-6 text-white/48">Scan a QR code or enter a ticket code manually.</p>
+            <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary sm:tracking-[0.22em]">{copy.lookup}</p>
+            <p className="mt-2 text-sm leading-6 text-white/62">{copy.lookupCopy}</p>
           </div>
           <StatusBadge label={scannerStatus} variant={scannerStatus === "error" ? "danger" : scannerStatus === "scanning" ? "success" : "neutral"} size="sm" />
         </div>
         <label className="block">
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Ticket code</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{copy.ticketCode}</span>
           <input
             type="text"
             value={ticketCode}
             onChange={(event) => setTicketCode(event.target.value)}
             autoComplete="off"
             spellCheck={false}
-            className="mt-2 min-h-11 w-full border border-white/[0.08] bg-black px-3 font-mono text-sm uppercase text-white outline-none motion-safe:transition-colors motion-safe:duration-500 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            inputMode="text"
+            className="mt-2 min-h-12 w-full border border-white/[0.08] bg-black px-3 font-mono text-sm uppercase text-white outline-none motion-safe:transition-colors motion-safe:duration-300 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           />
         </label>
         <div className="mt-4 grid gap-2 min-[380px]:grid-cols-2">
@@ -395,30 +517,31 @@ export function CheckInPanel() {
                 void startScanner();
               }
             }}
-            className="focus-ring inline-flex min-h-11 w-full items-center justify-center gap-2 border border-primary/35 px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-primary hover:text-black active:scale-[0.98]"
+            className="focus-ring inline-flex min-h-12 w-full items-center justify-center gap-2 border border-primary/35 px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.13em] text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-300 hover:bg-primary hover:text-black active:scale-[0.98]"
           >
             <Camera className="h-4 w-4" aria-hidden="true" />
-            {scannerOpen ? "Stop scan" : "Scan QR"}
+            {scannerOpen ? copy.stopScan : copy.scanQr}
           </button>
           <button
             type="submit"
             disabled={loading}
             aria-busy={loading}
-            className="focus-ring inline-flex min-h-11 w-full items-center justify-center gap-2 bg-primary px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-500 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+            className="focus-ring inline-flex min-h-12 w-full items-center justify-center gap-2 bg-primary px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.13em] text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-300 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
           >
             <Search className="h-4 w-4" aria-hidden="true" />
-            {loading ? "Checking" : "Validate"}
+            {loading ? copy.checking : copy.validate}
           </button>
         </div>
 
         {scannerOpen ? (
-          <div className="mt-4 overflow-hidden border border-white/[0.06] bg-black">
-            <div className="aspect-[4/3] w-full bg-[#030303]">
+          <div className="mt-4 overflow-hidden border border-primary/20 bg-black shadow-[0_0_42px_rgba(0,255,136,0.055)]">
+            <div className="aspect-[3/4] max-h-[70vh] w-full bg-[#030303] min-[390px]:aspect-square sm:aspect-[4/3]">
               <video ref={videoRef} className="h-full w-full object-cover" muted playsInline aria-label="QR scanner camera preview" />
+              <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
             </div>
             <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] px-3 py-2">
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">
-                {scannerStatus === "starting" ? "Starting camera" : "Scanning"}
+                {scannerStatus === "starting" ? copy.starting : copy.scanning}
               </p>
               <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_14px_rgba(0,255,136,0.55)] motion-safe:animate-pulse" aria-hidden="true" />
             </div>
@@ -465,15 +588,15 @@ export function CheckInPanel() {
         {ticket ? (
           <div className="grid gap-4">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Event title</p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{copy.eventTitle}</p>
               <p className="mt-2 text-2xl font-black uppercase text-white">{ticket.event_title}</p>
             </div>
             <div className="grid gap-3 min-[380px]:grid-cols-2">
               {[
-                ["Ticket code", ticket.ticket_code, ticket.ticket_code],
-                ["Ticket status", ticket.status, ticket.status],
-                ["Payment", ticket.payment_status, ticket.payment_status],
-                ["Door entry", ticket.checked_in ? "checked in" : "not checked in", ticket.checked_in]
+                [copy.ticketCode, ticket.ticket_code, ticket.ticket_code],
+                [copy.ticketStatus, ticket.status, ticket.status],
+                [copy.payment, ticket.payment_status, ticket.payment_status],
+                [copy.doorEntry, ticket.checked_in ? copy.checkedIn : copy.notCheckedIn, ticket.checked_in]
               ].map(([label, value, badgeValue]) => (
                 <div key={String(label)} className="border border-white/[0.05] bg-[#030303] p-4">
                   <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">{label}</p>
@@ -486,15 +609,15 @@ export function CheckInPanel() {
               onClick={checkInTicket}
               disabled={!canCheckIn || checkingIn}
               aria-busy={checkingIn}
-              className="focus-ring min-h-11 bg-primary px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-500 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+            className="focus-ring min-h-12 bg-primary px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.13em] text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-300 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
             >
-              {checkingIn ? "Confirming" : "Confirm check-in"}
+              {checkingIn ? copy.confirming : copy.confirm}
             </button>
           </div>
         ) : (
           <div className="border border-white/[0.05] bg-[#030303] p-6">
-            <p className="text-xl font-black uppercase text-white">No ticket selected</p>
-            <p className="mt-3 text-sm leading-6 text-white/45">Validate a ticket code to see the event, payment state, and door status.</p>
+            <p className="text-xl font-black uppercase text-white">{copy.noTicket}</p>
+            <p className="mt-3 text-sm leading-6 text-white/45">{copy.noTicketCopy}</p>
           </div>
         )}
       </div>

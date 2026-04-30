@@ -73,7 +73,7 @@ export function MetricGrid() {
           className="group relative min-w-0 border border-white/[0.05] bg-[#020202] p-4 motion-safe:transition-[border-color,box-shadow,transform] motion-safe:duration-500 motion-safe:ease-out hover:border-primary/[0.35] hover:shadow-[0_0_28px_rgba(0,255,136,0.06)] motion-safe:hover:-translate-y-0.5 sm:p-5 lg:p-6"
         >
           <span className="absolute left-0 top-0 h-px w-0 bg-primary motion-safe:transition-[width] motion-safe:duration-500 motion-safe:ease-out group-hover:w-full" aria-hidden="true" />
-          <p className="flex items-center justify-between gap-3 font-mono text-xs uppercase tracking-[0.22em] text-white/[0.32]">
+          <p className="flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.14em] text-white/[0.45] sm:text-xs sm:tracking-[0.2em]">
             {label}
             <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_12px_rgba(0,255,136,0.45)] motion-safe:animate-pulse" aria-hidden="true" />
           </p>
@@ -97,8 +97,8 @@ export function SystemStatusRow() {
   return (
     <div className="grid gap-3 border-y border-white/[0.05] bg-[#020202] py-4 sm:grid-cols-3">
       {items.map(([label, status]) => (
-        <div key={label} className="flex min-h-12 min-w-0 items-center justify-between gap-3 border border-white/[0.05] bg-[#030303] px-4 font-mono text-[10px] uppercase tracking-[0.14em] text-white/[0.42] sm:tracking-[0.16em]">
-          <span>{label}</span>
+        <div key={label} className="flex min-h-14 min-w-0 items-center justify-between gap-3 border border-white/[0.05] bg-[#030303] px-3 font-mono text-[10px] uppercase tracking-[0.11em] text-white/[0.52] sm:px-4 sm:tracking-[0.16em]">
+          <span className="min-w-0 break-words">{label}</span>
           <StatusBadge label={status} variant={getStatusBadgeVariant(status)} size="sm" />
         </div>
       ))}
@@ -112,8 +112,8 @@ export function RegistrationTable() {
     <section className="border-y border-white/[0.05] bg-[#020202] py-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{language === "ua" ? "Реєстрації" : "Registrations"}</p>
-          <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">{language === "ua" ? "Реєстрації" : "Registrations"}</p>
+          <h2 className="mt-3 text-[clamp(1.85rem,9vw,3rem)] font-black uppercase leading-[0.98] text-white">
             {language === "ua" ? "Операції з гостями" : "Attendee operations"}
           </h2>
         </div>
@@ -121,7 +121,7 @@ export function RegistrationTable() {
           {language === "ua" ? "Demo дані" : "Demo data"}
         </span>
       </div>
-      <div className="-mx-4 mt-8 overflow-x-auto border-t border-white/[0.05] px-4 sm:mx-0 sm:mt-10 sm:px-0">
+      <div className="-mx-3 mt-8 overflow-x-auto border-t border-white/[0.05] px-3 [scrollbar-width:thin] sm:mx-0 sm:mt-10 sm:px-0">
         <table className="w-full min-w-[620px] text-left text-sm">
           <thead className="font-mono text-xs uppercase tracking-[0.18em] text-white/[0.34]">
             <tr>
@@ -161,8 +161,8 @@ export function ReferralPanel() {
 
   return (
     <section className="border-y border-white/[0.05] bg-[#020202] py-8">
-      <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{language === "ua" ? "Реферальний рушій" : "Referral engine"}</p>
-      <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">{language === "ua" ? "Топ джерела зростання" : "Top growth sources"}</h2>
+      <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">{language === "ua" ? "Реферальний рушій" : "Referral engine"}</p>
+      <h2 className="mt-3 text-[clamp(1.85rem,9vw,3rem)] font-black uppercase leading-[0.98] text-white">{language === "ua" ? "Топ джерела зростання" : "Top growth sources"}</h2>
       <div className="mt-8 border border-primary/25 bg-[#030303] p-5">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-primary">{language === "ua" ? "Найкращий результат" : "Best performer"}</p>
         <div className="mt-4 flex flex-col gap-4 min-[380px]:flex-row min-[380px]:items-end min-[380px]:justify-between">
