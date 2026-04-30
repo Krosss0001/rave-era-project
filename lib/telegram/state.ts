@@ -59,16 +59,27 @@ export function getTelegramSupabaseClient() {
   return supabase;
 }
 
-export function parseStartPayload(value: string | undefined) {
+export function parseStartPayloadDetails(value: string | undefined) {
   if (!value) {
     return null;
   }
 
   const payload = value.trim();
   const eventPayload = payload.startsWith("event_") ? payload.slice("event_".length) : payload;
-  const [slug] = eventPayload.split("_ref_");
+  const [slug, referralCode] = eventPayload.split("_ref_");
 
-  return slug || null;
+  if (!slug) {
+    return null;
+  }
+
+  return {
+    slug,
+    referralCode: referralCode?.trim() || null
+  };
+}
+
+export function parseStartPayload(value: string | undefined) {
+  return parseStartPayloadDetails(value)?.slug ?? null;
 }
 
 export async function getEventBySlug(supabase: SupabaseClient<Database>, slug: string) {
@@ -184,7 +195,8 @@ export async function getLatestSession(supabase: SupabaseClient<Database>, teleg
 export async function startSession(
   supabase: SupabaseClient<Database>,
   user: TelegramUserInput,
-  eventSlug: string
+  eventSlug: string,
+  referralCode?: string | null
 ) {
   const event = await getEventBySlug(supabase, eventSlug);
 
@@ -197,6 +209,7 @@ export async function startSession(
       event_slug: eventSlug,
       step: "started",
       telegram_username: user.telegramUsername,
+      referral_code: referralCode ?? existing.referral_code ?? null,
       ...(user.language ? { language: user.language } : {})
     });
   }
@@ -210,6 +223,7 @@ export async function startSession(
       event_slug: eventSlug,
       step: "started",
       telegram_username: user.telegramUsername,
+      referral_code: referralCode ?? null,
       ...(user.language ? { language: user.language } : {})
     })
     .select("*")
@@ -278,7 +292,7 @@ export async function updateSession(
     .single();
 
   if (error && isUndefinedColumn(error)) {
-    const { language: _language, ...fallbackValues } = values;
+    const { language: _language, referral_code: _referralCode, ...fallbackValues } = values;
     const fallback = await supabase
       .from("telegram_registration_sessions")
       .update({
@@ -305,7 +319,7 @@ async function getRegistrationForSession(supabase: SupabaseClient<Database>, ses
   if (session.registration_id) {
     const { data, error } = await supabase
       .from("registrations")
-      .select("id,event_id,user_id,status")
+      .select("id,event_id,user_id,status,referral_code")
       .eq("id", session.registration_id)
       .maybeSingle();
 
@@ -317,7 +331,7 @@ async function getRegistrationForSession(supabase: SupabaseClient<Database>, ses
   if (session.event_id && session.telegram_user_id) {
     const { data, error } = await supabase
       .from("registrations")
-      .select("id,event_id,user_id,status")
+      .select("id,event_id,user_id,status,referral_code")
       .eq("event_id", session.event_id)
       .eq("telegram_user_id", session.telegram_user_id)
       .maybeSingle();
@@ -334,7 +348,7 @@ async function getRegistrationForSession(supabase: SupabaseClient<Database>, ses
   if (session.event_id && session.telegram_username) {
     const { data, error } = await supabase
       .from("registrations")
-      .select("id,event_id,user_id,status")
+      .select("id,event_id,user_id,status,referral_code")
       .eq("event_id", session.event_id)
       .eq("telegram_username", session.telegram_username)
       .maybeSingle();
@@ -440,6 +454,10 @@ export async function createPendingRegistrationAndTicket(
   const registration = existingRegistration || (await insertRegistration(supabase, session));
   const ticket = await createTicket(supabase, registration.id, session.event_id);
 
+  if (!existingRegistration && session.referral_code) {
+    await incrementReferralCounters(supabase, session.event_id, session.referral_code, { registrations: 1 });
+  }
+
   await updateSession(supabase, session.id, {
     registration_id: registration.id,
     ticket_id: ticket.id,
@@ -478,6 +496,10 @@ export async function confirmFreeRegistrationAndTicket(
     throw ticketResult.error || new Error("Ticket could not be confirmed.");
   }
 
+  if (session.event_id && session.referral_code && registration.status !== "confirmed") {
+    await incrementReferralCounters(supabase, session.event_id, session.referral_code, { confirmed: 1 });
+  }
+
   return {
     registration: registrationResult.data,
     ticket: ticketResult.data
@@ -498,6 +520,7 @@ async function insertRegistration(supabase: SupabaseClient<Database>, session: T
       instagram_nickname: instagram,
       telegram_username: session.telegram_username,
       telegram_user_id: session.telegram_user_id,
+      referral_code: session.referral_code ?? null,
       status: "pending"
     })
     .select("id,event_id,user_id,status")
@@ -523,6 +546,7 @@ async function insertRegistration(supabase: SupabaseClient<Database>, session: T
         email,
         telegram_username: session.telegram_username,
         telegram_user_id: session.telegram_user_id,
+        referral_code: session.referral_code ?? null,
         status: "pending"
       })
       .select("id,event_id,user_id,status")
@@ -561,6 +585,89 @@ async function insertRegistration(supabase: SupabaseClient<Database>, session: T
   });
 
   throw new Error(error?.message || "Registration could not be created.");
+}
+
+async function incrementReferralCounters(
+  supabase: SupabaseClient<Database>,
+  eventId: string,
+  code: string,
+  increments: { telegramStarts?: number; registrations?: number; confirmed?: number }
+) {
+  const cleanCode = code.trim();
+
+  if (!cleanCode) {
+    return;
+  }
+
+  const existingResult = await supabase
+    .from("referrals")
+    .select("*")
+    .eq("event_id", eventId)
+    .eq("code", cleanCode)
+    .maybeSingle();
+
+  if (existingResult.error) {
+    if (isUndefinedColumn(existingResult.error)) {
+      logTelegramStateIssue("Referral counter skipped because patch columns are missing", {
+        eventId,
+        code: cleanCode
+      });
+      return;
+    }
+
+    throw existingResult.error;
+  }
+
+  const existing = existingResult.data;
+  const nextValues: Database["public"]["Tables"]["referrals"]["Update"] = {
+    registrations: (existing?.registrations ?? 0) + (increments.registrations ?? 0),
+    confirmed: (existing?.confirmed ?? 0) + (increments.confirmed ?? 0)
+  };
+
+  if (increments.telegramStarts) {
+    nextValues.telegram_starts = (existing?.telegram_starts ?? 0) + increments.telegramStarts;
+  }
+
+  if (existing) {
+    const { error } = await supabase
+      .from("referrals")
+      .update(nextValues)
+      .eq("id", existing.id);
+
+    if (error && !isUndefinedColumn(error)) {
+      throw error;
+    }
+
+    return;
+  }
+
+  const { error } = await supabase
+    .from("referrals")
+    .insert({
+      event_id: eventId,
+      code: cleanCode,
+      source: increments.telegramStarts ? "telegram" : "telegram_registration",
+      clicks: 0,
+      telegram_starts: increments.telegramStarts ?? 0,
+      registrations: increments.registrations ?? 0,
+      confirmed: increments.confirmed ?? 0
+    });
+
+  if (error && !isUniqueCollision(error) && !isUndefinedColumn(error)) {
+    throw error;
+  }
+}
+
+export async function recordTelegramReferralStart(
+  supabase: SupabaseClient<Database>,
+  eventId: string,
+  referralCode: string | null | undefined
+) {
+  if (!referralCode) {
+    return;
+  }
+
+  await incrementReferralCounters(supabase, eventId, referralCode, { telegramStarts: 1 });
 }
 
 export async function getTicketsForTelegramUser(

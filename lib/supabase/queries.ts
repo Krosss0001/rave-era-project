@@ -69,7 +69,7 @@ export async function getMyReferrals(supabase: TypedSupabaseClient) {
 
   return supabase
     .from("referrals")
-    .select("id,event_id,code,clicks,registrations,confirmed,created_at")
+    .select("id,event_id,owner_user_id,created_by,code,source,label,clicks,telegram_starts,registrations,confirmed,created_at")
     .eq("owner_user_id", user.id)
     .order("created_at", { ascending: false });
 }

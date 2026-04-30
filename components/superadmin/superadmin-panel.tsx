@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Copy, Link2, Plus, Send, type LucideIcon } from "lucide-react";
+import { getCurrentRole } from "@/lib/auth/get-role";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { BroadcastAudience, Database } from "@/lib/supabase/types";
@@ -9,6 +11,16 @@ import { StatusBadge } from "@/components/shared/status-badge";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type EventOption = Pick<Database["public"]["Tables"]["events"]["Row"], "id" | "title" | "slug">;
+type ReferralRow = Pick<
+  Database["public"]["Tables"]["referrals"]["Row"],
+  "id" | "event_id" | "code" | "source" | "label" | "clicks" | "telegram_starts" | "registrations" | "confirmed" | "created_at"
+>;
+
+type ReferralForm = {
+  eventId: string;
+  code: string;
+  label: string;
+};
 
 const superadminAudienceOptions: Array<{ value: BroadcastAudience; label: string }> = [
   { value: "all_telegram_users", label: "All Telegram users" },
@@ -20,11 +32,48 @@ const superadminAudienceOptions: Array<{ value: BroadcastAudience; label: string
   { value: "bot_interacted_not_registered", label: "Bot users not registered" }
 ];
 
+const initialReferralForm: ReferralForm = {
+  eventId: "",
+  code: "",
+  label: ""
+};
+
+type GeneratedLinkItem = ["website" | "telegram", string, string, LucideIcon];
+
+function cleanReferralCode(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 80);
+}
+
+function getAppUrl() {
+  return (process.env.NEXT_PUBLIC_APP_URL || "https://rave-era-project.vercel.app").replace(/\/+$/, "");
+}
+
+function getTelegramBotUrl() {
+  return (process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/RaveeraBot").replace(/\/+$/, "");
+}
+
+function buildReferralLinks(event: EventOption, code: string) {
+  const payload = `event_${event.slug}_ref_${code}`;
+
+  return {
+    website: `${getAppUrl()}/events/${event.slug}?ref=${encodeURIComponent(code)}`,
+    telegram: `${getTelegramBotUrl()}?start=${encodeURIComponent(payload)}`
+  };
+}
+
 export function SuperadminPanel() {
   const { dictionary } = useLanguage();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [events, setEvents] = useState<EventOption[]>([]);
+  const [referrals, setReferrals] = useState<ReferralRow[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [referralForm, setReferralForm] = useState(initialReferralForm);
+  const [createdLinks, setCreatedLinks] = useState<{ website: string; telegram: string } | null>(null);
+  const [referralError, setReferralError] = useState("");
+  const [referralSuccess, setReferralSuccess] = useState("");
+  const [copiedLink, setCopiedLink] = useState<"website" | "telegram" | null>(null);
+  const [creatingReferral, setCreatingReferral] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
@@ -38,7 +87,8 @@ export function SuperadminPanel() {
         return;
       }
 
-      const [profileResult, eventResult] = await Promise.all([
+      const [roleState, profileResult, eventResult, referralResult] = await Promise.all([
+        getCurrentRole(supabase),
         supabase
           .from("profiles")
           .select("id,email,full_name,role,wallet_address,telegram_username,created_at")
@@ -46,16 +96,26 @@ export function SuperadminPanel() {
         supabase
           .from("events")
           .select("id,title,slug")
-          .order("date", { ascending: true, nullsFirst: false })
+          .order("date", { ascending: true, nullsFirst: false }),
+        supabase
+          .from("referrals")
+          .select("id,event_id,code,source,label,clicks,telegram_starts,registrations,confirmed,created_at")
+          .order("created_at", { ascending: false })
       ]);
 
       if (!mounted) {
         return;
       }
 
+      setCurrentUserId(roleState.user?.id ?? null);
       setProfiles(profileResult.data ?? []);
       setEvents(eventResult.data ?? []);
-      setMessage(profileResult.error ? "Profiles are not visible. Confirm the signed-in profile has the superadmin role." : "");
+      setReferrals(referralResult.data ?? []);
+      setMessage(
+        profileResult.error || referralResult.error
+          ? "Some superadmin data is not visible. Confirm the signed-in profile has the superadmin role and patch 013 is applied."
+          : ""
+      );
       setLoading(false);
     }
 
@@ -70,6 +130,91 @@ export function SuperadminPanel() {
     counts[profile.role] = (counts[profile.role] ?? 0) + 1;
     return counts;
   }, {});
+  const selectedReferralEvent = events.find((event) => event.id === referralForm.eventId) ?? null;
+  const previewLinks = selectedReferralEvent && referralForm.code ? buildReferralLinks(selectedReferralEvent, referralForm.code) : null;
+
+  function updateReferralCode(value: string) {
+    setReferralForm((current) => ({
+      ...current,
+      code: cleanReferralCode(value)
+    }));
+    setReferralError("");
+    setReferralSuccess("");
+    setCreatedLinks(null);
+  }
+
+  async function copyLink(type: "website" | "telegram", value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedLink(type);
+      window.setTimeout(() => setCopiedLink(null), 1600);
+    } catch {
+      setReferralError("Copy failed. Select the link text and copy it manually.");
+    }
+  }
+
+  async function createReferralLink(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!supabase) {
+      setReferralError("Supabase is not configured.");
+      return;
+    }
+
+    const selectedEvent = events.find((item) => item.id === referralForm.eventId);
+    const code = cleanReferralCode(referralForm.code);
+    const label = referralForm.label.trim().slice(0, 120);
+
+    if (!selectedEvent) {
+      setReferralError("Select an event first.");
+      return;
+    }
+
+    if (!code) {
+      setReferralError("Enter a lowercase referral code.");
+      return;
+    }
+
+    const duplicate = referrals.some((referral) => referral.event_id === selectedEvent.id && referral.code === code);
+
+    if (duplicate) {
+      setReferralError("This event already has that referral code.");
+      return;
+    }
+
+    setCreatingReferral(true);
+    setReferralError("");
+    setReferralSuccess("");
+
+    const { data, error } = await supabase
+      .from("referrals")
+      .insert({
+        event_id: selectedEvent.id,
+        code,
+        source: label || "superadmin",
+        label: label || null,
+        created_by: currentUserId,
+        clicks: 0,
+        telegram_starts: 0,
+        registrations: 0,
+        confirmed: 0
+      })
+      .select("id,event_id,code,source,label,clicks,telegram_starts,registrations,confirmed,created_at")
+      .single();
+
+    setCreatingReferral(false);
+
+    if (error || !data) {
+      setReferralError(error?.code === "23505" ? "This event already has that referral code." : error?.message || "Referral link could not be created.");
+      return;
+    }
+
+    const nextLinks = buildReferralLinks(selectedEvent, code);
+    setReferrals((current) => [data, ...current]);
+    setReferralForm({ eventId: selectedEvent.id, code, label });
+    setCreatedLinks(nextLinks);
+    setReferralSuccess("Referral link created.");
+  }
 
   return (
     <div className="grid gap-10">
@@ -82,6 +227,185 @@ export function SuperadminPanel() {
         requireEvent={false}
         defaultAudience="all_telegram_users"
       />
+
+      <section className="border-y border-white/[0.05] bg-[#020202] py-8">
+        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">Referral operations</p>
+            <h2 className="mt-3 text-[clamp(1.85rem,9vw,3rem)] font-black uppercase leading-[0.98] text-white">Referral Link Builder</h2>
+          </div>
+          <StatusBadge label={`${referrals.length} links`} variant={referrals.length > 0 ? "success" : "neutral"} size="sm" />
+        </div>
+
+        <form onSubmit={createReferralLink} className="mt-8 grid gap-4 border border-white/[0.05] bg-[#030303] p-4 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          <fieldset className="grid min-w-0 gap-4" disabled={creatingReferral} aria-busy={creatingReferral}>
+            <legend className="sr-only">Create referral link</legend>
+            <label className="block">
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">Event *</span>
+              <select
+                value={referralForm.eventId}
+                onChange={(changeEvent) => {
+                  setReferralForm((current) => ({ ...current, eventId: changeEvent.target.value }));
+                  setCreatedLinks(null);
+                  setReferralError("");
+                  setReferralSuccess("");
+                }}
+                className="focus-ring mt-2 min-h-12 w-full border border-white/[0.08] bg-black px-3 py-2 text-sm text-white"
+                required
+              >
+                <option value="">Select event</option>
+                {events.map((event) => (
+                  <option key={event.id} value={event.id}>
+                    {event.title} / {event.slug}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">Custom code / nickname *</span>
+              <input
+                value={referralForm.code}
+                onChange={(changeEvent) => updateReferralCode(changeEvent.target.value)}
+                type="text"
+                inputMode="text"
+                autoComplete="off"
+                spellCheck={false}
+                pattern="[a-z0-9_-]+"
+                placeholder="dj-nika"
+                aria-invalid={referralError ? "true" : undefined}
+                aria-describedby={referralError ? "referral-builder-error" : "referral-code-help"}
+                className="focus-ring mt-2 min-h-12 w-full border border-white/[0.08] bg-black px-3 py-2 font-mono text-sm lowercase text-white placeholder:text-white/25"
+                required
+              />
+              <span id="referral-code-help" className="mt-2 block text-xs leading-5 text-white/42">
+                Lowercase letters, numbers, dash, and underscore only.
+              </span>
+            </label>
+
+            <label className="block">
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">Optional label / source</span>
+              <input
+                value={referralForm.label}
+                onChange={(changeEvent) => {
+                  setReferralForm((current) => ({ ...current, label: changeEvent.target.value }));
+                  setCreatedLinks(null);
+                }}
+                type="text"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="Artist, partner, influencer"
+                className="focus-ring mt-2 min-h-12 w-full border border-white/[0.08] bg-black px-3 py-2 text-sm text-white placeholder:text-white/25"
+              />
+            </label>
+
+            {referralError ? (
+              <p id="referral-builder-error" className="border border-red-400/30 bg-red-400/[0.04] px-3 py-2 text-sm leading-6 text-red-100" aria-live="polite">
+                {referralError}
+              </p>
+            ) : null}
+            {referralSuccess ? (
+              <p className="border border-primary/25 bg-primary/[0.035] px-3 py-2 text-sm leading-6 text-primary" aria-live="polite">
+                {referralSuccess}
+              </p>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={creatingReferral}
+              className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 border border-primary/55 px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-primary transition-[background-color,color,transform,opacity] hover:bg-primary hover:text-black active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              {creatingReferral ? "Creating..." : "Create referral link"}
+            </button>
+          </fieldset>
+
+          <div className="min-w-0 border border-white/[0.05] bg-black p-4">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">Generated links</p>
+            {createdLinks || previewLinks ? (
+              <div className="mt-4 grid gap-4">
+                {([
+                  ["website" as const, "Website link", (createdLinks ?? previewLinks)!.website, Link2],
+                  ["telegram" as const, "Telegram link", (createdLinks ?? previewLinks)!.telegram, Send]
+                ] satisfies GeneratedLinkItem[]).map(([type, label, value, Icon]) => (
+                  <div key={type} className="min-w-0 border border-white/[0.05] bg-[#030303] p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/38">{label}</p>
+                      <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
+                    </div>
+                    <p className="mt-3 break-all font-mono text-xs leading-5 text-white/58">{value}</p>
+                    <button
+                      type="button"
+                      onClick={() => copyLink(type, value)}
+                      className="focus-ring mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 border border-primary/35 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-primary transition-[background-color,color,transform] hover:bg-primary hover:text-black active:scale-[0.98]"
+                    >
+                      <Copy className="h-4 w-4" aria-hidden="true" />
+                      {copiedLink === type ? "Copied" : `Copy ${type} link`}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 border border-white/[0.05] bg-[#020202] p-4">
+                <p className="text-sm leading-6 text-white/45">Select an event and enter a code to preview both links.</p>
+              </div>
+            )}
+          </div>
+        </form>
+
+        <div className="mt-6 overflow-x-auto border border-white/[0.05] bg-[#030303] [scrollbar-width:thin]">
+          {loading ? (
+            <div className="grid gap-3 p-4 md:grid-cols-4">
+              {[0, 1, 2, 3].map((item) => (
+                <div key={item} className="h-20 bg-white/[0.035] motion-safe:animate-pulse" />
+              ))}
+            </div>
+          ) : referrals.length > 0 ? (
+            <table className="w-full min-w-[820px] text-left text-xs">
+              <thead className="border-b border-white/[0.05] font-mono uppercase tracking-[0.13em] text-white/[0.34]">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Event</th>
+                  <th className="px-4 py-3 font-medium">Code / source</th>
+                  <th className="px-4 py-3 font-medium">Clicks</th>
+                  <th className="px-4 py-3 font-medium">Telegram starts</th>
+                  <th className="px-4 py-3 font-medium">Registrations</th>
+                  <th className="px-4 py-3 font-medium">Confirmed</th>
+                  <th className="px-4 py-3 font-medium">Conversion</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.05]">
+                {referrals.map((referral) => {
+                  const event = events.find((item) => item.id === referral.event_id);
+                  const starts = referral.clicks + referral.telegram_starts;
+                  const conversion = starts > 0 ? Math.round((referral.registrations / starts) * 100) : 0;
+
+                  return (
+                    <tr key={referral.id} className="transition-colors hover:bg-primary/[0.018]">
+                      <td className="px-4 py-4">
+                        <p className="font-medium text-white">{event?.title ?? "Unknown event"}</p>
+                        <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-white/35">{event?.slug ?? referral.event_id?.slice(0, 8) ?? "-"}</p>
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="font-mono text-sm font-semibold text-white">{referral.code}</p>
+                        <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-white/35">{referral.label || referral.source || "superadmin"}</p>
+                      </td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{referral.clicks}</td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{referral.telegram_starts}</td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{referral.registrations}</td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-primary">{referral.confirmed}</td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{conversion}%</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <div className="p-5">
+              <p className="text-sm leading-6 text-white/45">No referral links yet. Create the first custom link above.</p>
+            </div>
+          )}
+        </div>
+      </section>
 
       <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-10">
         <section className="border-y border-white/[0.05] bg-[#020202] py-8">

@@ -287,8 +287,11 @@ export type Database = {
           event_id: string | null;
           code: string;
           source: string | null;
+          label: string | null;
           owner_user_id: string | null;
+          created_by: string | null;
           clicks: number;
+          telegram_starts: number;
           registrations: number;
           confirmed: number;
           created_at: string;
@@ -298,8 +301,11 @@ export type Database = {
           event_id?: string | null;
           code: string;
           source?: string | null;
+          label?: string | null;
           owner_user_id?: string | null;
+          created_by?: string | null;
           clicks?: number;
+          telegram_starts?: number;
           registrations?: number;
           confirmed?: number;
           created_at?: string;
@@ -307,9 +313,12 @@ export type Database = {
         Update: {
           event_id?: string | null;
           owner_user_id?: string | null;
+          created_by?: string | null;
           code?: string;
           source?: string | null;
+          label?: string | null;
           clicks?: number;
+          telegram_starts?: number;
           registrations?: number;
           confirmed?: number;
         };
@@ -324,6 +333,13 @@ export type Database = {
           {
             foreignKeyName: "referrals_owner_user_id_fkey";
             columns: ["owner_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referrals_created_by_fkey";
+            columns: ["created_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
@@ -343,6 +359,7 @@ export type Database = {
           position_company: string | null;
           industry: string | null;
           telegram_username: string | null;
+          referral_code: string | null;
           language: string;
           registration_id: string | null;
           ticket_id: string | null;
@@ -361,6 +378,7 @@ export type Database = {
           position_company?: string | null;
           industry?: string | null;
           telegram_username?: string | null;
+          referral_code?: string | null;
           language?: string;
           registration_id?: string | null;
           ticket_id?: string | null;
@@ -378,6 +396,7 @@ export type Database = {
           position_company?: string | null;
           industry?: string | null;
           telegram_username?: string | null;
+          referral_code?: string | null;
           language?: string;
           registration_id?: string | null;
           ticket_id?: string | null;

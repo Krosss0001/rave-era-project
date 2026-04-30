@@ -22,6 +22,8 @@ import {
   getTelegramTicketByCode,
   getTicketsForTelegramUser,
   parseStartPayload,
+  parseStartPayloadDetails,
+  recordTelegramReferralStart,
   subscribeTelegramUser,
   startSession,
   unsubscribeTelegramUser,
@@ -346,7 +348,9 @@ async function handleStart(message: TelegramMessage, payload: string | undefined
   await upsertTelegramUser(supabase, user);
   await subscribeTelegramUser(supabase, user.telegramUserId);
   const language: BotLanguage = "uk";
-  const eventSlug = parseStartPayload(payload);
+  const payloadDetails = parseStartPayloadDetails(payload);
+  const eventSlug = payloadDetails?.slug ?? null;
+  const referralCode = payloadDetails?.referralCode ?? null;
 
   if (!eventSlug) {
     await showMainMenu(user.chatId, language);
@@ -367,7 +371,7 @@ async function handleStart(message: TelegramMessage, payload: string | undefined
     return;
   }
 
-  const session = await startSession(supabase, { ...user, language }, eventSlug);
+  const session = await startSession(supabase, { ...user, language }, eventSlug, referralCode);
 
   if (!session.event_id) {
     const copy = getTelegramCopy(language);
@@ -381,6 +385,7 @@ async function handleStart(message: TelegramMessage, payload: string | undefined
     return;
   }
 
+  await recordTelegramReferralStart(supabase, session.event_id, referralCode);
   await askForEventConfirmation(user.chatId, session, event, language);
 }
 

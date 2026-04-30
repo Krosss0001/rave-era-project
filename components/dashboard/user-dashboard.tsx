@@ -65,7 +65,7 @@ export function UserDashboard() {
           .order("created_at", { ascending: false }),
         supabase
           .from("referrals")
-          .select("id,event_id,owner_user_id,code,source,clicks,registrations,confirmed,created_at")
+          .select("id,event_id,owner_user_id,created_by,code,source,label,clicks,telegram_starts,registrations,confirmed,created_at")
           .eq("owner_user_id", roleState.user.id)
           .order("created_at", { ascending: false })
       ]);

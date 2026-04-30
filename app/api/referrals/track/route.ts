@@ -5,7 +5,7 @@ import type { Database } from "@/lib/supabase/types";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-type ReferralAction = "click" | "registration";
+type ReferralAction = "click" | "registration" | "telegram_start";
 
 type ReferralTrackBody = {
   eventId?: unknown;
@@ -40,12 +40,17 @@ function isUuid(value: unknown): value is string {
 }
 
 function isReferralAction(value: unknown): value is ReferralAction {
-  return value === "click" || value === "registration";
+  return value === "click" || value === "registration" || value === "telegram_start";
+}
+
+function isUndefinedColumn(error: { code?: string } | null) {
+  return error?.code === "42703";
 }
 
 function getNextCounters(referral: ReferralRow | null, action: ReferralAction, confirmed: boolean) {
   return {
     clicks: (referral?.clicks ?? 0) + (action === "click" ? 1 : 0),
+    telegram_starts: (referral?.telegram_starts ?? 0) + (action === "telegram_start" ? 1 : 0),
     registrations: (referral?.registrations ?? 0) + (action === "registration" ? 1 : 0),
     confirmed: (referral?.confirmed ?? 0) + (action === "registration" && confirmed ? 1 : 0)
   };
@@ -84,17 +89,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "Referral tracking is not available for this event." }, { status: 404 });
     }
 
-    const { data: existing, error: existingError } = await supabase
+    let legacyReferralColumns = false;
+    let existingResult = await supabase
       .from("referrals")
-      .select("id,event_id,code,source,owner_user_id,clicks,registrations,confirmed,created_at")
+      .select("id,event_id,code,source,label,owner_user_id,created_by,clicks,telegram_starts,registrations,confirmed,created_at")
       .eq("event_id", eventId)
       .eq("code", code)
       .maybeSingle();
 
-    if (existingError) {
-      throw existingError;
+    if (isUndefinedColumn(existingResult.error)) {
+      legacyReferralColumns = true;
+      existingResult = await supabase
+        .from("referrals")
+        .select("id,event_id,code,source,owner_user_id,clicks,registrations,confirmed,created_at")
+        .eq("event_id", eventId)
+        .eq("code", code)
+        .maybeSingle();
     }
 
+    if (existingResult.error) {
+      throw existingResult.error;
+    }
+
+    const existing = existingResult.data;
     const counters = getNextCounters(existing, action, confirmed);
 
     if (existing) {
@@ -102,6 +119,7 @@ export async function POST(request: Request) {
         .from("referrals")
         .update({
           clicks: counters.clicks,
+          ...(!legacyReferralColumns ? { telegram_starts: counters.telegram_starts } : {}),
           registrations: counters.registrations,
           confirmed: counters.confirmed,
           ...(source && !existing.source ? { source } : {})
@@ -122,6 +140,7 @@ export async function POST(request: Request) {
         code,
         source,
         clicks: counters.clicks,
+        ...(!legacyReferralColumns ? { telegram_starts: counters.telegram_starts } : {}),
         registrations: counters.registrations,
         confirmed: counters.confirmed
       });

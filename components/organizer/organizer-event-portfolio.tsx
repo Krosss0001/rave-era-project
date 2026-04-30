@@ -28,7 +28,7 @@ type TicketRow = Pick<
 >;
 type ReferralRow = Pick<
   Database["public"]["Tables"]["referrals"]["Row"],
-  "id" | "event_id" | "code" | "source" | "clicks" | "registrations" | "confirmed"
+  "id" | "event_id" | "code" | "source" | "label" | "clicks" | "telegram_starts" | "registrations" | "confirmed"
 >;
 type EventRow = Database["public"]["Tables"]["events"]["Row"];
 type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
@@ -177,7 +177,7 @@ export function OrganizerEventPortfolio() {
         eventIds.length > 0
           ? await supabase
               .from("referrals")
-              .select("id,event_id,code,source,clicks,registrations,confirmed")
+              .select("id,event_id,code,source,label,clicks,telegram_starts,registrations,confirmed")
               .in("event_id", eventIds)
           : { data: [] };
 
@@ -1040,12 +1040,14 @@ export function OrganizerEventPortfolio() {
               const registrationsForCode = registrationCounts?.registrations ?? referral?.registrations ?? 0;
               const confirmedForCode = registrationCounts?.confirmed ?? referral?.confirmed ?? 0;
               const clicksForCode = referral?.clicks ?? 0;
-              const conversion = clicksForCode > 0 ? Math.round((registrationsForCode / clicksForCode) * 100) : 0;
+              const telegramStartsForCode = referral?.telegram_starts ?? 0;
+              const startsForCode = clicksForCode + telegramStartsForCode;
+              const conversion = startsForCode > 0 ? Math.round((registrationsForCode / startsForCode) * 100) : 0;
 
               return {
                 code,
-                source: referral?.source ?? (code === event.slug ? "default" : "registration"),
-                clicks: clicksForCode,
+                source: referral?.label ?? referral?.source ?? (code === event.slug ? "default" : "registration"),
+                clicks: startsForCode,
                 registrations: registrationsForCode,
                 confirmed: confirmedForCode,
                 conversion
@@ -1055,11 +1057,13 @@ export function OrganizerEventPortfolio() {
             .sort((first, second) => second.confirmed - first.confirmed || second.registrations - first.registrations || second.clicks - first.clicks);
           const topReferral = referralLeaderboard.find((referral) => referral.clicks > 0 || referral.registrations > 0 || referral.confirmed > 0);
           const referralClicks = relatedReferrals.reduce((sum, referral) => sum + referral.clicks, 0);
+          const referralTelegramStarts = relatedReferrals.reduce((sum, referral) => sum + referral.telegram_starts, 0);
+          const referralStarts = referralClicks + referralTelegramStarts;
           const referralRegistrations = registrationsWithReferral.length;
           const confirmedReferralRegistrations = confirmedRegistrationsWithReferral.length;
-          const referralConversion = referralClicks > 0 ? Math.round((referralRegistrations / referralClicks) * 100) : 0;
+          const referralConversion = referralStarts > 0 ? Math.round((referralRegistrations / referralStarts) * 100) : 0;
           const topReferralCode = topReferral?.code ?? null;
-          const hasReferralActivity = referralClicks > 0 || referralRegistrations > 0 || confirmedReferralRegistrations > 0 || Boolean(topReferralCode);
+          const hasReferralActivity = referralStarts > 0 || referralRegistrations > 0 || confirmedReferralRegistrations > 0 || Boolean(topReferralCode);
           const activeFilter = registrationFilterByEvent[event.id] ?? "all";
           const registrationRows = relatedRegistrations.map((registration) => {
             const registrationTickets = relatedTickets.filter((ticket) => ticket.registration_id === registration.id);

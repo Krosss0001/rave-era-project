@@ -84,13 +84,17 @@ create table if not exists public.referrals (
   id uuid primary key default gen_random_uuid(),
   event_id uuid references public.events(id) on delete cascade,
   owner_user_id uuid references public.profiles(id) on delete cascade,
+  created_by uuid references public.profiles(id) on delete set null,
   code text not null,
   source text,
+  label text,
   clicks int not null default 0,
+  telegram_starts int not null default 0,
   registrations int not null default 0,
   confirmed int not null default 0,
   created_at timestamptz not null default now(),
   constraint referrals_clicks_check check (clicks >= 0),
+  constraint referrals_telegram_starts_check check (telegram_starts >= 0),
   constraint referrals_registrations_check check (registrations >= 0),
   constraint referrals_confirmed_check check (confirmed >= 0)
 );
@@ -108,6 +112,7 @@ create unique index if not exists tickets_registration_unique_idx
 on public.tickets(registration_id)
 where registration_id is not null;
 create index if not exists referrals_owner_user_id_idx on public.referrals(owner_user_id);
+create index if not exists referrals_created_by_idx on public.referrals(created_by);
 create index if not exists referrals_event_id_idx on public.referrals(event_id);
 create index if not exists referrals_code_idx on public.referrals(code);
 create unique index if not exists referrals_event_id_code_unique_idx
