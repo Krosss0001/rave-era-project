@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { canManageEvents, canManagePlatform } from "@/lib/auth/roles";
 import { escapeHtml, type BotLanguage } from "@/lib/telegram/messages";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import type { BroadcastAudience, Database, UserRole } from "@/lib/supabase/types";
@@ -126,7 +127,7 @@ export async function requireBroadcastActor(request: Request) {
 
   const role = profile?.role as UserRole | undefined;
 
-  if (role !== "organizer" && role !== "admin" && role !== "superadmin") {
+  if (!canManageEvents(role)) {
     throw new Error("forbidden");
   }
 
@@ -139,7 +140,7 @@ export function assertBroadcastAccess(input: {
   audience: BroadcastAudience;
   event: BroadcastEvent | null;
 }) {
-  if (input.role === "admin" || input.role === "superadmin") {
+  if (canManagePlatform(input.role)) {
     return;
   }
 

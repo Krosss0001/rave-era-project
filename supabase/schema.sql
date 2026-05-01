@@ -27,6 +27,9 @@ create table if not exists public.events (
   price numeric(12, 2) not null default 0,
   currency text not null default 'UAH',
   capacity int not null default 0,
+  manual_registered_override int,
+  manual_remaining_override int,
+  stats_note text,
   status text not null default 'draft',
   image_url text,
   organizer_id uuid references public.profiles(id) on delete set null,
@@ -46,6 +49,8 @@ create table if not exists public.events (
   wallet_enabled boolean not null default true,
   created_at timestamptz not null default now(),
   constraint events_capacity_check check (capacity >= 0),
+  constraint events_manual_registered_override_check check (manual_registered_override is null or manual_registered_override >= 0),
+  constraint events_manual_remaining_override_check check (manual_remaining_override is null or manual_remaining_override >= 0),
   constraint events_price_check check (price >= 0),
   constraint events_status_check check (status in ('draft', 'published', 'live', 'limited', 'soon', 'cancelled', 'archived'))
 );

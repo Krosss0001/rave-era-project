@@ -19,6 +19,32 @@ type StatusBadgeProps = {
   className?: string;
 };
 
+const statusLabels: Record<string, string> = {
+  checked_in: "checked in",
+  "checked-in": "checked in",
+  paid_free: "paid/free",
+  reserved: "reserved",
+  active: "active",
+  used: "used",
+  pending: "pending",
+  confirmed: "confirmed",
+  cancelled: "cancelled",
+  canceled: "cancelled",
+  failed: "failed",
+  live: "live",
+  limited: "limited",
+  soon: "soon",
+  draft: "draft",
+  published: "published",
+  archived: "archived"
+};
+
+function formatStatusLabel(label: string) {
+  const normalized = label.toLowerCase();
+
+  return statusLabels[normalized] ?? label;
+}
+
 export function getStatusBadgeVariant(value: string | boolean | null | undefined): keyof typeof variants {
   if (value === true) {
     return "success";
@@ -54,8 +80,11 @@ export function getStatusBadgeClass(value: string | boolean | null | undefined) 
 }
 
 export function StatusBadge({ label, variant = "planned", size = "md", className }: StatusBadgeProps) {
+  const displayLabel = formatStatusLabel(label);
+
   return (
     <span
+      aria-label={displayLabel}
       className={clsx(
         "inline-flex max-w-full items-center justify-center gap-2 border font-mono font-semibold uppercase leading-4",
         size === "sm" ? "min-h-7 px-2.5 py-1 text-[9px] tracking-[0.1em] sm:tracking-[0.14em]" : "min-h-8 px-3 py-2 text-[10px] tracking-[0.14em] sm:px-4 sm:tracking-[0.18em]",
@@ -64,7 +93,7 @@ export function StatusBadge({ label, variant = "planned", size = "md", className
       )}
     >
       <span className="h-1.5 w-1.5 shrink-0 bg-current shadow-[0_0_12px_currentColor] motion-safe:animate-pulse" aria-hidden="true" />
-      <span className="min-w-0 truncate">{label}</span>
+      <span className="min-w-0 truncate">{displayLabel}</span>
     </span>
   );
 }

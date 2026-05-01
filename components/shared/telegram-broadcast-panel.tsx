@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Send, UsersRound } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { BroadcastAudience } from "@/lib/supabase/types";
@@ -21,8 +21,14 @@ type PreviewResponse = {
   ok: boolean;
   audienceLabel?: string;
   estimatedRecipientCount?: number;
-  sampleRecipients?: Array<{ telegram_user_id: string; chat_id: string }>;
+  skipped?: BroadcastSkippedCounts;
   error?: string;
+};
+
+type BroadcastSkippedCounts = {
+  emptyChatId?: number;
+  unsubscribed?: number;
+  missingTelegramUser?: number;
 };
 
 type SendResponse = {
@@ -32,6 +38,8 @@ type SendResponse = {
   total?: number;
   sent?: number;
   failed?: number;
+  skipped?: BroadcastSkippedCounts;
+  failureReasons?: Array<{ reason: string }>;
   error?: string;
 };
 
@@ -86,6 +94,18 @@ export function TelegramBroadcastPanel({
   const selectedEvent = events.find((event) => event.id === eventId) ?? null;
   const eventRequired = requireEvent || isEventAudience(audience);
   const previewMessage = formatPreviewMessage({ message, event: eventRequired ? selectedEvent : null });
+  const skippedPreviewTotal = getSkippedTotal(preview?.skipped);
+  const skippedSendTotal = getSkippedTotal(sendResult?.skipped);
+
+  useEffect(() => {
+    if (!eventRequired || events.length === 0) {
+      return;
+    }
+
+    if (!eventId || !events.some((event) => event.id === eventId)) {
+      setEventId(events[0].id);
+    }
+  }, [eventId, eventRequired, events]);
 
   async function callBroadcastApi<T>(path: string): Promise<T> {
     if (!supabase) {
@@ -108,7 +128,7 @@ export function TelegramBroadcastPanel({
       },
       body: JSON.stringify({
         audience,
-        eventId: eventRequired ? eventId : null,
+        eventId: eventRequired ? selectedEvent?.id ?? eventId : null,
         message
       })
     });
@@ -126,7 +146,7 @@ export function TelegramBroadcastPanel({
       throw new Error("Enter a message.");
     }
 
-    if (eventRequired && !eventId) {
+    if (eventRequired && !selectedEvent) {
       throw new Error("Select an event.");
     }
   }
@@ -170,6 +190,9 @@ export function TelegramBroadcastPanel({
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">{eyebrow}</p>
           <h2 className="mt-3 text-[clamp(1.85rem,9vw,3rem)] font-black uppercase leading-[0.98] text-white">{title}</h2>
           <p className="mt-5 max-w-xl text-sm leading-6 text-white/58">{description}</p>
+          <p className="mt-4 border border-white/[0.06] bg-white/[0.025] px-3 py-2 text-xs leading-5 text-white/52">
+            Users must start @Rave_era_group_bot before broadcasts can reach them.
+          </p>
           <div className="mt-8 border border-white/[0.06] bg-[#030303] p-4">
             <p className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-white/52 sm:tracking-[0.18em]">
               <Send className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
@@ -259,8 +282,9 @@ export function TelegramBroadcastPanel({
                 <p className="font-mono text-2xl font-semibold tabular-nums text-white">{preview.estimatedRecipientCount ?? 0}</p>
               </div>
               <p className="text-xs leading-5 text-white/45">
-                Sample: {(preview.sampleRecipients ?? []).map((recipient) => recipient.chat_id).join(", ") || "No recipients yet"}
+                Skipped: {skippedPreviewTotal}. {formatSkippedCounts(preview.skipped)}
               </p>
+              <p className="text-xs leading-5 text-white/45">Recipient identifiers stay server-side.</p>
             </div>
           ) : null}
 
@@ -268,8 +292,21 @@ export function TelegramBroadcastPanel({
             <div className="mt-5 grid gap-3 border border-primary/25 bg-primary/[0.035] p-4" aria-live="polite">
               <StatusBadge label="Send result" variant="success" size="sm" className="justify-self-start" />
               <p className="text-sm leading-6 text-white/70">
-                Sent {sendResult.sent ?? 0} of {sendResult.total ?? 0}. Failed: {sendResult.failed ?? 0}.
+                Sent {sendResult.sent ?? 0} of {sendResult.total ?? 0}. Failed: {sendResult.failed ?? 0}. Skipped: {skippedSendTotal}.
               </p>
+              {sendResult.failureReasons && sendResult.failureReasons.length > 0 ? (
+                <div className="grid gap-2 border border-red-400/20 bg-red-400/[0.035] p-3">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-red-100/70">First failure reasons</p>
+                  {sendResult.failureReasons.slice(0, 3).map((failure, index) => (
+                    <p key={`${failure.reason}-${index}`} className="text-xs leading-5 text-red-100">
+                      {failure.reason}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+              {skippedSendTotal > 0 ? (
+                <p className="text-xs leading-5 text-white/45">{formatSkippedCounts(sendResult.skipped)}</p>
+              ) : null}
               <p className="break-all font-mono text-[10px] uppercase tracking-[0.12em] text-white/35">
                 {sendResult.broadcastId}
               </p>
@@ -279,4 +316,20 @@ export function TelegramBroadcastPanel({
       </div>
     </section>
   );
+}
+
+function getSkippedTotal(skipped: BroadcastSkippedCounts | null | undefined) {
+  return (skipped?.emptyChatId ?? 0) + (skipped?.unsubscribed ?? 0) + (skipped?.missingTelegramUser ?? 0);
+}
+
+function formatSkippedCounts(skipped: BroadcastSkippedCounts | null | undefined) {
+  if (!skipped || getSkippedTotal(skipped) === 0) {
+    return "No skipped recipients.";
+  }
+
+  return [
+    skipped.emptyChatId ? `${skipped.emptyChatId} missing chat_id` : null,
+    skipped.unsubscribed ? `${skipped.unsubscribed} unsubscribed` : null,
+    skipped.missingTelegramUser ? `${skipped.missingTelegramUser} have not started the new bot` : null
+  ].filter(Boolean).join(" / ");
 }

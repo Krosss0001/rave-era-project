@@ -16,15 +16,23 @@ export type BroadcastRecipient = {
   chat_id: string;
 };
 
+export type BroadcastSkippedCounts = {
+  emptyChatId: number;
+  unsubscribed: number;
+  missingTelegramUser: number;
+};
+
+export type BroadcastAudienceResolution = {
+  recipients: BroadcastRecipient[];
+  skipped: BroadcastSkippedCounts;
+};
+
 type ResolveBroadcastAudienceInput = {
   audience: BroadcastAudience;
   eventId?: string | null;
 };
 
-type TelegramUserRow = Pick<
-  Database["public"]["Tables"]["telegram_users"]["Row"],
-  "telegram_user_id" | "chat_id"
->;
+type TelegramUserRow = Pick<Database["public"]["Tables"]["telegram_users"]["Row"], "telegram_user_id" | "chat_id" | "is_subscribed">;
 
 type RegistrationAudienceRow = Pick<
   Database["public"]["Tables"]["registrations"]["Row"],
@@ -61,15 +69,13 @@ function requireEventId(audience: BroadcastAudience, eventId: string | null | un
   }
 }
 
-async function getSubscribedTelegramUsers(supabase: SupabaseClient<Database>) {
+async function getTelegramUsers(supabase: SupabaseClient<Database>) {
   const rows: TelegramUserRow[] = [];
 
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await supabase
       .from("telegram_users")
-      .select("telegram_user_id,chat_id")
-      .eq("is_subscribed", true)
-      .not("chat_id", "is", null)
+      .select("telegram_user_id,chat_id,is_subscribed")
       .range(from, from + PAGE_SIZE - 1);
 
     if (error) {
@@ -138,23 +144,54 @@ async function getEventTickets(supabase: SupabaseClient<Database>, eventId: stri
   }
 }
 
-function dedupeByChatId(users: TelegramUserRow[], allowedTelegramUserIds: Set<string> | null) {
+function dedupeByChatId(users: TelegramUserRow[], allowedTelegramUserIds: Set<string> | null): BroadcastAudienceResolution {
   const recipients = new Map<string, BroadcastRecipient>();
+  const seenTelegramUserIds = new Set<string>();
+  const skipped: BroadcastSkippedCounts = {
+    emptyChatId: 0,
+    unsubscribed: 0,
+    missingTelegramUser: 0
+  };
 
   for (const user of users) {
-    if (!user.chat_id || (allowedTelegramUserIds && !allowedTelegramUserIds.has(user.telegram_user_id))) {
+    if (allowedTelegramUserIds && !allowedTelegramUserIds.has(user.telegram_user_id)) {
       continue;
     }
 
-    if (!recipients.has(user.chat_id)) {
-      recipients.set(user.chat_id, {
+    seenTelegramUserIds.add(user.telegram_user_id);
+
+    if (!user.is_subscribed) {
+      skipped.unsubscribed += 1;
+      continue;
+    }
+
+    const chatId = user.chat_id?.trim();
+
+    if (!chatId) {
+      skipped.emptyChatId += 1;
+      continue;
+    }
+
+    if (!recipients.has(chatId)) {
+      recipients.set(chatId, {
         telegram_user_id: user.telegram_user_id,
-        chat_id: user.chat_id
+        chat_id: chatId
       });
     }
   }
 
-  return Array.from(recipients.values());
+  if (allowedTelegramUserIds) {
+    for (const telegramUserId of Array.from(allowedTelegramUserIds)) {
+      if (!seenTelegramUserIds.has(telegramUserId)) {
+        skipped.missingTelegramUser += 1;
+      }
+    }
+  }
+
+  return {
+    recipients: Array.from(recipients.values()),
+    skipped
+  };
 }
 
 function getTicketMatchedRegistrationIds(
@@ -171,11 +208,11 @@ function getTicketMatchedRegistrationIds(
 export async function resolveBroadcastAudience({
   audience,
   eventId
-}: ResolveBroadcastAudienceInput): Promise<BroadcastRecipient[]> {
+}: ResolveBroadcastAudienceInput): Promise<BroadcastAudienceResolution> {
   requireEventId(audience, eventId);
 
   const supabase = getBroadcastSupabaseClient();
-  const users = await getSubscribedTelegramUsers(supabase);
+  const users = await getTelegramUsers(supabase);
 
   if (audience === "all_telegram_users") {
     return dedupeByChatId(users, null);
@@ -194,10 +231,7 @@ export async function resolveBroadcastAudience({
         .filter(Boolean) as string[]
     );
 
-    return dedupeByChatId(
-      users,
-      new Set(users.map((user) => user.telegram_user_id).filter((id) => !registeredTelegramUserIds.has(id)))
-    );
+    return dedupeByChatId(users, new Set(users.map((user) => user.telegram_user_id).filter((id) => !registeredTelegramUserIds.has(id))));
   }
 
   const activeRegistrations = registrations.filter((registration) => registration.status !== "cancelled");

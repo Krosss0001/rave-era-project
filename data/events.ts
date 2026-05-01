@@ -14,6 +14,9 @@ export type RaveeraEvent = {
   currency: string;
   capacity: number;
   registered: number;
+  manualRegisteredOverride?: number | null;
+  manualRemainingOverride?: number | null;
+  statsNote?: string | null;
   stats?: {
     totalRegistrations: number;
     confirmedRegistrations: number;

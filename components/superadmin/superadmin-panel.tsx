@@ -18,6 +18,7 @@ type ReferralRow = Pick<
 >;
 type RegistrationReferralRow = Pick<Database["public"]["Tables"]["registrations"]["Row"], "id" | "event_id" | "referral_code" | "status">;
 type TicketReferralRow = Pick<Database["public"]["Tables"]["tickets"]["Row"], "registration_id" | "event_id" | "payment_status" | "checked_in" | "checked_in_at" | "status">;
+type ReferralAnalyticsRow = Database["public"]["Functions"]["get_referral_analytics"]["Returns"][number];
 
 type ReferralForm = {
   eventId: string;
@@ -68,6 +69,7 @@ export function SuperadminPanel() {
   const [referrals, setReferrals] = useState<ReferralRow[]>([]);
   const [registrations, setRegistrations] = useState<RegistrationReferralRow[]>([]);
   const [tickets, setTickets] = useState<TicketReferralRow[]>([]);
+  const [referralAnalytics, setReferralAnalytics] = useState<ReferralAnalyticsRow[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [referralForm, setReferralForm] = useState(initialReferralForm);
   const [createdLinks, setCreatedLinks] = useState<{ website: string; telegram: string } | null>(null);
@@ -88,7 +90,7 @@ export function SuperadminPanel() {
         return;
       }
 
-      const [roleState, profileResult, eventResult, referralResult, registrationResult, ticketResult] = await Promise.all([
+      const [roleState, profileResult, eventResult, referralResult, referralAnalyticsResult, registrationResult, ticketResult] = await Promise.all([
         getCurrentRole(supabase),
         supabase
           .from("profiles")
@@ -102,6 +104,7 @@ export function SuperadminPanel() {
           .from("referrals")
           .select("id,event_id,code,source,label,clicks,telegram_starts,registrations,confirmed,paid,checked_in,created_at,updated_at")
           .order("created_at", { ascending: false }),
+        supabase.rpc("get_referral_analytics"),
         supabase
           .from("registrations")
           .select("id,event_id,referral_code,status")
@@ -119,11 +122,18 @@ export function SuperadminPanel() {
       setProfiles(profileResult.data ?? []);
       setEvents(eventResult.data ?? []);
       setReferrals(referralResult.data ?? []);
+      setReferralAnalytics(referralAnalyticsResult.data ?? []);
       setRegistrations(registrationResult.data ?? []);
       setTickets(ticketResult.data ?? []);
+      if (referralAnalyticsResult.error) {
+        console.warn("Referral analytics calculation error", {
+          code: referralAnalyticsResult.error.code,
+          message: referralAnalyticsResult.error.message
+        });
+      }
       setMessage(
-        profileResult.error || referralResult.error || registrationResult.error || ticketResult.error
-          ? "Some superadmin data is not visible. Confirm the signed-in profile has the superadmin role and patch 013 is applied."
+        profileResult.error || referralResult.error || referralAnalyticsResult.error || registrationResult.error || ticketResult.error
+          ? "Some superadmin data is not visible. Confirm the signed-in profile has the superadmin role and patches 013-015 are applied."
           : ""
       );
       setLoading(false);
@@ -170,6 +180,12 @@ export function SuperadminPanel() {
   }, [registrations, tickets]);
   const selectedReferralEvent = events.find((event) => event.id === referralForm.eventId) ?? null;
   const previewLinks = selectedReferralEvent && referralForm.code ? buildReferralLinks(selectedReferralEvent, referralForm.code) : null;
+  const referralAnalyticsById = useMemo(() => {
+    return referralAnalytics.reduce<Record<string, ReferralAnalyticsRow>>((items, analytics) => {
+      items[analytics.referral_id] = analytics;
+      return items;
+    }, {});
+  }, [referralAnalytics]);
 
   function updateReferralCode(value: string) {
     setReferralForm((current) => ({
@@ -421,12 +437,13 @@ export function SuperadminPanel() {
                 {referrals.map((referral) => {
                   const event = events.find((item) => item.id === referral.event_id);
                   const starts = referral.clicks + referral.telegram_starts;
+                  const analytics = referralAnalyticsById[referral.id];
                   const calculatedStats = referral.event_id ? referralStatsByKey[`${referral.event_id}:${referral.code}`] : null;
-                  const registrationsCount = calculatedStats?.registrations ?? referral.registrations;
-                  const confirmedCount = calculatedStats?.confirmed ?? referral.confirmed;
-                  const paidCount = calculatedStats?.paid ?? referral.paid;
-                  const checkedInCount = calculatedStats?.checkedIn ?? referral.checked_in;
-                  const conversion = starts > 0 ? Math.round((registrationsCount / starts) * 100) : 0;
+                  const registrationsCount = analytics?.registrations ?? calculatedStats?.registrations ?? referral.registrations;
+                  const confirmedCount = analytics?.confirmed ?? calculatedStats?.confirmed ?? referral.confirmed;
+                  const paidCount = analytics?.paid ?? calculatedStats?.paid ?? referral.paid;
+                  const checkedInCount = analytics?.checked_in ?? calculatedStats?.checkedIn ?? referral.checked_in;
+                  const conversion = Math.round((analytics?.conversion ?? registrationsCount / Math.max(starts, 1)) * 100);
                   const links = event ? buildReferralLinks(event, referral.code) : null;
 
                   return (
