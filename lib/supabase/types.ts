@@ -61,9 +61,6 @@ export type Database = {
           price: number;
           currency: string;
           capacity: number;
-          manual_registered_override: number | null;
-          manual_remaining_override: number | null;
-          stats_note: string | null;
           status: EventStatus;
           image_url: string | null;
           organizer_id: string | null;
@@ -96,9 +93,6 @@ export type Database = {
           price?: number;
           currency?: string;
           capacity?: number;
-          manual_registered_override?: number | null;
-          manual_remaining_override?: number | null;
-          stats_note?: string | null;
           status?: EventStatus;
           image_url?: string | null;
           organizer_id?: string | null;
@@ -130,9 +124,6 @@ export type Database = {
           price?: number;
           currency?: string;
           capacity?: number;
-          manual_registered_override?: number | null;
-          manual_remaining_override?: number | null;
-          stats_note?: string | null;
           status?: EventStatus;
           image_url?: string | null;
           organizer_id?: string | null;
@@ -618,40 +609,6 @@ export type Database = {
           active_tickets: number;
           used_tickets: number;
           checked_in_count: number;
-        }[];
-      };
-      get_referral_analytics: {
-        Args: Record<PropertyKey, never>;
-        Returns: {
-          referral_id: string;
-          event_id: string;
-          code: string;
-          registrations: number;
-          confirmed: number;
-          paid: number;
-          checked_in: number;
-          conversion: number;
-        }[];
-      };
-      get_organizer_registration_rows: {
-        Args: { event_ids: string[] };
-        Returns: {
-          registration_id: string;
-          event_id: string;
-          name: string | null;
-          email: string | null;
-          phone: string | null;
-          instagram_nickname: string | null;
-          telegram_username: string | null;
-          telegram_user_id: string | null;
-          referral_code: string | null;
-          registration_status: RegistrationStatus;
-          registration_created_at: string;
-          ticket_id: string | null;
-          ticket_status: TicketStatus | null;
-          payment_status: PaymentStatus | null;
-          checked_in: boolean | null;
-          checked_in_at: string | null;
         }[];
       };
       check_in_ticket: {

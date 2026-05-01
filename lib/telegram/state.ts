@@ -50,10 +50,6 @@ function logTelegramStateIssue(message: string, details: Record<string, unknown>
   }
 }
 
-function logTelegramStateInfo(message: string, details: Record<string, unknown> = {}) {
-  console.info(message, details);
-}
-
 export function getTelegramSupabaseClient() {
   const supabase = getSupabaseServiceRoleClient();
 
@@ -90,7 +86,7 @@ export function parseStartPayload(value: string | undefined) {
 export async function getEventBySlug(supabase: SupabaseClient<Database>, slug: string) {
   const { data, error } = await supabase
     .from("events")
-    .select("id,slug,title,subtitle,description,date,city,venue,address,price,currency,capacity,manual_registered_override,manual_remaining_override,stats_note,status,image_url,organizer_id,organizer_name,organizer_description,organizer_contact,telegram_url,lineup,tags,age_limit,dress_code,doors_open,event_type,ticket_wave_label,urgency_note,referral_enabled,wallet_enabled,created_at")
+    .select("id,slug,title,subtitle,description,date,city,venue,address,price,currency,capacity,status,image_url,organizer_id,organizer_name,organizer_description,organizer_contact,telegram_url,lineup,tags,age_limit,dress_code,doors_open,event_type,ticket_wave_label,urgency_note,referral_enabled,wallet_enabled,created_at")
     .eq("slug", slug)
     .in("status", ["published", "live", "limited", "soon"])
     .maybeSingle();
@@ -105,7 +101,7 @@ export async function getEventBySlug(supabase: SupabaseClient<Database>, slug: s
 export async function getPublicTelegramEvents(supabase: SupabaseClient<Database>) {
   const { data, error } = await supabase
     .from("events")
-    .select("id,slug,title,subtitle,description,date,city,venue,address,price,currency,capacity,manual_registered_override,manual_remaining_override,stats_note,status,image_url,organizer_id,organizer_name,organizer_description,organizer_contact,telegram_url,lineup,tags,age_limit,dress_code,doors_open,event_type,ticket_wave_label,urgency_note,referral_enabled,wallet_enabled,created_at")
+    .select("id,slug,title,subtitle,description,date,city,venue,address,price,currency,capacity,status,image_url")
     .in("status", ["published", "live", "limited", "soon"])
     .order("date", { ascending: true, nullsFirst: false })
     .limit(8);
@@ -456,38 +452,10 @@ export async function createPendingRegistrationAndTicket(
   }
 
   const existingRegistration = await getRegistrationForSession(supabase, session);
-  let registration = existingRegistration || (await insertRegistration(supabase, session));
-  let referralWasSaved = false;
-
-  if (existingRegistration && session.referral_code && !existingRegistration.referral_code) {
-    const { data, error } = await supabase
-      .from("registrations")
-      .update({ referral_code: session.referral_code })
-      .eq("id", existingRegistration.id)
-      .select("id,event_id,user_id,status,referral_code")
-      .single();
-
-    if (error) {
-      logTelegramStateIssue("Telegram registration referral_code update failed", {
-        eventId: session.event_id,
-        registrationId: existingRegistration.id,
-        code: error.code,
-        reason: error.message
-      });
-    } else if (data) {
-      registration = data;
-      referralWasSaved = true;
-      logTelegramStateInfo("Referral code saved for Telegram registration", {
-        eventId: session.event_id,
-        registrationId: data.id,
-        referralCode: session.referral_code
-      });
-    }
-  }
-
+  const registration = existingRegistration || (await insertRegistration(supabase, session));
   const ticket = await createTicket(supabase, registration.id, session.event_id);
 
-  if ((!existingRegistration || referralWasSaved) && session.referral_code) {
+  if (!existingRegistration && session.referral_code) {
     await incrementReferralCounters(supabase, session.event_id, session.referral_code, { registrations: 1 }, "telegram_registration");
   }
 
@@ -565,25 +533,10 @@ async function insertRegistration(supabase: SupabaseClient<Database>, session: T
       referral_code: session.referral_code ?? null,
       status: "pending"
     })
-    .select("id,event_id,user_id,status,referral_code")
+    .select("id,event_id,user_id,status")
     .single();
 
   if (!error && data) {
-    logTelegramStateInfo("Telegram registration created", {
-      eventId: session.event_id,
-      registrationId: data.id,
-      hasReferralCode: Boolean(session.referral_code),
-      hasTelegramUserId: Boolean(session.telegram_user_id)
-    });
-
-    if (session.referral_code) {
-      logTelegramStateInfo("Referral code saved for Telegram registration", {
-        eventId: session.event_id,
-        registrationId: data.id,
-        referralCode: session.referral_code
-      });
-    }
-
     return data;
   }
 
@@ -606,25 +559,10 @@ async function insertRegistration(supabase: SupabaseClient<Database>, session: T
         referral_code: session.referral_code ?? null,
         status: "pending"
       })
-      .select("id,event_id,user_id,status,referral_code")
+      .select("id,event_id,user_id,status")
       .single();
 
     if (!fallback.error && fallback.data) {
-      logTelegramStateInfo("Telegram registration created", {
-        eventId: session.event_id,
-        registrationId: fallback.data.id,
-        hasReferralCode: Boolean(session.referral_code),
-        hasTelegramUserId: Boolean(session.telegram_user_id)
-      });
-
-      if (session.referral_code) {
-        logTelegramStateInfo("Referral code saved for Telegram registration", {
-          eventId: session.event_id,
-          registrationId: fallback.data.id,
-          referralCode: session.referral_code
-        });
-      }
-
       return fallback.data;
     }
 

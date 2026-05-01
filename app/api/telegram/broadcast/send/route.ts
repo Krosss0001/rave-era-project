@@ -13,10 +13,6 @@ import {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-type FailureReason = {
-  reason: string;
-};
-
 function errorResponse(error: unknown) {
   const message = error instanceof Error ? error.message : "Unexpected error.";
   const status = message === "unauthorized" ? 401 : message === "forbidden" ? 403 : 400;
@@ -35,11 +31,10 @@ export async function POST(request: Request) {
       audience: input.audience,
       event
     });
-    const audienceResolution = await resolveBroadcastAudience({
+    const recipients = await resolveBroadcastAudience({
       audience: input.audience,
       eventId: input.eventId
     });
-    const recipients = audienceResolution.recipients;
     const formattedMessage = formatBroadcastMessage({
       language: input.language,
       message: input.message,
@@ -65,7 +60,6 @@ export async function POST(request: Request) {
 
     let sent = 0;
     let failed = 0;
-    const failureReasons: FailureReason[] = [];
 
     for (const recipient of recipients) {
       try {
@@ -86,20 +80,13 @@ export async function POST(request: Request) {
         sent += 1;
       } catch (error) {
         failed += 1;
-        const failureMessage = error instanceof Error ? error.message : "Unknown send error.";
-
-        if (failureReasons.length < 3) {
-          failureReasons.push({
-            reason: failureMessage
-          });
-        }
 
         await supabase.from("telegram_broadcast_recipients").insert({
           broadcast_id: broadcast.id,
           telegram_user_id: recipient.telegram_user_id,
           chat_id: recipient.chat_id,
           status: "failed",
-          error: failureMessage
+          error: error instanceof Error ? error.message : "Unknown send error."
         });
       }
     }
@@ -124,9 +111,7 @@ export async function POST(request: Request) {
       audienceLabel: getBroadcastAudienceLabel(input.audience),
       total: recipients.length,
       sent,
-      failed,
-      skipped: audienceResolution.skipped,
-      failureReasons
+      failed
     });
   } catch (error) {
     return errorResponse(error);

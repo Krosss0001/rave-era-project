@@ -86,21 +86,10 @@ supabase/patches/012_referral_tracking.sql
 supabase/patches/013_referral_link_analytics.sql
 supabase/patches/013_superadmin_referral_links.sql
 supabase/patches/014_public_event_stats.sql
-supabase/patches/015_event_stats_overrides.sql
-supabase/patches/015_referral_organizer_sync.sql
 ```
 
 Patch `006` creates server-managed Telegram registration sessions. Patch `007` adds Telegram identity linking plus `registrations.telegram_user_id`. Patch `008` keeps legacy language columns defaulted to `uk`. Patch `009` adds QR check-in support. Patch `010` adds Telegram broadcast tables, recipient tracking, and `telegram_users.is_subscribed`. Patch `011` adds `registrations.phone` and `registrations.instagram_nickname`. Patch `012` adds referral source/counter support and per-event referral code indexing.
-Patch `013_referral_link_analytics` adds referral link analytics columns. Patch `013_superadmin_referral_links` adds superadmin referral ownership metadata. Patch `014` adds public event stats RPC support for synchronized event cards and detail pages. Patch `015_event_stats_overrides` adds display-only event stats override fields. Patch `015_referral_organizer_sync` adds reliable referral analytics and organizer registration sync RPCs.
-
-Minimum SQL for manual public stats overrides:
-
-```sql
-alter table public.events
-add column if not exists manual_registered_override integer,
-add column if not exists manual_remaining_override integer,
-add column if not exists stats_note text;
-```
+Patch `013_referral_link_analytics` adds referral link analytics columns. Patch `013_superadmin_referral_links` adds superadmin referral ownership metadata. Patch `014` adds public event stats RPC support for synchronized event cards and detail pages.
 
 ## Telegram Webhook Setup
 

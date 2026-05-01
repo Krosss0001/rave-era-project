@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Copy, CreditCard, Gauge, QrCode, Share2, Users } from "lucide-react";
-import type { RaveeraEvent } from "@/data/events";
+import { events as mockEvents, type RaveeraEvent } from "@/data/events";
 import { getCurrentRole } from "@/lib/auth/get-role";
 import { canManagePlatform } from "@/lib/auth/roles";
 import { useLanguage } from "@/lib/i18n/use-language";
@@ -12,7 +12,7 @@ import { formatEventDate, getCapacityPercent } from "@/lib/format";
 import { getPaymentPlaceholderCopy } from "@/lib/payment-placeholder";
 import { slugify } from "@/lib/slugify";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { EVENT_BASE_SELECT_FIELDS, EVENT_SELECT_FIELDS } from "@/lib/supabase/event-fields";
+import { EVENT_SELECT_FIELDS } from "@/lib/supabase/event-fields";
 import { mapDatabaseEvent } from "@/lib/supabase/event-mapper";
 import type { BroadcastAudience, Database, EventStatus, PaymentStatus, RegistrationStatus, TicketStatus } from "@/lib/supabase/types";
 import { TelegramBroadcastPanel } from "@/components/shared/telegram-broadcast-panel";
@@ -20,7 +20,7 @@ import { StatusBadge, getStatusBadgeVariant } from "@/components/shared/status-b
 
 type RegistrationRow = Pick<
   Database["public"]["Tables"]["registrations"]["Row"],
-  "id" | "event_id" | "name" | "email" | "phone" | "instagram_nickname" | "telegram_username" | "telegram_user_id" | "referral_code" | "status" | "created_at"
+  "id" | "event_id" | "name" | "email" | "phone" | "instagram_nickname" | "telegram_username" | "referral_code" | "status" | "created_at"
 >;
 type TicketRow = Pick<
   Database["public"]["Tables"]["tickets"]["Row"],
@@ -31,7 +31,6 @@ type ReferralRow = Pick<
   "id" | "event_id" | "code" | "source" | "label" | "clicks" | "telegram_starts" | "registrations" | "confirmed"
 >;
 type EventRow = Database["public"]["Tables"]["events"]["Row"];
-type OrganizerRegistrationRpcRow = Database["public"]["Functions"]["get_organizer_registration_rows"]["Returns"][number];
 type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
 type OrganizerEvent = RaveeraEvent & { dbStatus?: EventStatus };
 type RegistrationFilter = "all" | "confirmed" | "pending" | "paid" | "checked-in";
@@ -40,7 +39,6 @@ type EventForm = typeof initialForm;
 type EventValidationResult =
   | { error: string }
   | { title: string; slug: string; capacity: number; price: number };
-type SupabaseIssue = { code?: string; message?: string } | null;
 
 const eventStatusOptions: EventStatus[] = ["draft", "live", "limited", "soon"];
 const registrationFilters: Array<{ value: RegistrationFilter; label: { ua: string; en: string } }> = [
@@ -65,29 +63,6 @@ const registrationActionOrder: RegistrationAction[] = [
   "reset_check_in"
 ];
 
-function logOrganizerSupabaseIssue(message: string, details: Record<string, unknown> = {}) {
-  if (process.env.NODE_ENV !== "production") {
-    console.warn(message, details);
-  }
-}
-
-function isMissingOptionalEventColumn(error: SupabaseIssue) {
-  const message = error?.message?.toLowerCase() ?? "";
-
-  return (
-    error?.code === "42703" ||
-    message.includes("manual_registered_override") ||
-    message.includes("manual_remaining_override") ||
-    message.includes("stats_note")
-  );
-}
-
-function getOrganizerEventErrorMessage(error: SupabaseIssue) {
-  return isMissingOptionalEventColumn(error)
-    ? "Run events stats override SQL patch first."
-    : error?.message || "Event could not be saved.";
-}
-
 const initialForm = {
   title: "",
   subtitle: "",
@@ -100,9 +75,6 @@ const initialForm = {
   price: "0",
   currency: "UAH",
   capacity: "",
-  manual_registered_override: "",
-  manual_remaining_override: "",
-  stats_note: "",
   status: "draft" as EventStatus,
   image_url: "",
   organizer_name: "",
@@ -125,7 +97,7 @@ export function OrganizerEventPortfolio() {
   const { dictionary, language } = useLanguage();
   const router = useRouter();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
-  const [events, setEvents] = useState<OrganizerEvent[]>([]);
+  const [events, setEvents] = useState<OrganizerEvent[]>(mockEvents);
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
   const [tickets, setTickets] = useState<TicketRow[]>([]);
   const [referrals, setReferrals] = useState<ReferralRow[]>([]);
@@ -156,138 +128,54 @@ export function OrganizerEventPortfolio() {
         return;
       }
 
-      const client = supabase;
-      const roleState = await getCurrentRole(client);
+      const roleState = await getCurrentRole(supabase);
 
       if (!roleState.user || !roleState.role) {
         setLoading(false);
         return;
       }
 
-      const userId = roleState.user.id;
-      const canViewAllEvents = canManagePlatform(roleState.role);
+      setCurrentUserId(roleState.user.id);
+      setCanEditAllEvents(canManagePlatform(roleState.role));
 
-      setCurrentUserId(userId);
-      setCanEditAllEvents(canViewAllEvents);
+      let query = supabase
+        .from("events")
+        .select(EVENT_SELECT_FIELDS)
+        .order("date", { ascending: true, nullsFirst: false });
 
-      async function queryOrganizerEvents(selectFields: string) {
-        let query = client
-          .from("events")
-          .select(selectFields)
-          .order("date", { ascending: true, nullsFirst: false });
-
-        if (!canViewAllEvents) {
-          query = query.eq("organizer_id", userId);
-        }
-
-        return query;
+      if (!canManagePlatform(roleState.role)) {
+        query = query.eq("organizer_id", roleState.user.id);
       }
 
-      let eventResult = await queryOrganizerEvents(EVENT_SELECT_FIELDS);
-
-      if (eventResult.error) {
-        logOrganizerSupabaseIssue(
-          isMissingOptionalEventColumn(eventResult.error)
-            ? "Organizer events fetch retried without optional override columns."
-            : "Organizer events full fetch failed; retrying with base event fields.",
-          {
-            code: eventResult.error.code,
-            message: eventResult.error.message
-          }
-        );
-        eventResult = await queryOrganizerEvents(EVENT_BASE_SELECT_FIELDS);
-      }
-
-      if (eventResult.error) {
-        logOrganizerSupabaseIssue("Organizer events fetch failed after base-field retry.", {
-          code: eventResult.error.code,
-          message: eventResult.error.message
-        });
-      }
-
-      const databaseEvents = !eventResult.error && eventResult.data ? (eventResult.data as unknown as EventRow[]) : [];
+      const eventResult = await query;
+      const databaseEvents = (eventResult.data ?? []) as unknown as EventRow[];
       const mappedEvents = databaseEvents.map((event) => ({
         ...mapDatabaseEvent(event),
         dbStatus: event.status
       }));
-      const visibleEvents = mappedEvents;
-      const eventIds = mappedEvents.map((event) => event.id);
+      const visibleEvents = mappedEvents.length > 0 ? mappedEvents : mockEvents;
+      const eventIds = visibleEvents.map((event) => event.id);
 
-      let nextRegistrations: RegistrationRow[] = [];
-      let nextTickets: TicketRow[] = [];
-
-      if (eventIds.length > 0) {
-        const organizerRegistrationResult = await client.rpc("get_organizer_registration_rows", { event_ids: eventIds });
-
-        if (!organizerRegistrationResult.error && organizerRegistrationResult.data) {
-          const registrationMap = new Map<string, RegistrationRow>();
-          const ticketRows: TicketRow[] = [];
-
-          for (const row of organizerRegistrationResult.data as OrganizerRegistrationRpcRow[]) {
-            registrationMap.set(row.registration_id, {
-              id: row.registration_id,
-              event_id: row.event_id,
-              name: row.name,
-              email: row.email,
-              phone: row.phone,
-              instagram_nickname: row.instagram_nickname,
-              telegram_username: row.telegram_username,
-              telegram_user_id: row.telegram_user_id,
-              referral_code: row.referral_code,
-              status: row.registration_status,
-              created_at: row.registration_created_at
-            });
-
-            if (row.ticket_id && row.ticket_status && row.payment_status) {
-              ticketRows.push({
-                id: row.ticket_id,
-                registration_id: row.registration_id,
-                event_id: row.event_id,
-                status: row.ticket_status,
-                payment_status: row.payment_status,
-                checked_in: Boolean(row.checked_in),
-                checked_in_at: row.checked_in_at
-              });
-            }
-          }
-
-          nextRegistrations = Array.from(registrationMap.values());
-          nextTickets = ticketRows;
-        } else {
-          logOrganizerSupabaseIssue("Organizer registrations query error", {
-            code: organizerRegistrationResult.error?.code,
-            message: organizerRegistrationResult.error?.message
-          });
-
-          const [registrationResult, ticketResult] = await Promise.all([
-            client
+      const registrationResult =
+        eventIds.length > 0
+          ? await supabase
               .from("registrations")
-              .select("id,event_id,name,email,phone,instagram_nickname,telegram_username,telegram_user_id,referral_code,status,created_at")
+              .select("id,event_id,name,email,phone,instagram_nickname,telegram_username,referral_code,status,created_at")
               .in("event_id", eventIds)
-              .order("created_at", { ascending: false }),
-            client
+              .order("created_at", { ascending: false })
+          : { data: [] };
+
+      const ticketResult =
+        eventIds.length > 0
+          ? await supabase
               .from("tickets")
               .select("id,registration_id,event_id,status,payment_status,checked_in,checked_in_at")
               .in("event_id", eventIds)
-          ]);
-
-          if (registrationResult.error || ticketResult.error) {
-            logOrganizerSupabaseIssue("Organizer registrations fallback query error", {
-              registrationCode: registrationResult.error?.code,
-              ticketCode: ticketResult.error?.code,
-              registrationMessage: registrationResult.error?.message,
-              ticketMessage: ticketResult.error?.message
-            });
-          }
-
-          nextRegistrations = registrationResult.data ?? [];
-          nextTickets = ticketResult.data ?? [];
-        }
-      }
+          : { data: [] };
 
       const referralResult =
         eventIds.length > 0
-          ? await client
+          ? await supabase
               .from("referrals")
               .select("id,event_id,code,source,label,clicks,telegram_starts,registrations,confirmed")
               .in("event_id", eventIds)
@@ -298,8 +186,8 @@ export function OrganizerEventPortfolio() {
       }
 
       setEvents(visibleEvents);
-      setRegistrations(nextRegistrations);
-      setTickets(nextTickets);
+      setRegistrations(registrationResult.data ?? []);
+      setTickets(ticketResult.data ?? []);
       setReferrals(referralResult.data ?? []);
       setLoading(false);
     }
@@ -350,11 +238,8 @@ export function OrganizerEventPortfolio() {
       address: event.address,
       price: event.price.toString(),
       currency: event.currency,
-    capacity: event.capacity.toString(),
-    manual_registered_override: event.manualRegisteredOverride?.toString() ?? "",
-    manual_remaining_override: event.manualRemainingOverride?.toString() ?? "",
-    stats_note: event.statsNote ?? "",
-    status: event.dbStatus ?? event.status,
+      capacity: event.capacity.toString(),
+      status: event.dbStatus ?? event.status,
       image_url: event.image,
       organizer_name: event.organizerName ?? "",
       organizer_description: event.organizerDescription ?? "",
@@ -400,45 +285,6 @@ export function OrganizerEventPortfolio() {
     }
 
     return { title, slug, capacity, price };
-  }
-
-  function parseOptionalOverride(value: string, label: string) {
-    const trimmed = value.trim();
-
-    if (!trimmed || trimmed.toLowerCase() === "auto") {
-      return { value: null };
-    }
-
-    const parsed = Number(trimmed);
-
-    if (!Number.isInteger(parsed) || parsed < 0) {
-      return { error: `${label} must be a non-negative whole number.` };
-    }
-
-    return { value: parsed };
-  }
-
-  function getManualStatsOverridePayload(targetForm: EventForm, capacity: number) {
-    const registered = parseOptionalOverride(targetForm.manual_registered_override, "Registered override");
-    const remaining = parseOptionalOverride(targetForm.manual_remaining_override, "Remaining override");
-
-    if ("error" in registered) {
-      return registered;
-    }
-
-    if ("error" in remaining) {
-      return remaining;
-    }
-
-    if (!canEditAllEvents && registered.value !== null && registered.value > capacity) {
-      return { error: "Registered override cannot exceed capacity for organizer accounts." };
-    }
-
-    return {
-      manual_registered_override: registered.value,
-      manual_remaining_override: remaining.value,
-      stats_note: targetForm.stats_note.trim() || null
-    };
   }
 
   function getVisibilityHint(status: EventStatus) {
@@ -510,7 +356,7 @@ export function OrganizerEventPortfolio() {
     setSaving(false);
 
     if (error) {
-      setMessage({ type: "error", text: getOrganizerEventErrorMessage(error) });
+      setMessage({ type: "error", text: error.message });
       return;
     }
 
@@ -550,13 +396,6 @@ export function OrganizerEventPortfolio() {
       return;
     }
 
-    const manualStatsPayload = getManualStatsOverridePayload(editForm, validated.capacity);
-
-    if ("error" in manualStatsPayload) {
-      setMessage({ type: "error", text: manualStatsPayload.error || "Invalid manual stats override." });
-      return;
-    }
-
     setUpdatingEventId(targetEvent.id);
 
     const updatePayload: EventUpdate = {
@@ -585,8 +424,7 @@ export function OrganizerEventPortfolio() {
       ticket_wave_label: editForm.ticket_wave_label.trim() || null,
       urgency_note: editForm.urgency_note.trim() || null,
       referral_enabled: editForm.referral_enabled,
-      wallet_enabled: editForm.wallet_enabled,
-      ...manualStatsPayload
+      wallet_enabled: editForm.wallet_enabled
     };
 
     let query = supabase.from("events").update(updatePayload).eq("id", targetEvent.id);
@@ -600,7 +438,7 @@ export function OrganizerEventPortfolio() {
     setUpdatingEventId(null);
 
     if (error) {
-      setMessage({ type: "error", text: getOrganizerEventErrorMessage(error) });
+      setMessage({ type: "error", text: error.message });
       return;
     }
 
@@ -618,67 +456,6 @@ export function OrganizerEventPortfolio() {
       setMessage({
         type: "success",
         text: `Event updated / Подію оновлено. ${getVisibilityHint(updatedRow.status)}`
-      });
-    }
-  }
-
-  async function saveManualStatsOverride(targetEvent: OrganizerEvent, clear = false) {
-    setMessage(null);
-    setSuccessSlug(null);
-
-    if (!supabase || !currentUserId) {
-      setMessage({ type: "error", text: dictionary.organizer.sessionMissing });
-      return;
-    }
-
-    const capacity = Number(editForm.capacity || targetEvent.capacity);
-
-    if (!Number.isFinite(capacity) || capacity <= 0) {
-      setMessage({ type: "error", text: dictionary.organizer.capacityRequired });
-      return;
-    }
-
-    const manualStatsPayload = clear
-      ? { manual_registered_override: null, manual_remaining_override: null, stats_note: null }
-      : getManualStatsOverridePayload(editForm, capacity);
-
-    if ("error" in manualStatsPayload) {
-      setMessage({ type: "error", text: manualStatsPayload.error || "Invalid manual stats override." });
-      return;
-    }
-
-    setUpdatingEventId(`${targetEvent.id}:override`);
-
-    let query = supabase.from("events").update(manualStatsPayload).eq("id", targetEvent.id);
-
-    if (!canEditAllEvents) {
-      query = query.eq("organizer_id", currentUserId);
-    }
-
-    const { data, error } = await query.select(EVENT_SELECT_FIELDS).single();
-
-    setUpdatingEventId(null);
-
-    if (error) {
-      setMessage({ type: "error", text: getOrganizerEventErrorMessage(error) });
-      return;
-    }
-
-    if (data) {
-      const updatedRow = data as unknown as EventRow;
-      const updatedEvent: OrganizerEvent = {
-        ...mapDatabaseEvent(updatedRow),
-        dbStatus: updatedRow.status
-      };
-
-      setEvents((current) => current.map((item) => (item.id === updatedEvent.id ? updatedEvent : item)));
-      setEditForm(formFromEvent(updatedEvent));
-      setSuccessSlug(updatedRow.slug);
-      setMessage({
-        type: "success",
-        text: clear
-          ? "Manual stats override cleared / Ручну корекцію статистики очищено."
-          : "Manual stats override saved / Ручну корекцію статистики збережено."
       });
     }
   }
@@ -1233,21 +1010,6 @@ export function OrganizerEventPortfolio() {
       </div>
 
       <div className="mt-10 grid gap-0">
-        {!loading && events.length === 0 ? (
-          <div className="border border-white/[0.05] bg-[#030303] p-6">
-            <p className="text-xl font-black uppercase text-white">No organizer events yet</p>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/48">
-              Create the first event above, or confirm this account owns events in Supabase. Mock events are not shown in the operator panel when Supabase returns an empty result.
-            </p>
-            <button
-              type="button"
-              onClick={() => setFormOpen(true)}
-              className="focus-ring mt-5 inline-flex min-h-11 items-center border border-primary/45 bg-primary/[0.025] px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-primary transition-colors hover:bg-primary hover:text-black"
-            >
-              Create event
-            </button>
-          </div>
-        ) : null}
         {events.map((event) => {
           const relatedRegistrations = registrations.filter((registration) => registration.event_id === event.id);
           const relatedTickets = tickets.filter((ticket) => ticket.event_id === event.id);
@@ -1631,76 +1393,6 @@ export function OrganizerEventPortfolio() {
                         className="mt-2 min-h-11 w-full border border-white/[0.08] bg-[#020202] px-3 font-mono text-sm text-white outline-none motion-safe:transition-colors motion-safe:duration-500 focus:border-primary"
                       />
                     </label>
-                    <div className="md:col-span-2 border border-primary/15 bg-black/40 p-4">
-                      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-                        <div>
-                          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
-                            Manual stats override / Ручна корекція статистики
-                          </p>
-                          <p className="mt-2 max-w-2xl text-xs leading-5 text-white/45">
-                            Overrides change displayed public stats only. They do not create registrations.
-                          </p>
-                        </div>
-                        {(event.manualRegisteredOverride !== null && event.manualRegisteredOverride !== undefined) ||
-                        (event.manualRemainingOverride !== null && event.manualRemainingOverride !== undefined) ? (
-                          <StatusBadge label="override active" variant="pending" size="sm" />
-                        ) : null}
-                      </div>
-                      <div className="mt-4 grid gap-3 md:grid-cols-3">
-                        <label className="block">
-                          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/35">Public registered count</span>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="([0-9]+|auto)?"
-                            value={editForm.manual_registered_override}
-                            onChange={(inputEvent) => updateEditField("manual_registered_override", inputEvent.target.value)}
-                            placeholder="auto"
-                            className="mt-2 min-h-11 w-full border border-white/[0.08] bg-[#020202] px-3 font-mono text-sm text-white outline-none motion-safe:transition-colors motion-safe:duration-500 focus:border-primary"
-                          />
-                        </label>
-                        <label className="block">
-                          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/35">Public remaining spots</span>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="([0-9]+|auto)?"
-                            value={editForm.manual_remaining_override}
-                            onChange={(inputEvent) => updateEditField("manual_remaining_override", inputEvent.target.value)}
-                            placeholder="auto"
-                            className="mt-2 min-h-11 w-full border border-white/[0.08] bg-[#020202] px-3 font-mono text-sm text-white outline-none motion-safe:transition-colors motion-safe:duration-500 focus:border-primary"
-                          />
-                        </label>
-                        <label className="block">
-                          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/35">Internal note</span>
-                          <input
-                            type="text"
-                            value={editForm.stats_note}
-                            onChange={(inputEvent) => updateEditField("stats_note", inputEvent.target.value)}
-                            placeholder="internal note"
-                            className="mt-2 min-h-11 w-full border border-white/[0.08] bg-[#020202] px-3 text-sm text-white outline-none motion-safe:transition-colors motion-safe:duration-500 focus:border-primary"
-                          />
-                        </label>
-                      </div>
-                      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                        <button
-                          type="button"
-                          onClick={() => saveManualStatsOverride(event)}
-                          disabled={updatingEventId === `${event.id}:override`}
-                          className="focus-ring inline-flex min-h-11 items-center justify-center border border-primary/45 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-primary transition-colors hover:bg-primary hover:text-black disabled:cursor-not-allowed disabled:opacity-45"
-                        >
-                          {updatingEventId === `${event.id}:override` ? "Saving..." : "Save override"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => saveManualStatsOverride(event, true)}
-                          disabled={updatingEventId === `${event.id}:override`}
-                          className="focus-ring inline-flex min-h-11 items-center justify-center border border-white/[0.08] px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-white/55 transition-colors hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-45"
-                        >
-                          Clear override
-                        </button>
-                      </div>
-                    </div>
                     <label className="block md:col-span-2">
                       <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">Image URL</span>
                       <input
@@ -1848,7 +1540,7 @@ export function OrganizerEventPortfolio() {
                                 <span className="block truncate">{registration.email || "-"}</span>
                               </td>
                               <td className="py-4 pr-4 font-mono text-xs text-white/[0.45]">{registration.instagram_nickname || "-"}</td>
-                              <td className="py-4 pr-4 font-mono text-xs text-white/[0.45]">{registration.telegram_username || registration.telegram_user_id || "-"}</td>
+                              <td className="py-4 pr-4 font-mono text-xs text-white/[0.45]">{registration.telegram_username || "-"}</td>
                               <td className="py-4 pr-4">
                                 <StatusBadge label={registration.status} variant={getStatusBadgeVariant(registration.status)} size="sm" />
                               </td>

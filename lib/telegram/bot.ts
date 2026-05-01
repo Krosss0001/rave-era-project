@@ -24,24 +24,6 @@ function getBotToken() {
   return process.env.TELEGRAM_BOT_TOKEN;
 }
 
-function sanitizeTelegramError(value: string) {
-  const token = getBotToken();
-
-  return token ? value.replaceAll(token, "[redacted]") : value;
-}
-
-async function getTelegramErrorMessage(response: Response, method: string) {
-  try {
-    const payload = (await response.json()) as { description?: unknown; error_code?: unknown };
-    const description = typeof payload.description === "string" ? payload.description : response.statusText;
-    const errorCode = typeof payload.error_code === "number" ? ` ${payload.error_code}` : "";
-
-    return sanitizeTelegramError(`Telegram API ${method} failed (${response.status}${errorCode}): ${description}`);
-  } catch {
-    return sanitizeTelegramError(`Telegram API ${method} failed with ${response.status}.`);
-  }
-}
-
 async function telegramApi<T>(method: string, payload: Record<string, unknown>): Promise<T | null> {
   const token = getBotToken();
 
@@ -59,7 +41,7 @@ async function telegramApi<T>(method: string, payload: Record<string, unknown>):
   });
 
   if (!response.ok) {
-    throw new Error(await getTelegramErrorMessage(response, method));
+    throw new Error(`Telegram API ${method} failed with ${response.status}.`);
   }
 
   return response.json() as Promise<T>;
@@ -79,7 +61,7 @@ async function telegramFormApi<T>(method: string, payload: FormData): Promise<T 
   });
 
   if (!response.ok) {
-    throw new Error(await getTelegramErrorMessage(response, method));
+    throw new Error(`Telegram API ${method} failed with ${response.status}.`);
   }
 
   return response.json() as Promise<T>;

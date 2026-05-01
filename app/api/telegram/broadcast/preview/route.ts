@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       event
     });
 
-    const audienceResolution = await resolveBroadcastAudience({
+    const recipients = await resolveBroadcastAudience({
       audience: input.audience,
       eventId: input.eventId
     });
@@ -40,8 +40,8 @@ export async function POST(request: Request) {
       ok: true,
       audience: input.audience,
       audienceLabel: getBroadcastAudienceLabel(input.audience),
-      estimatedRecipientCount: audienceResolution.recipients.length,
-      skipped: audienceResolution.skipped
+      estimatedRecipientCount: recipients.length,
+      sampleRecipients: recipients.slice(0, 10)
     });
   } catch (error) {
     return errorResponse(error);

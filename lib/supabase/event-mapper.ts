@@ -1,9 +1,7 @@
 import { events as mockEvents, type RaveeraEvent } from "@/data/events";
 import type { Database, EventStatus } from "@/lib/supabase/types";
 
-type EventRowBase = Database["public"]["Tables"]["events"]["Row"];
-type EventRow = Omit<EventRowBase, "manual_registered_override" | "manual_remaining_override" | "stats_note"> &
-  Partial<Pick<EventRowBase, "manual_registered_override" | "manual_remaining_override" | "stats_note">>;
+type EventRow = Database["public"]["Tables"]["events"]["Row"];
 
 function getDateParts(value: string | null) {
   if (!value) {
@@ -63,9 +61,6 @@ export function mapDatabaseEvent(row: EventRow): RaveeraEvent {
     currency: row.currency || fallback?.currency || "UAH",
     capacity: Math.max(row.capacity, fallback?.capacity ?? 1),
     registered: fallback?.registered ?? 0,
-    manualRegisteredOverride: row.manual_registered_override ?? null,
-    manualRemainingOverride: row.manual_remaining_override ?? null,
-    statsNote: row.stats_note ?? null,
     status: normalizeStatus(row.status),
     tags: parseList(row.tags, fallback?.tags || ["Event", "Telegram", "Rave'era"]),
     lineup: parseList(row.lineup, fallback?.lineup || ["Rave'era Residents"]),
