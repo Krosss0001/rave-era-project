@@ -57,12 +57,12 @@ function formatPreviewMessage(input: {
   message: string;
   event: BroadcastEventOption | null;
 }) {
-  const header = "Message from Rave'era Group";
-  const footer = "/stop to unsubscribe";
+  const header = "Повідомлення від Rave'era Group";
+  const footer = "/stop щоб відписатися";
   const eventUrl = input.event?.slug ? `${getAppUrl()}/events/${input.event.slug}` : `${getAppUrl()}/events`;
   const eventLines = input.event ? [input.event.title, eventUrl] : [eventUrl];
 
-  return [header, "", ...eventLines, "", input.message || "Message preview", "", footer].join("\n");
+  return [header, "", ...eventLines, "", input.message || "Попередній перегляд повідомлення", "", footer].join("\n");
 }
 
 export function TelegramBroadcastPanel({

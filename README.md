@@ -52,7 +52,7 @@ Public frontend variables:
 
 ```bash
 NEXT_PUBLIC_APP_URL=https://rave-era-project.vercel.app
-NEXT_PUBLIC_TELEGRAM_BOT_URL=https://t.me/your_bot_username
+NEXT_PUBLIC_TELEGRAM_BOT_URL=https://t.me/Rave_era_group_bot
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_public_anon_key
 ```
@@ -83,9 +83,13 @@ supabase/patches/009_qr_checkin.sql
 supabase/patches/010_telegram_broadcasts.sql
 supabase/patches/011_registration_contact_fields.sql
 supabase/patches/012_referral_tracking.sql
+supabase/patches/013_referral_link_analytics.sql
+supabase/patches/013_superadmin_referral_links.sql
+supabase/patches/014_public_event_stats.sql
 ```
 
 Patch `006` creates server-managed Telegram registration sessions. Patch `007` adds Telegram identity linking plus `registrations.telegram_user_id`. Patch `008` keeps legacy language columns defaulted to `uk`. Patch `009` adds QR check-in support. Patch `010` adds Telegram broadcast tables, recipient tracking, and `telegram_users.is_subscribed`. Patch `011` adds `registrations.phone` and `registrations.instagram_nickname`. Patch `012` adds referral source/counter support and per-event referral code indexing.
+Patch `013_referral_link_analytics` adds referral link analytics columns. Patch `013_superadmin_referral_links` adds superadmin referral ownership metadata. Patch `014` adds public event stats RPC support for synchronized event cards and detail pages.
 
 ## Telegram Webhook Setup
 

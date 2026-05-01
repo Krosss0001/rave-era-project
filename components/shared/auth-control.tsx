@@ -66,6 +66,21 @@ export function AuthControl() {
     return () => listener.subscription.unsubscribe();
   }, [supabase]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [open]);
+
   async function sendMagicLink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 

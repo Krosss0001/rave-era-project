@@ -169,14 +169,12 @@ export default function HomePage() {
   return (
     <div className="relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 -z-20 bg-[linear-gradient(rgba(255,255,255,0.018)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.018)_1px,transparent_1px)] bg-[size:80px_80px]" />
-      <div className="pointer-events-none absolute left-[-20%] top-[28%] -z-10 h-[42vw] w-[42vw] bg-[#00FF88]/[0.035] blur-[150px]" />
       <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.045] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:4px_4px]" />
       <section className="relative overflow-hidden">
-        <div className="absolute right-[-18%] top-[4%] -z-10 h-[55vw] w-[55vw] bg-[#00FF88]/10 blur-[150px] motion-safe:animate-[heroGlow_9s_cubic-bezier(0.16,1,0.3,1)_infinite_alternate]" />
         <div className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-center gap-10 px-3 py-14 sm:px-6 sm:py-24 md:px-10 md:py-28 lg:grid-cols-[1.1fr_0.9fr] lg:px-12 2xl:max-w-[1500px]">
           <div className="max-w-4xl">
             <p className="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 border border-white/[0.05] bg-[#020202] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/55 sm:px-4 sm:tracking-[0.24em]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#00FF88] shadow-[0_0_16px_rgba(0,255,136,0.75)] motion-safe:animate-[softPulse_2.2s_ease-out_infinite]" aria-hidden="true" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#00FF88] shadow-[0_0_16px_rgba(0,255,136,0.75)]" aria-hidden="true" />
               <span className="whitespace-nowrap">Rave<span className="text-[#00FF88]">&apos;</span>era</span> Group <span className="text-[#00FF88]" aria-hidden="true">{"\u00B7"}</span> Concerts <span className="text-[#00FF88]">&amp;</span> Marketing Agency
             </p>
             <h1 className="mt-7 max-w-[980px] whitespace-normal break-normal text-[clamp(2.15rem,10.8vw,8.25rem)] font-black uppercase leading-[0.92] tracking-normal text-white [hyphens:none] [overflow-wrap:normal] [text-wrap:balance] [word-break:normal] sm:mt-8 sm:text-[clamp(3.65rem,8vw,9rem)] sm:leading-[0.82]">
@@ -289,17 +287,15 @@ export default function HomePage() {
             />
           </p>
         </div>
-        <div className="relative z-10 flex overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_12%,black_88%,transparent)]">
-          <div className="flex shrink-0 animate-[marquee_42s_linear_infinite] items-center gap-12 pr-12 font-mono text-xs font-semibold uppercase tracking-[0.22em] text-white/25 hover:[animation-play-state:paused] md:gap-16 md:pr-16">
-            {[...partners, ...partners].map((partner, index) => (
-              <span
-                key={`${partner}-${index}`}
-                className="whitespace-nowrap opacity-70 transition duration-500 hover:opacity-100 hover:text-[#00FF88] hover:[text-shadow:0_0_18px_rgba(0,255,136,0.22)]"
-              >
-                {partner}
-              </span>
-            ))}
-          </div>
+        <div className="relative z-10 mx-auto flex max-w-7xl flex-wrap justify-center gap-x-6 gap-y-3 px-4 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/25 sm:px-6 sm:text-xs sm:tracking-[0.22em] md:px-10 lg:px-12 2xl:max-w-[1500px]">
+          {partners.map((partner) => (
+            <span
+              key={partner}
+              className="whitespace-nowrap opacity-70 transition duration-500 hover:opacity-100 hover:text-[#00FF88] hover:[text-shadow:0_0_18px_rgba(0,255,136,0.22)]"
+            >
+              {partner}
+            </span>
+          ))}
         </div>
       </section>
 
@@ -491,14 +487,6 @@ export default function HomePage() {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-            @keyframes marquee {
-              from {
-                transform: translateX(0);
-              }
-              to {
-                transform: translateX(-50%);
-              }
-            }
             @keyframes revealLine {
               from {
                 opacity: 0;
@@ -519,26 +507,6 @@ export default function HomePage() {
               to {
                 opacity: 1;
                 transform: translateY(0);
-              }
-            }
-            @keyframes heroGlow {
-              from {
-                transform: translate3d(0, 0, 0) scale(1);
-              }
-              to {
-                transform: translate3d(-6%, 4%, 0) scale(1.1);
-              }
-            }
-            @keyframes softPulse {
-              0%, 100% {
-                opacity: 0.85;
-                transform: scale(1);
-                box-shadow: 0 0 10px rgba(0,255,136,0.45);
-              }
-              50% {
-                opacity: 1;
-                transform: scale(1.35);
-                box-shadow: 0 0 18px rgba(0,255,136,0.78);
               }
             }
             @keyframes scrollFadeUp {

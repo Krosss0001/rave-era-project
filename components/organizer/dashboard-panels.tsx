@@ -13,7 +13,6 @@ function CountUpValue({ value }: { value: string }) {
   const hasDecimal = value.includes(".");
   const hasComma = value.includes(",");
   const [display, setDisplay] = useState(0);
-  const [liveOffset, setLiveOffset] = useState(0);
 
   useEffect(() => {
     let frame = 0;
@@ -33,23 +32,9 @@ function CountUpValue({ value }: { value: string }) {
     return () => window.cancelAnimationFrame(raf);
   }, [target]);
 
-  useEffect(() => {
-    if (suffix === "%" || target < 100) {
-      return;
-    }
-
-    const interval = window.setInterval(() => {
-      setLiveOffset((value) => (value + 1) % 4);
-    }, 4200);
-
-    return () => window.clearInterval(interval);
-  }, [suffix, target]);
-
-  const liveDisplay = display + liveOffset;
-
   const formatted = hasDecimal
-    ? liveDisplay.toFixed(1)
-    : Math.round(liveDisplay).toLocaleString("en-US", { useGrouping: hasComma });
+    ? display.toFixed(1)
+    : Math.round(display).toLocaleString("en-US", { useGrouping: hasComma });
 
   const separator = suffix && suffix !== "%" ? " " : "";
 
@@ -220,7 +205,7 @@ export function TelegramStatusPanel() {
             className="flex min-h-12 items-center gap-3 border-b border-white/[0.05] bg-[#020202] py-3 font-mono text-sm text-white/[0.58] motion-safe:animate-[logFade_420ms_cubic-bezier(0.16,1,0.3,1)_both] last:border-b-0"
             style={{ animationDelay: `${index * 90}ms` }}
           >
-            <CheckCircle2 className="h-4 w-4 text-primary motion-safe:animate-[statusPulse_1.8s_ease-out_infinite]" aria-hidden="true" />
+            <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden="true" />
             <span className="uppercase tracking-[0.12em]">{item}</span>
           </div>
         ))}
@@ -231,10 +216,6 @@ export function TelegramStatusPanel() {
             @keyframes logFade {
               from { opacity: 0; transform: translateY(8px); }
               to { opacity: 1; transform: translateY(0); }
-            }
-            @keyframes statusPulse {
-              0%, 100% { opacity: 1; }
-              50% { opacity: 0.58; }
             }
           `
         }}

@@ -294,7 +294,10 @@ export type Database = {
           telegram_starts: number;
           registrations: number;
           confirmed: number;
+          paid: number;
+          checked_in: number;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
@@ -308,7 +311,10 @@ export type Database = {
           telegram_starts?: number;
           registrations?: number;
           confirmed?: number;
+          paid?: number;
+          checked_in?: number;
           created_at?: string;
+          updated_at?: string;
         };
         Update: {
           event_id?: string | null;
@@ -321,6 +327,9 @@ export type Database = {
           telegram_starts?: number;
           registrations?: number;
           confirmed?: number;
+          paid?: number;
+          checked_in?: number;
+          updated_at?: string;
         };
         Relationships: [
           {
@@ -587,6 +596,20 @@ export type Database = {
       get_event_registration_count: {
         Args: { event_id_input: string };
         Returns: number;
+      };
+      get_public_event_stats: {
+        Args: { event_ids: string[] };
+        Returns: {
+          event_id: string;
+          total_registrations: number;
+          confirmed_registrations: number;
+          pending_registrations: number;
+          paid_tickets: number;
+          reserved_tickets: number;
+          active_tickets: number;
+          used_tickets: number;
+          checked_in_count: number;
+        }[];
       };
       check_in_ticket: {
         Args: { ticket_code_input: string };

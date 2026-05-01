@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildQrPayload, generateTicketCode } from "@/lib/tickets";
+import { incrementReferralCounters } from "@/lib/referral-tracking";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import type { BotLanguage } from "@/lib/telegram/messages";
 import type { Database } from "@/lib/supabase/types";
@@ -455,7 +456,7 @@ export async function createPendingRegistrationAndTicket(
   const ticket = await createTicket(supabase, registration.id, session.event_id);
 
   if (!existingRegistration && session.referral_code) {
-    await incrementReferralCounters(supabase, session.event_id, session.referral_code, { registrations: 1 });
+    await incrementReferralCounters(supabase, session.event_id, session.referral_code, { registrations: 1 }, "telegram_registration");
   }
 
   await updateSession(supabase, session.id, {
@@ -496,8 +497,17 @@ export async function confirmFreeRegistrationAndTicket(
     throw ticketResult.error || new Error("Ticket could not be confirmed.");
   }
 
-  if (session.event_id && session.referral_code && registration.status !== "confirmed") {
-    await incrementReferralCounters(supabase, session.event_id, session.referral_code, { confirmed: 1 });
+  if (session.event_id && session.referral_code) {
+    await incrementReferralCounters(
+      supabase,
+      session.event_id,
+      session.referral_code,
+      {
+        confirmed: registration.status !== "confirmed" ? 1 : 0,
+        paid: ticket.payment_status !== "paid" ? 1 : 0
+      },
+      "telegram_free_registration"
+    );
   }
 
   return {
@@ -587,77 +597,6 @@ async function insertRegistration(supabase: SupabaseClient<Database>, session: T
   throw new Error(error?.message || "Registration could not be created.");
 }
 
-async function incrementReferralCounters(
-  supabase: SupabaseClient<Database>,
-  eventId: string,
-  code: string,
-  increments: { telegramStarts?: number; registrations?: number; confirmed?: number }
-) {
-  const cleanCode = code.trim();
-
-  if (!cleanCode) {
-    return;
-  }
-
-  const existingResult = await supabase
-    .from("referrals")
-    .select("*")
-    .eq("event_id", eventId)
-    .eq("code", cleanCode)
-    .maybeSingle();
-
-  if (existingResult.error) {
-    if (isUndefinedColumn(existingResult.error)) {
-      logTelegramStateIssue("Referral counter skipped because patch columns are missing", {
-        eventId,
-        code: cleanCode
-      });
-      return;
-    }
-
-    throw existingResult.error;
-  }
-
-  const existing = existingResult.data;
-  const nextValues: Database["public"]["Tables"]["referrals"]["Update"] = {
-    registrations: (existing?.registrations ?? 0) + (increments.registrations ?? 0),
-    confirmed: (existing?.confirmed ?? 0) + (increments.confirmed ?? 0)
-  };
-
-  if (increments.telegramStarts) {
-    nextValues.telegram_starts = (existing?.telegram_starts ?? 0) + increments.telegramStarts;
-  }
-
-  if (existing) {
-    const { error } = await supabase
-      .from("referrals")
-      .update(nextValues)
-      .eq("id", existing.id);
-
-    if (error && !isUndefinedColumn(error)) {
-      throw error;
-    }
-
-    return;
-  }
-
-  const { error } = await supabase
-    .from("referrals")
-    .insert({
-      event_id: eventId,
-      code: cleanCode,
-      source: increments.telegramStarts ? "telegram" : "telegram_registration",
-      clicks: 0,
-      telegram_starts: increments.telegramStarts ?? 0,
-      registrations: increments.registrations ?? 0,
-      confirmed: increments.confirmed ?? 0
-    });
-
-  if (error && !isUniqueCollision(error) && !isUndefinedColumn(error)) {
-    throw error;
-  }
-}
-
 export async function recordTelegramReferralStart(
   supabase: SupabaseClient<Database>,
   eventId: string,
@@ -667,7 +606,7 @@ export async function recordTelegramReferralStart(
     return;
   }
 
-  await incrementReferralCounters(supabase, eventId, referralCode, { telegramStarts: 1 });
+  await incrementReferralCounters(supabase, eventId, referralCode, { telegramStarts: 1 }, "telegram");
 }
 
 export async function getTicketsForTelegramUser(

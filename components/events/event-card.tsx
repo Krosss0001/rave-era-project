@@ -13,9 +13,11 @@ type EventCardProps = {
 };
 
 export function EventCard({ event, featured = false }: EventCardProps) {
-  const seed = event.id.split("").reduce((total, char) => total + char.charCodeAt(0), 0);
-  const recentSales = 8 + (seed % 9);
-  const capacityPercent = getCapacityPercent(event.registered, event.capacity);
+  const registeredCount = event.stats?.totalRegistrations ?? event.registered;
+  const remainingCapacity = event.stats?.remainingCapacity ?? Math.max(0, event.capacity - registeredCount);
+  const capacityPercent = event.stats?.fillPercent ?? getCapacityPercent(registeredCount, event.capacity);
+  const paidTickets = event.stats?.paidTickets ?? 0;
+  const reservedTickets = event.stats?.reservedTickets ?? 0;
   const statusLabel =
     capacityPercent >= 70
       ? { ua: "Майже повно", en: "Almost full" }
@@ -55,7 +57,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/22 via-transparent to-black/5" />
         <p className={`absolute left-4 top-4 border bg-[#020202]/95 px-3 py-1 font-mono text-[9px] font-semibold uppercase tracking-[0.18em] text-[#00FF88] ${
-          urgent ? "border-[#00FF88]/40 shadow-[0_0_24px_rgba(0,255,136,0.12)] motion-safe:animate-[signalPulse_1.8s_ease-out_infinite]" : "border-white/[0.05]"
+          urgent ? "border-[#00FF88]/40 shadow-[0_0_24px_rgba(0,255,136,0.12)]" : "border-white/[0.05]"
         }`}>
           <LocalizedText ua={statusLabel.ua} en={statusLabel.en} />
         </p>
@@ -75,15 +77,19 @@ export function EventCard({ event, featured = false }: EventCardProps) {
             {event.subtitle}
           </p>
           <p className="mt-4 inline-flex items-start gap-2 font-mono text-[10px] uppercase leading-5 tracking-[0.14em] text-white/[0.46] sm:tracking-[0.18em]">
-            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#00FF88] shadow-[0_0_12px_rgba(0,255,136,0.5)] motion-safe:animate-[signalPulse_1.8s_ease-out_infinite]" aria-hidden="true" />
-            <LocalizedText ua={`${recentSales} квитків за останню хвилю продажів`} en={`${recentSales} tickets sold in the latest sales window`} />
+            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#00FF88] shadow-[0_0_12px_rgba(0,255,136,0.5)]" aria-hidden="true" />
+            <LocalizedText ua={`${registeredCount} зареєстровано / ${remainingCapacity} місць залишилось`} en={`${registeredCount} registered / ${remainingCapacity} spots remaining`} />
           </p>
         </div>
         <div className="mt-7 grid grid-cols-1 gap-2 border-t border-white/[0.05] pt-5 min-[360px]:grid-cols-2 sm:grid-cols-3">
           {[
             { id: "city", value: event.city, label: <LocalizedText ua="місто" en="city" /> },
             { id: "price", value: <LocalizedPrice price={event.price} currency={event.currency} />, label: <LocalizedText ua="ціна" en="price" /> },
-            { id: "time", value: event.time, label: <LocalizedText ua="час" en="time" /> }
+            { id: "registered", value: registeredCount, label: <LocalizedText ua="зареєстровано" en="registered" /> },
+            { id: "remaining", value: remainingCapacity, label: <LocalizedText ua="залишилось" en="remaining" /> },
+            ...(paidTickets > 0 || reservedTickets > 0
+              ? [{ id: "tickets", value: `${paidTickets}/${reservedTickets}`, label: <LocalizedText ua="оплачено/резерв" en="paid/reserved" /> }]
+              : [])
           ].map(({ id, value, label }) => (
             <div key={id} className="min-w-0 border border-white/[0.05] bg-[#030303] p-3 motion-safe:transition-colors motion-safe:duration-300 group-hover:border-white/[0.08]">
               <p className="break-words font-mono text-xs font-semibold uppercase leading-5 text-white">{value}</p>
@@ -98,9 +104,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
           </div>
           <div className="h-1 overflow-hidden bg-white/15">
             <div
-              className={`h-full origin-left ${capacityTone} motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out ${
-                urgent ? "motion-safe:animate-[signalPulse_1.8s_ease-out_infinite]" : ""
-              }`}
+              className={`h-full origin-left ${capacityTone} motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out`}
               style={{ width: `${capacityPercent}%` }}
             />
           </div>
@@ -118,10 +122,6 @@ export function EventCard({ event, featured = false }: EventCardProps) {
             @keyframes fadeUp {
               from { opacity: 0; transform: translateY(14px); }
               to { opacity: 1; transform: translateY(0); }
-            }
-            @keyframes signalPulse {
-              0%, 100% { opacity: 1; }
-              50% { opacity: 0.62; }
             }
           `
         }}

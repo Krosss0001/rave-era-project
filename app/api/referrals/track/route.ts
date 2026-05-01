@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import type { Database } from "@/lib/supabase/types";
+import { cleanReferralCode, incrementReferralCounters, incrementReferralCountersForTicket } from "@/lib/referral-tracking";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-type ReferralAction = "click" | "registration" | "telegram_start";
+type ReferralAction = "click" | "registration" | "telegram_start" | "confirmed" | "paid" | "checked_in";
 
 type ReferralTrackBody = {
   eventId?: unknown;
@@ -13,18 +13,8 @@ type ReferralTrackBody = {
   source?: unknown;
   action?: unknown;
   confirmed?: unknown;
+  ticketId?: unknown;
 };
-
-type ReferralRow = Database["public"]["Tables"]["referrals"]["Row"];
-
-function cleanReferralCode(value: unknown) {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const code = value.trim().slice(0, 80);
-  return code.length > 0 ? code : null;
-}
 
 function cleanSource(value: unknown) {
   if (typeof value !== "string") {
@@ -40,30 +30,35 @@ function isUuid(value: unknown): value is string {
 }
 
 function isReferralAction(value: unknown): value is ReferralAction {
-  return value === "click" || value === "registration" || value === "telegram_start";
-}
-
-function isUndefinedColumn(error: { code?: string } | null) {
-  return error?.code === "42703";
-}
-
-function getNextCounters(referral: ReferralRow | null, action: ReferralAction, confirmed: boolean) {
-  return {
-    clicks: (referral?.clicks ?? 0) + (action === "click" ? 1 : 0),
-    telegram_starts: (referral?.telegram_starts ?? 0) + (action === "telegram_start" ? 1 : 0),
-    registrations: (referral?.registrations ?? 0) + (action === "registration" ? 1 : 0),
-    confirmed: (referral?.confirmed ?? 0) + (action === "registration" && confirmed ? 1 : 0)
-  };
+  return value === "click" || value === "registration" || value === "telegram_start" || value === "confirmed" || value === "paid" || value === "checked_in";
 }
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as ReferralTrackBody;
     const eventId = isUuid(body.eventId) ? body.eventId : null;
-    const code = cleanReferralCode(body.code);
+    const code = typeof body.code === "string" ? cleanReferralCode(body.code) : null;
     const source = cleanSource(body.source);
     const action = isReferralAction(body.action) ? body.action : "click";
     const confirmed = body.confirmed === true;
+    const ticketId = isUuid(body.ticketId) ? body.ticketId : null;
+
+    if ((action === "paid" || action === "checked_in") && ticketId) {
+      const supabase = getSupabaseServiceRoleClient();
+
+      if (!supabase) {
+        return NextResponse.json({ ok: false, error: "Supabase service role client is not configured." }, { status: 503 });
+      }
+
+      await incrementReferralCountersForTicket(
+        supabase,
+        ticketId,
+        action === "paid" ? { paid: 1 } : { checkedIn: 1 },
+        source ?? (action === "paid" ? "ticket_payment" : "ticket_check_in")
+      );
+
+      return NextResponse.json({ ok: true });
+    }
 
     if (!eventId || !code) {
       return NextResponse.json({ ok: false, error: "eventId and code are required." }, { status: 400 });
@@ -89,69 +84,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "Referral tracking is not available for this event." }, { status: 404 });
     }
 
-    let legacyReferralColumns = false;
-    let existingResult = await supabase
-      .from("referrals")
-      .select("id,event_id,code,source,label,owner_user_id,created_by,clicks,telegram_starts,registrations,confirmed,created_at")
-      .eq("event_id", eventId)
-      .eq("code", code)
-      .maybeSingle();
-
-    if (isUndefinedColumn(existingResult.error)) {
-      legacyReferralColumns = true;
-      existingResult = await supabase
-        .from("referrals")
-        .select("id,event_id,code,source,owner_user_id,clicks,registrations,confirmed,created_at")
-        .eq("event_id", eventId)
-        .eq("code", code)
-        .maybeSingle();
-    }
-
-    if (existingResult.error) {
-      throw existingResult.error;
-    }
-
-    const existing = existingResult.data;
-    const counters = getNextCounters(existing, action, confirmed);
-
-    if (existing) {
-      const { error: updateError } = await supabase
-        .from("referrals")
-        .update({
-          clicks: counters.clicks,
-          ...(!legacyReferralColumns ? { telegram_starts: counters.telegram_starts } : {}),
-          registrations: counters.registrations,
-          confirmed: counters.confirmed,
-          ...(source && !existing.source ? { source } : {})
-        })
-        .eq("id", existing.id);
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      return NextResponse.json({ ok: true });
-    }
-
-    const { error: insertError } = await supabase
-      .from("referrals")
-      .insert({
-        event_id: eventId,
-        code,
-        source,
-        clicks: counters.clicks,
-        ...(!legacyReferralColumns ? { telegram_starts: counters.telegram_starts } : {}),
-        registrations: counters.registrations,
-        confirmed: counters.confirmed
-      });
-
-    if (insertError) {
-      if (insertError.code === "23505") {
-        return NextResponse.json({ ok: true, deduped: true });
-      }
-
-      throw insertError;
-    }
+    await incrementReferralCounters(
+      supabase,
+      eventId,
+      code,
+      {
+        clicks: action === "click" ? 1 : 0,
+        telegramStarts: action === "telegram_start" ? 1 : 0,
+        registrations: action === "registration" ? 1 : 0,
+        confirmed: action === "confirmed" || (action === "registration" && confirmed) ? 1 : 0,
+        paid: action === "paid" ? 1 : 0,
+        checkedIn: action === "checked_in" ? 1 : 0
+      },
+      source
+    );
 
     return NextResponse.json({ ok: true });
   } catch (error) {

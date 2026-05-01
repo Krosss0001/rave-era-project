@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { getCurrentRole, type RoleState } from "@/lib/auth/get-role";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -15,7 +14,6 @@ type RoleGateProps = {
 
 export function RoleGate({ allowedRoles, children }: RoleGateProps) {
   const { dictionary } = useLanguage();
-  const router = useRouter();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const allowedKey = allowedRoles.join(":");
   const stableAllowedRoles = useMemo(() => allowedKey.split(":") as UserRole[], [allowedKey]);
@@ -30,7 +28,6 @@ export function RoleGate({ allowedRoles, children }: RoleGateProps) {
       if (!supabase) {
         setLoading(false);
         setAccessState("error");
-        router.replace("/");
         return;
       }
 
@@ -46,7 +43,6 @@ export function RoleGate({ allowedRoles, children }: RoleGateProps) {
 
         if (!nextState.role || !stableAllowedRoles.includes(nextState.role)) {
           setAccessState("denied");
-          router.replace("/");
           return;
         }
 
@@ -58,7 +54,6 @@ export function RoleGate({ allowedRoles, children }: RoleGateProps) {
 
         setLoading(false);
         setAccessState("error");
-        router.replace("/");
       }
     }
 
@@ -72,19 +67,19 @@ export function RoleGate({ allowedRoles, children }: RoleGateProps) {
       mounted = false;
       listener?.subscription.unsubscribe();
     };
-  }, [allowedKey, router, stableAllowedRoles, supabase]);
+  }, [allowedKey, stableAllowedRoles, supabase]);
 
   if (loading || !state?.role || !stableAllowedRoles.includes(state.role)) {
     return (
-      <div className="min-h-[70vh] bg-[#000000] px-4 py-24 sm:px-6 md:px-10 lg:px-12">
-        <div className="mx-auto max-w-7xl border-y border-white/[0.05] bg-[#020202] py-12 2xl:max-w-[1500px]">
+      <div className="min-h-[70vh] bg-[#000000] px-3 py-16 sm:px-6 sm:py-24 md:px-10 lg:px-12">
+        <div className="mx-auto max-w-7xl border-y border-white/[0.05] bg-[#020202] px-1 py-10 sm:py-12 2xl:max-w-[1500px]">
           <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-primary">
             {accessState === "checking" ? dictionary.access.check : dictionary.access.denied}
           </p>
-          <h1 className="mt-4 text-4xl font-black uppercase leading-none text-white md:text-6xl">
+          <h1 className="mt-4 text-[clamp(2rem,12vw,3.75rem)] font-black uppercase leading-none text-white">
             {accessState === "checking" ? dictionary.access.verifying : dictionary.access.restricted}
           </h1>
-          <p className="mt-5 max-w-xl text-sm leading-6 text-white/45">
+          <p className="mt-5 max-w-xl text-sm leading-6 text-white/58">
             {accessState === "checking"
               ? dictionary.access.checkingCopy
               : dictionary.access.deniedCopy}

@@ -5,6 +5,7 @@ import { Copy, Link2, Plus, Send, type LucideIcon } from "lucide-react";
 import { getCurrentRole } from "@/lib/auth/get-role";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getTelegramBotBaseUrl } from "@/lib/telegram";
 import type { BroadcastAudience, Database } from "@/lib/supabase/types";
 import { TelegramBroadcastPanel } from "@/components/shared/telegram-broadcast-panel";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -13,8 +14,10 @@ type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type EventOption = Pick<Database["public"]["Tables"]["events"]["Row"], "id" | "title" | "slug">;
 type ReferralRow = Pick<
   Database["public"]["Tables"]["referrals"]["Row"],
-  "id" | "event_id" | "code" | "source" | "label" | "clicks" | "telegram_starts" | "registrations" | "confirmed" | "created_at"
+  "id" | "event_id" | "code" | "source" | "label" | "clicks" | "telegram_starts" | "registrations" | "confirmed" | "paid" | "checked_in" | "created_at" | "updated_at"
 >;
+type RegistrationReferralRow = Pick<Database["public"]["Tables"]["registrations"]["Row"], "id" | "event_id" | "referral_code" | "status">;
+type TicketReferralRow = Pick<Database["public"]["Tables"]["tickets"]["Row"], "registration_id" | "event_id" | "payment_status" | "checked_in" | "checked_in_at" | "status">;
 
 type ReferralForm = {
   eventId: string;
@@ -48,16 +51,12 @@ function getAppUrl() {
   return (process.env.NEXT_PUBLIC_APP_URL || "https://rave-era-project.vercel.app").replace(/\/+$/, "");
 }
 
-function getTelegramBotUrl() {
-  return (process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || "https://t.me/RaveeraBot").replace(/\/+$/, "");
-}
-
 function buildReferralLinks(event: EventOption, code: string) {
   const payload = `event_${event.slug}_ref_${code}`;
 
   return {
     website: `${getAppUrl()}/events/${event.slug}?ref=${encodeURIComponent(code)}`,
-    telegram: `${getTelegramBotUrl()}?start=${encodeURIComponent(payload)}`
+    telegram: `${getTelegramBotBaseUrl()}?start=${encodeURIComponent(payload)}`
   };
 }
 
@@ -67,6 +66,8 @@ export function SuperadminPanel() {
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [events, setEvents] = useState<EventOption[]>([]);
   const [referrals, setReferrals] = useState<ReferralRow[]>([]);
+  const [registrations, setRegistrations] = useState<RegistrationReferralRow[]>([]);
+  const [tickets, setTickets] = useState<TicketReferralRow[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [referralForm, setReferralForm] = useState(initialReferralForm);
   const [createdLinks, setCreatedLinks] = useState<{ website: string; telegram: string } | null>(null);
@@ -87,7 +88,7 @@ export function SuperadminPanel() {
         return;
       }
 
-      const [roleState, profileResult, eventResult, referralResult] = await Promise.all([
+      const [roleState, profileResult, eventResult, referralResult, registrationResult, ticketResult] = await Promise.all([
         getCurrentRole(supabase),
         supabase
           .from("profiles")
@@ -99,8 +100,15 @@ export function SuperadminPanel() {
           .order("date", { ascending: true, nullsFirst: false }),
         supabase
           .from("referrals")
-          .select("id,event_id,code,source,label,clicks,telegram_starts,registrations,confirmed,created_at")
-          .order("created_at", { ascending: false })
+          .select("id,event_id,code,source,label,clicks,telegram_starts,registrations,confirmed,paid,checked_in,created_at,updated_at")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("registrations")
+          .select("id,event_id,referral_code,status")
+          .not("referral_code", "is", null),
+        supabase
+          .from("tickets")
+          .select("registration_id,event_id,payment_status,checked_in,checked_in_at,status")
       ]);
 
       if (!mounted) {
@@ -111,8 +119,10 @@ export function SuperadminPanel() {
       setProfiles(profileResult.data ?? []);
       setEvents(eventResult.data ?? []);
       setReferrals(referralResult.data ?? []);
+      setRegistrations(registrationResult.data ?? []);
+      setTickets(ticketResult.data ?? []);
       setMessage(
-        profileResult.error || referralResult.error
+        profileResult.error || referralResult.error || registrationResult.error || ticketResult.error
           ? "Some superadmin data is not visible. Confirm the signed-in profile has the superadmin role and patch 013 is applied."
           : ""
       );
@@ -130,6 +140,34 @@ export function SuperadminPanel() {
     counts[profile.role] = (counts[profile.role] ?? 0) + 1;
     return counts;
   }, {});
+  const referralStatsByKey = useMemo(() => {
+    const ticketMap = tickets.reduce<Record<string, TicketReferralRow[]>>((items, ticket) => {
+      if (ticket.registration_id) {
+        items[ticket.registration_id] = [...(items[ticket.registration_id] ?? []), ticket];
+      }
+
+      return items;
+    }, {});
+
+    return registrations.reduce<Record<string, { registrations: number; confirmed: number; paid: number; checkedIn: number }>>((items, registration) => {
+      if (!registration.referral_code) {
+        return items;
+      }
+
+      const key = `${registration.event_id}:${registration.referral_code}`;
+      const current = items[key] ?? { registrations: 0, confirmed: 0, paid: 0, checkedIn: 0 };
+      const registrationTickets = ticketMap[registration.id] ?? [];
+
+      items[key] = {
+        registrations: current.registrations + 1,
+        confirmed: current.confirmed + (registration.status === "confirmed" ? 1 : 0),
+        paid: current.paid + (registrationTickets.some((ticket) => ticket.payment_status === "paid") ? 1 : 0),
+        checkedIn: current.checkedIn + (registrationTickets.some((ticket) => ticket.checked_in || ticket.checked_in_at || ticket.status === "used") ? 1 : 0)
+      };
+
+      return items;
+    }, {});
+  }, [registrations, tickets]);
   const selectedReferralEvent = events.find((event) => event.id === referralForm.eventId) ?? null;
   const previewLinks = selectedReferralEvent && referralForm.code ? buildReferralLinks(selectedReferralEvent, referralForm.code) : null;
 
@@ -197,9 +235,11 @@ export function SuperadminPanel() {
         clicks: 0,
         telegram_starts: 0,
         registrations: 0,
-        confirmed: 0
+        confirmed: 0,
+        paid: 0,
+        checked_in: 0
       })
-      .select("id,event_id,code,source,label,clicks,telegram_starts,registrations,confirmed,created_at")
+      .select("id,event_id,code,source,label,clicks,telegram_starts,registrations,confirmed,paid,checked_in,created_at,updated_at")
       .single();
 
     setCreatingReferral(false);
@@ -232,7 +272,7 @@ export function SuperadminPanel() {
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">Referral operations</p>
-            <h2 className="mt-3 text-[clamp(1.85rem,9vw,3rem)] font-black uppercase leading-[0.98] text-white">Referral Link Builder</h2>
+            <h2 className="mt-3 text-[clamp(1.85rem,9vw,3rem)] font-black uppercase leading-[0.98] text-white">Unique Referral Links / Унікальні реферальні посилання</h2>
           </div>
           <StatusBadge label={`${referrals.length} links`} variant={referrals.length > 0 ? "success" : "neutral"} size="sm" />
         </div>
@@ -361,23 +401,33 @@ export function SuperadminPanel() {
               ))}
             </div>
           ) : referrals.length > 0 ? (
-            <table className="w-full min-w-[820px] text-left text-xs">
+            <table className="w-full min-w-[1180px] text-left text-xs">
               <thead className="border-b border-white/[0.05] font-mono uppercase tracking-[0.13em] text-white/[0.34]">
                 <tr>
                   <th className="px-4 py-3 font-medium">Event</th>
                   <th className="px-4 py-3 font-medium">Code / source</th>
-                  <th className="px-4 py-3 font-medium">Clicks</th>
+                  <th className="px-4 py-3 font-medium">Website clicks</th>
                   <th className="px-4 py-3 font-medium">Telegram starts</th>
                   <th className="px-4 py-3 font-medium">Registrations</th>
                   <th className="px-4 py-3 font-medium">Confirmed</th>
+                  <th className="px-4 py-3 font-medium">Paid</th>
+                  <th className="px-4 py-3 font-medium">Checked-in</th>
                   <th className="px-4 py-3 font-medium">Conversion</th>
+                  <th className="px-4 py-3 font-medium">Website link</th>
+                  <th className="px-4 py-3 font-medium">Telegram link</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.05]">
                 {referrals.map((referral) => {
                   const event = events.find((item) => item.id === referral.event_id);
                   const starts = referral.clicks + referral.telegram_starts;
-                  const conversion = starts > 0 ? Math.round((referral.registrations / starts) * 100) : 0;
+                  const calculatedStats = referral.event_id ? referralStatsByKey[`${referral.event_id}:${referral.code}`] : null;
+                  const registrationsCount = calculatedStats?.registrations ?? referral.registrations;
+                  const confirmedCount = calculatedStats?.confirmed ?? referral.confirmed;
+                  const paidCount = calculatedStats?.paid ?? referral.paid;
+                  const checkedInCount = calculatedStats?.checkedIn ?? referral.checked_in;
+                  const conversion = starts > 0 ? Math.round((registrationsCount / starts) * 100) : 0;
+                  const links = event ? buildReferralLinks(event, referral.code) : null;
 
                   return (
                     <tr key={referral.id} className="transition-colors hover:bg-primary/[0.018]">
@@ -391,9 +441,39 @@ export function SuperadminPanel() {
                       </td>
                       <td className="px-4 py-4 font-mono tabular-nums text-white/65">{referral.clicks}</td>
                       <td className="px-4 py-4 font-mono tabular-nums text-white/65">{referral.telegram_starts}</td>
-                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{referral.registrations}</td>
-                      <td className="px-4 py-4 font-mono tabular-nums text-primary">{referral.confirmed}</td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{registrationsCount}</td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-primary">{confirmedCount}</td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{paidCount}</td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{checkedInCount}</td>
                       <td className="px-4 py-4 font-mono tabular-nums text-white/65">{conversion}%</td>
+                      <td className="px-4 py-4">
+                        {links ? (
+                          <button
+                            type="button"
+                            onClick={() => copyLink("website", links.website)}
+                            className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 border border-primary/35 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-primary transition-colors hover:bg-primary hover:text-black"
+                          >
+                            <Copy className="h-4 w-4" aria-hidden="true" />
+                            {copiedLink === "website" ? "Copied" : "Copy"}
+                          </button>
+                        ) : (
+                          <span className="font-mono text-white/30">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4">
+                        {links ? (
+                          <button
+                            type="button"
+                            onClick={() => copyLink("telegram", links.telegram)}
+                            className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 border border-primary/35 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-primary transition-colors hover:bg-primary hover:text-black"
+                          >
+                            <Copy className="h-4 w-4" aria-hidden="true" />
+                            {copiedLink === "telegram" ? "Copied" : "Copy"}
+                          </button>
+                        ) : (
+                          <span className="font-mono text-white/30">-</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}

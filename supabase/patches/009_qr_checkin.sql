@@ -37,6 +37,7 @@ begin
     tickets.status,
     tickets.payment_status,
     tickets.checked_in,
+    tickets.checked_in_at,
     events.title as event_title,
     events.organizer_id
   into ticket_record
@@ -57,7 +58,7 @@ begin
     raise exception 'access_denied';
   end if;
 
-  if ticket_record.checked_in or ticket_record.status = 'used' then
+  if ticket_record.checked_in or ticket_record.checked_in_at is not null or ticket_record.status = 'used' then
     raise exception 'ticket_already_checked_in';
   end if;
 

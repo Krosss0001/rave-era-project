@@ -15,14 +15,14 @@ export function ReferralClickTracker({ eventId, referralCode }: ReferralClickTra
       return;
     }
 
-    const storageKey = `raveera-ref-click:${eventId}:${code}`;
+    const storageKey = `referral_clicked_${code}`;
 
     try {
-      if (window.sessionStorage.getItem(storageKey)) {
+      if (window.localStorage.getItem(storageKey)) {
         return;
       }
 
-      window.sessionStorage.setItem(storageKey, "1");
+      window.localStorage.setItem(storageKey, "1");
     } catch {
       // Tracking should never block the event page.
     }

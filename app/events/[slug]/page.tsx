@@ -70,7 +70,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
         ? { ua: "Обмежено", en: "LIMITED" }
         : { ua: "Наживо", en: "LIVE" };
   const aboutParagraphs = getEventParagraphs(event.description);
-  const capacityPercent = stats.capacityFillPercent;
+  const capacityPercent = stats.fillPercent;
   const urgent = capacityPercent >= 60;
   const locationLabel = [event.city, event.venue].filter(Boolean).join(", ") || event.address || "Локація уточнюється";
   const capacityTone =
@@ -154,7 +154,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
                 className="focus-ring inline-flex min-h-12 w-full items-center justify-center gap-3 bg-[#00FF88] px-5 py-3 text-center font-mono text-[11px] font-bold uppercase leading-5 tracking-[0.12em] text-black shadow-[0_0_34px_rgba(0,255,136,0.16)] transition duration-200 hover:scale-[1.01] hover:brightness-110 hover:shadow-[0_0_44px_rgba(0,255,136,0.22)] active:scale-[0.99] sm:w-auto sm:px-6 sm:tracking-[0.16em]"
               >
                 <Send className="h-4 w-4" aria-hidden="true" />
-                <LocalizedText ua="Відкрити Telegram bot" en="Open Telegram bot" />
+                <LocalizedText ua="Відкрити Telegram бот" en="Open Telegram bot" />
               </Link>
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/42">
                 <LocalizedText ua="Реєстрація проходить через Telegram-бот." en="Registration continues in the Telegram bot." />
@@ -271,6 +271,10 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35"><LocalizedText ua="Місткість" en="Capacity" /></p>
                 <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-white">{event.capacity}</p>
               </div>
+            </div>
+            <div className="mt-4 border-b border-white/[0.05] pb-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35"><LocalizedText ua="Залишилось" en="Remaining" /></p>
+              <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-white">{stats.remainingCapacity}</p>
             </div>
             <div className="mt-4 grid gap-2 border-b border-white/[0.05] pb-4 min-[360px]:grid-cols-2">
               <div>

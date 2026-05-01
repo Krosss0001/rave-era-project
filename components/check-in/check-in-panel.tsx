@@ -103,7 +103,7 @@ function getCheckInErrorMessage(message: string) {
     return "У вас немає доступу до цієї події.";
   }
 
-  if (normalized.includes("ticket_already_used")) {
+  if (normalized.includes("ticket_already_used") || normalized.includes("ticket_already_checked_in")) {
     return "Цей квиток уже використано для входу.";
   }
 
@@ -185,7 +185,7 @@ export function CheckInPanel() {
           noTicketCopy: "Validate a ticket code to see the event, payment state, and door status."
         };
 
-  const canCheckIn = ticket?.status === "active" && ticket.payment_status === "paid" && !ticket.checked_in;
+  const canCheckIn = ticket?.status === "active" && ticket.payment_status === "paid" && !ticket.checked_in && !ticket.checked_in_at;
 
   const stopScanner = useCallback((preserveStatus = false) => {
     scanActiveRef.current = false;
@@ -288,7 +288,7 @@ export function CheckInPanel() {
 
       setTicket(nextTicket);
 
-      if (nextTicket.checked_in || nextTicket.status === "used") {
+      if (nextTicket.checked_in || nextTicket.checked_in_at || nextTicket.status === "used") {
         setMessage({ type: "warning", text: "Цей квиток уже використано для входу." });
       } else if (nextTicket.status !== "active" || nextTicket.payment_status !== "paid") {
         setMessage({ type: "warning", text: "Для входу доступні лише активні підтверджені квитки." });
@@ -471,6 +471,17 @@ export function CheckInPanel() {
         logCheckInIssue("Check-in RPC returned no ticket", { ticketCode: ticket.ticket_code });
         throw new Error("Не вдалося підтвердити вхід за квитком.");
       }
+
+      fetch("/api/referrals/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ticketId: updatedTicket.ticket_id,
+          source: "check_in",
+          action: "checked_in"
+        }),
+        keepalive: true
+      }).catch(() => undefined);
 
       setTicket(mapCheckInResult(updatedTicket));
       setMessage({ type: "success", text: "Вхід за квитком підтверджено." });

@@ -92,11 +92,16 @@ create table if not exists public.referrals (
   telegram_starts int not null default 0,
   registrations int not null default 0,
   confirmed int not null default 0,
+  paid int not null default 0,
+  checked_in int not null default 0,
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   constraint referrals_clicks_check check (clicks >= 0),
   constraint referrals_telegram_starts_check check (telegram_starts >= 0),
   constraint referrals_registrations_check check (registrations >= 0),
-  constraint referrals_confirmed_check check (confirmed >= 0)
+  constraint referrals_confirmed_check check (confirmed >= 0),
+  constraint referrals_paid_check check (paid >= 0),
+  constraint referrals_checked_in_check check (checked_in >= 0)
 );
 
 create index if not exists events_organizer_id_idx on public.events(organizer_id);

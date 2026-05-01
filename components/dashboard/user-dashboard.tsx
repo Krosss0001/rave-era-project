@@ -19,6 +19,16 @@ function isString(value: string | null): value is string {
   return Boolean(value);
 }
 
+function getQrLockedMessage(ticket: TicketRow, language: "ua" | "en") {
+  if (ticket.status === "used" || ticket.checked_in || ticket.checked_in_at) {
+    return language === "ua"
+      ? "Цей квиток уже використано для входу."
+      : "This ticket has already been used for entry.";
+  }
+
+  return getPaymentPlaceholderCopy(language);
+}
+
 export function UserDashboard() {
   const { dictionary, language } = useLanguage();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
@@ -65,7 +75,7 @@ export function UserDashboard() {
           .order("created_at", { ascending: false }),
         supabase
           .from("referrals")
-          .select("id,event_id,owner_user_id,created_by,code,source,label,clicks,telegram_starts,registrations,confirmed,created_at")
+          .select("id,event_id,owner_user_id,created_by,code,source,label,clicks,telegram_starts,registrations,confirmed,paid,checked_in,created_at,updated_at")
           .eq("owner_user_id", roleState.user.id)
           .order("created_at", { ascending: false })
       ]);
@@ -234,7 +244,7 @@ export function UserDashboard() {
               tickets.map((ticket) => {
                 const event = ticketEvents[ticket.event_id];
                 const isQrVisible = visibleQrTicketId === ticket.id;
-                const isQrLocked = ticket.status !== "active" || ticket.payment_status !== "paid";
+                const isQrLocked = ticket.status !== "active" || ticket.payment_status !== "paid" || ticket.checked_in || Boolean(ticket.checked_in_at);
                 const isFreeTicket = Number(event?.price ?? 1) <= 0;
                 const paymentLabel = isFreeTicket && ticket.payment_status === "paid" ? "paid/free" : ticket.payment_status;
 
@@ -294,7 +304,7 @@ export function UserDashboard() {
                       <TicketQr
                         ticket={ticket}
                         locked={isQrLocked}
-                        lockedMessage={getPaymentPlaceholderCopy(language)}
+                        lockedMessage={getQrLockedMessage(ticket, language)}
                       />
                     </div>
                   ) : null}

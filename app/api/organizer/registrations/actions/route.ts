@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { canManagePlatform, canManageEvents } from "@/lib/auth/roles";
+import { incrementReferralCounters } from "@/lib/referral-tracking";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import type { Database, UserRole } from "@/lib/supabase/types";
 
@@ -107,7 +108,7 @@ async function getRegistrationForAction(
 ) {
   const { data, error } = await supabase
     .from("registrations")
-    .select("id,event_id,status,events(id,organizer_id)")
+    .select("id,event_id,referral_code,status,events(id,organizer_id)")
     .eq("id", registrationId)
     .maybeSingle();
 
@@ -128,6 +129,8 @@ async function getRegistrationForAction(
   return {
     id: data.id,
     eventId: data.event_id,
+    referralCode: data.referral_code,
+    status: data.status,
     organizerId: events.organizer_id
   };
 }
@@ -182,6 +185,16 @@ export async function POST(request: Request) {
       if (error) {
         throw error;
       }
+
+      if (nextStatus === "confirmed" && registration.status !== "confirmed") {
+        await incrementReferralCounters(
+          supabase,
+          registration.eventId,
+          registration.referralCode,
+          { confirmed: 1 },
+          "organizer_confirmation"
+        );
+      }
     } else {
       const existingTickets = await getRegistrationTickets(supabase, registrationId);
 
@@ -190,6 +203,7 @@ export async function POST(request: Request) {
       }
 
       if (body.action === "mark_payment_paid") {
+        const newlyPaidCount = existingTickets.filter((ticket) => ticket.payment_status !== "paid").length;
         const { error } = await supabase
           .from("tickets")
           .update({ payment_status: "paid" })
@@ -198,10 +212,20 @@ export async function POST(request: Request) {
         if (error) {
           throw error;
         }
+
+        if (newlyPaidCount > 0) {
+          await incrementReferralCounters(
+            supabase,
+            registration.eventId,
+            registration.referralCode,
+            { paid: newlyPaidCount },
+            "organizer_payment"
+          );
+        }
       }
 
       if (body.action === "mark_ticket_active") {
-        if (existingTickets.some((ticket) => ticket.checked_in || ticket.status === "used")) {
+        if (existingTickets.some((ticket) => ticket.checked_in || ticket.checked_in_at || ticket.status === "used")) {
           throw new Error("Used tickets cannot be reactivated here.");
         }
 
@@ -229,7 +253,7 @@ export async function POST(request: Request) {
             checked_in_by: null
           })
           .eq("registration_id", registrationId)
-          .or("checked_in.eq.true,status.eq.used");
+          .or("checked_in.eq.true,status.eq.used,checked_in_at.not.is.null");
 
         if (error) {
           throw error;

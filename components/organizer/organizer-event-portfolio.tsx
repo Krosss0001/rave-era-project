@@ -893,7 +893,7 @@ export function OrganizerEventPortfolio() {
                 type="url"
                 value={form.telegram_url}
                 onChange={(event) => updateField("telegram_url", event.target.value)}
-                placeholder="https://t.me/..."
+                placeholder="Configured by NEXT_PUBLIC_TELEGRAM_BOT_URL"
                 className="mt-2 min-h-11 w-full border border-white/[0.08] bg-[#020202] px-3 font-mono text-sm text-white outline-none motion-safe:transition-colors motion-safe:duration-500 focus:border-primary"
               />
             </label>
@@ -1073,8 +1073,8 @@ export function OrganizerEventPortfolio() {
               : hasTicket
                 ? registrationTickets.find((ticket) => ticket.payment_status === "failed")?.payment_status ?? "pending"
                 : "missing";
-            const checkInStatus = registrationTickets.some((ticket) => ticket.checked_in || ticket.status === "used") ? "used" : "active";
-            const ticketStatus: TicketStatus | "missing" = registrationTickets.some((ticket) => ticket.checked_in || ticket.status === "used")
+            const checkInStatus = registrationTickets.some((ticket) => ticket.checked_in || ticket.checked_in_at || ticket.status === "used") ? "used" : "active";
+            const ticketStatus: TicketStatus | "missing" = registrationTickets.some((ticket) => ticket.checked_in || ticket.checked_in_at || ticket.status === "used")
               ? "used"
               : registrationTickets.find((ticket) => ticket.status === "active")?.status ??
                 registrationTickets.find((ticket) => ticket.status === "reserved")?.status ??

@@ -33,7 +33,7 @@ type RegistrationAudienceRow = Pick<
 
 type TicketAudienceRow = Pick<
   Database["public"]["Tables"]["tickets"]["Row"],
-  "registration_id" | "event_id" | "payment_status" | "checked_in"
+  "registration_id" | "event_id" | "payment_status" | "status" | "checked_in" | "checked_in_at"
 >;
 
 const PAGE_SIZE = 1000;
@@ -121,7 +121,7 @@ async function getEventTickets(supabase: SupabaseClient<Database>, eventId: stri
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await supabase
       .from("tickets")
-      .select("registration_id,event_id,payment_status,checked_in")
+      .select("registration_id,event_id,payment_status,status,checked_in,checked_in_at")
       .eq("event_id", eventId)
       .not("registration_id", "is", null)
       .range(from, from + PAGE_SIZE - 1);
@@ -243,7 +243,7 @@ export async function resolveBroadcastAudience({
     tickets,
     audience === "event_paid"
       ? (ticket) => ticket.payment_status === "paid"
-      : (ticket) => ticket.checked_in
+      : (ticket) => ticket.checked_in || ticket.status === "used" || ticket.checked_in_at !== null
   );
 
   allowedTelegramUserIds = new Set(

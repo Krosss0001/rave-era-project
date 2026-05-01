@@ -19,13 +19,13 @@ export function TelegramCta({ eventSlug, referralCode }: TelegramCtaProps) {
           kicker: "Основний шлях",
           title: "Підтвердження в Telegram",
           body: "Реєстрація проходить через Telegram-бот.",
-          button: "Відкрити Telegram bot",
+          button: "Відкрити Telegram бот",
           referral: "Реферал застосовано",
           newTab: "Telegram відкриється в новій вкладці. Бот зберігає підтвердження та оновлення квитка в одному місці."
         }
       : {
           kicker: "Primary path",
-          title: "Confirm in Telegram",
+          title: "Telegram confirmation",
           body: "Registration continues in the Telegram bot.",
           button: "Open Telegram bot",
           referral: "Referral applied",
@@ -33,23 +33,23 @@ export function TelegramCta({ eventSlug, referralCode }: TelegramCtaProps) {
         };
 
   return (
-    <section className="group relative overflow-hidden border border-[#00FF88]/28 bg-[#020202] p-4 shadow-[0_0_56px_rgba(0,255,136,0.07)] transition duration-200 hover:border-[#00FF88]/45">
+    <section className="group relative overflow-hidden border border-[#00FF88]/28 bg-[#020202] p-5 shadow-[0_0_56px_rgba(0,255,136,0.07)] transition duration-200 hover:border-[#00FF88]/45">
       <span className="absolute left-0 top-0 h-px w-full bg-[#00FF88]" aria-hidden="true" />
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-[#00FF88]/30 bg-black text-[#00FF88]">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center border border-[#00FF88]/35 bg-[#00FF88]/[0.045] text-[#00FF88] shadow-[0_0_24px_rgba(0,255,136,0.08)]">
           <Send className="h-4 w-4" aria-hidden="true" />
         </span>
         <div className="min-w-0">
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#00FF88] sm:tracking-[0.18em]">{copy.kicker}</p>
-          <h2 className="mt-2 text-xl font-black uppercase leading-none text-white">{copy.title}</h2>
-          <p className="mt-2 text-sm leading-6 text-white/58">{copy.body}</p>
+          <h2 className="mt-2 text-xl font-black uppercase leading-tight text-white">{copy.title}</h2>
+          <p className="mt-2 text-sm leading-6 text-white/64">{copy.body}</p>
         </div>
       </div>
       <Link
         href={telegramUrl}
         target="_blank"
         rel="noreferrer"
-        className="focus-ring mt-4 inline-flex min-h-12 w-full items-center justify-between gap-3 bg-[#00FF88] px-4 py-3 font-mono text-[11px] font-black uppercase tracking-[0.13em] text-black transition duration-200 hover:scale-[1.01] hover:brightness-110 hover:shadow-[0_0_32px_rgba(0,255,136,0.16)] active:scale-[0.99] sm:tracking-[0.16em]"
+        className="focus-ring mt-5 inline-flex min-h-12 w-full items-center justify-between gap-3 bg-[#00FF88] px-4 py-3 font-mono text-[11px] font-black uppercase tracking-[0.13em] text-black transition duration-200 hover:scale-[1.01] hover:brightness-110 hover:shadow-[0_0_32px_rgba(0,255,136,0.16)] active:scale-[0.99] sm:tracking-[0.16em]"
       >
         <span className="min-w-0 text-left leading-5">{copy.button}</span>
         <ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden="true" />
