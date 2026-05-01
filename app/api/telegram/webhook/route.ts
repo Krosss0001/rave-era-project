@@ -18,7 +18,6 @@ import {
   getEventBySlug,
   getLatestSession,
   getPublicTelegramEvents,
-  getTelegramPublicSupabaseClient,
   getTelegramSupabaseClient,
   getTelegramTicketByCode,
   getTicketsForTelegramUser,
@@ -232,7 +231,7 @@ async function sendSummary(chatId: string, session: TelegramSession, event: Even
 
 async function sendEventsSearch(chatId: string, language: BotLanguage) {
   const copy = getTelegramCopy(language);
-  const events = await getPublicTelegramEvents(getTelegramPublicSupabaseClient());
+  const events = await getPublicTelegramEvents(getTelegramSupabaseClient());
 
   if (events.length === 0) {
     await sendTelegramMessage(chatId, copy.noEvents, {
@@ -240,16 +239,6 @@ async function sendEventsSearch(chatId: string, language: BotLanguage) {
     });
     return;
   }
-
-  await sendTelegramMessage(
-    chatId,
-    events
-      .map((event, index) => `${index + 1}. <b>${escapeHtml(event.title)}</b>\n${escapeHtml(getEventUrl(event.slug))}`)
-      .join("\n\n"),
-    {
-      inlineKeyboard: events.map((event) => [{ text: event.title, callback_data: `register:${event.slug}` }])
-    }
-  );
 
   for (const event of events) {
     await sendEventPreview(chatId, event as EventRow, language);

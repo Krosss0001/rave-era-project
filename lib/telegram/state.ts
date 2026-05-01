@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildQrPayload, generateTicketCode } from "@/lib/tickets";
 import { incrementReferralCounters } from "@/lib/referral-tracking";
-import { getSupabaseServerClient, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import type { BotLanguage } from "@/lib/telegram/messages";
 import type { Database } from "@/lib/supabase/types";
 
@@ -64,30 +64,14 @@ export function getTelegramSupabaseClient() {
   return supabase;
 }
 
-export function getTelegramPublicSupabaseClient() {
-  const supabase = getSupabaseServerClient();
-
-  if (!supabase) {
-    throw new Error("Supabase anon client is not configured.");
-  }
-
-  return supabase;
-}
-
 export function parseStartPayloadDetails(value: string | undefined) {
   if (!value) {
     return null;
   }
 
-  const payload = value.trim().replace(/^event_/, "");
-  let slug = payload;
-  let referralCode: string | null = null;
-
-  if (payload.includes("_ref_")) {
-    const [eventSlug, ref] = payload.split("_ref_");
-    slug = eventSlug.trim();
-    referralCode = ref?.trim() || null;
-  }
+  const payload = value.trim();
+  const eventPayload = payload.startsWith("event_") ? payload.slice("event_".length) : payload;
+  const [slug, referralCode] = eventPayload.split("_ref_");
 
   if (!slug) {
     return null;
@@ -95,7 +79,7 @@ export function parseStartPayloadDetails(value: string | undefined) {
 
   return {
     slug,
-    referralCode: referralCode || null
+    referralCode: referralCode?.trim() || null
   };
 }
 
@@ -121,23 +105,13 @@ export async function getEventBySlug(supabase: SupabaseClient<Database>, slug: s
 export async function getPublicTelegramEvents(supabase: SupabaseClient<Database>) {
   const { data, error } = await supabase
     .from("events")
-    .select("*")
-    .eq("status", "live")
+    .select("id,slug,title,subtitle,description,date,city,venue,address,price,currency,capacity,manual_registered_override,manual_remaining_override,stats_note,status,image_url,organizer_id,organizer_name,organizer_description,organizer_contact,telegram_url,lineup,tags,age_limit,dress_code,doors_open,event_type,ticket_wave_label,urgency_note,referral_enabled,wallet_enabled,created_at")
+    .in("status", ["published", "live", "limited", "soon"])
     .order("date", { ascending: true, nullsFirst: false })
     .limit(8);
 
   if (error) {
-    console.error("Telegram live events Supabase query failed", {
-      code: error.code,
-      message: error.message,
-      details: error.details,
-      hint: error.hint
-    });
     throw error;
-  }
-
-  if (!data?.length) {
-    console.warn("Telegram live events Supabase query returned no rows", { error: null });
   }
 
   return data ?? [];
