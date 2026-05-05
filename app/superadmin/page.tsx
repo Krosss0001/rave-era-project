@@ -1,12 +1,14 @@
 import { RoleGate } from "@/components/shared/role-gate";
 import { SuperadminPanel } from "@/components/superadmin/superadmin-panel";
 import { LocalizedText } from "@/components/shared/localized-text";
+import { BackgroundGrid, GlowField, VisualSystemStyles } from "@/components/shared/visual-system";
 
 export default function SuperadminPage() {
   return (
     <RoleGate allowedRoles={["superadmin"]}>
       <div className="relative mx-auto max-w-7xl overflow-hidden bg-[#000000] px-3 py-12 sm:px-6 sm:py-20 md:px-10 lg:px-12 2xl:max-w-[1500px]">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.016)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.016)_1px,transparent_1px)] bg-[size:80px_80px]" />
+        <BackgroundGrid />
+        <GlowField />
         <div className="border-b border-white/[0.05] pb-14">
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.28em]"><LocalizedText ua="01. / Суперадмін система" en="01. / Superadmin System" /></p>
           <h1 className="mt-6 text-[clamp(2.3rem,12vw,5rem)] font-black uppercase leading-[0.94] text-white sm:mt-7">
@@ -22,6 +24,7 @@ export default function SuperadminPage() {
         <div className="mt-12">
           <SuperadminPanel />
         </div>
+        <VisualSystemStyles />
       </div>
     </RoleGate>
   );

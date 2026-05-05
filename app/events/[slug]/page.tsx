@@ -13,6 +13,7 @@ import { LocalizedText } from "@/components/shared/localized-text";
 import { LocalizedEventDate } from "@/components/shared/localized-event-date";
 import { LocalizedPrice } from "@/components/shared/localized-price";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { BackgroundGrid, DepthFrame, GlowField, ScanLine, VisualSystemStyles } from "@/components/shared/visual-system";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -98,9 +99,12 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
   ];
 
   return (
-    <div className="overflow-x-hidden bg-[#000000] text-white">
+    <div className="relative overflow-x-hidden bg-[#000000] text-white">
+      <BackgroundGrid className="opacity-70" />
+      <GlowField />
       <ReferralClickTracker eventId={event.id} referralCode={referralCode} />
       <section className="group relative overflow-hidden border-b border-white/[0.05]">
+        <ScanLine className="opacity-45" />
         <SafeEventImage
           src={event.image}
           alt={`${event.title} atmosphere`}
@@ -162,7 +166,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           </div>
 
           <div className="order-first w-full lg:order-none">
-            <div className="relative mx-auto aspect-[3/4] max-h-[68vh] min-h-[300px] max-w-[620px] overflow-hidden border border-white/[0.08] bg-black shadow-[0_0_80px_rgba(0,255,136,0.08)] sm:aspect-[4/3] lg:ml-auto lg:max-h-[560px]">
+            <DepthFrame className="relative mx-auto aspect-[3/4] max-h-[68vh] min-h-[300px] max-w-[620px] shadow-[0_0_80px_rgba(0,255,136,0.08)] sm:aspect-[4/3] lg:ml-auto lg:max-h-[560px]">
               <SafeEventImage
                 src={event.image}
                 alt={`${event.title} event poster`}
@@ -171,7 +175,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
                 sizes="(min-width: 1024px) 44vw, 100vw"
               />
               <div className="pointer-events-none absolute inset-0 border border-[#00FF88]/10" />
-            </div>
+            </DepthFrame>
           </div>
         </div>
       </section>
@@ -315,6 +319,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           `
         }}
       />
+      <VisualSystemStyles />
     </div>
   );
 }

@@ -249,7 +249,8 @@ export function UserDashboard() {
                 const paymentLabel = isFreeTicket && ticket.payment_status === "paid" ? "paid/free" : ticket.payment_status;
 
                 return (
-                <div key={ticket.id} className="min-w-0 border border-white/[0.06] bg-[#030303] p-4">
+                <div key={ticket.id} className="group relative min-w-0 overflow-hidden border border-white/[0.06] bg-[#030303] p-4 shadow-[0_0_44px_rgba(0,255,136,0.035)] transition-[border-color,background-color,transform] duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/[0.018]">
+                  <span className="absolute left-0 top-0 h-px w-0 bg-primary transition-[width] duration-500 group-hover:w-full" aria-hidden="true" />
                   <div className="flex flex-col gap-3 border-b border-white/[0.05] pb-4 min-[390px]:flex-row min-[390px]:items-start min-[390px]:justify-between">
                     <div className="min-w-0">
                       {event?.slug ? (
@@ -300,7 +301,7 @@ export function UserDashboard() {
                     </Link>
                   </div>
                   {isQrVisible ? (
-                    <div className="mt-4">
+                    <div className="mt-4 border border-primary/20 bg-black p-3 shadow-[0_0_34px_rgba(0,255,136,0.045)]">
                       <TicketQr
                         ticket={ticket}
                         locked={isQrLocked}

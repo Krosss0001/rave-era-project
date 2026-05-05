@@ -1,12 +1,15 @@
 import { CheckInPanel } from "@/components/check-in/check-in-panel";
 import { RoleGate } from "@/components/shared/role-gate";
 import { LocalizedText } from "@/components/shared/localized-text";
+import { BackgroundGrid, GlowField, ScanLine, VisualSystemStyles } from "@/components/shared/visual-system";
 
 export default function CheckInPage() {
   return (
     <RoleGate allowedRoles={["organizer", "admin", "superadmin"]}>
       <div className="relative mx-auto max-w-7xl overflow-hidden bg-[#000000] px-3 py-10 sm:px-6 sm:py-20 md:px-10 lg:px-12 2xl:max-w-[1500px]">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.016)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.016)_1px,transparent_1px)] bg-[size:80px_80px]" />
+        <BackgroundGrid />
+        <GlowField />
+        <ScanLine className="opacity-40" />
         <div className="border-b border-white/[0.05] pb-14">
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary sm:text-xs sm:tracking-[0.28em]">
             <LocalizedText ua="01. / Контроль входу" en="01. / Door system" />
@@ -36,6 +39,7 @@ export default function CheckInPage() {
         <div className="mt-12">
           <CheckInPanel />
         </div>
+        <VisualSystemStyles />
       </div>
     </RoleGate>
   );

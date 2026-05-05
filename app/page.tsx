@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowRight, Bot, ChartNoAxesCombined, Sparkles, WalletCards } from "lucide-react";
+import { ArrowRight, Bot, ChartNoAxesCombined, RadioTower, Sparkles } from "lucide-react";
 import { featuredEvent } from "@/data/events";
 import { getCapacityPercent } from "@/lib/format";
 import { SafeEventImage } from "@/components/events/safe-event-image";
@@ -33,11 +33,11 @@ const platformCards = [
     }
   },
   {
-    icon: WalletCards,
-    title: { ua: "Solana-ready доступ", en: "Solana-ready Access" },
+    icon: RadioTower,
+    title: { ua: "Операційний доступ", en: "Operational Access" },
     copy: {
-      ua: "Архітектура, готова до wallet-доступу, колекційних перепусток і майбутніх механік винагород.",
-      en: "Wallet-ready architecture for gated access, collector passes, and future reward mechanics."
+      ua: "Квитки, статуси та QR-доступ залишаються зрозумілими для гостя і дверей.",
+      en: "Ticket state, QR access, and door operations stay clear for guests and organizers."
     }
   }
 ];
@@ -72,10 +72,10 @@ const growthCards = [
     }
   },
   {
-    title: { ua: "Майбутні wallet-нагороди", en: "Future wallet rewards" },
+    title: { ua: "Операційна готовність", en: "Operational readiness" },
     copy: {
-      ua: "Solana-ready доступ залишає простір для лояльності, колекційних перепусток і gated utility.",
-      en: "Solana-ready access keeps room for loyalty, collector passes, and gated event utility."
+      ua: "Команда бачить попит, оплати, check-in і джерела зростання в одному місці.",
+      en: "Teams see demand, payment state, check-in, and source signals in one operating surface."
     }
   }
 ];
@@ -118,7 +118,7 @@ const partners = [
   "CRYPTO.KARATIST",
   "ZEEKR",
   "MAISON CASTEL",
-  "JACK DANIELS Old No. 7",
+  "JACK DANIEL'S Old No. 7",
   "HIKE",
   "SENOR CARTEL",
   "TOOSECCO",
@@ -149,6 +149,68 @@ function CornerBrackets() {
   );
 }
 
+function HeroVisualSystem() {
+  const planes = [
+    { title: "NOIR SIGNAL", meta: "74% capacity", className: "left-[2%] top-[12%] rotate-[-7deg]" },
+    { title: "TELEGRAM FLOW", meta: "QR ready", className: "right-[3%] top-[34%] rotate-[6deg]" },
+    { title: "REFERRAL LOOP", meta: "76 tracked", className: "bottom-[12%] left-[12%] rotate-[4deg]" }
+  ];
+
+  return (
+    <div className="hero-visual pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+      <div className="hero-grid absolute inset-0 opacity-80" />
+      <div className="hero-scan absolute inset-x-0 top-0 h-24 opacity-40" />
+      <div className="absolute right-[-18%] top-[8%] h-[48rem] w-[48rem] rounded-full bg-[#00FF88]/[0.08] blur-[150px]" />
+      <div className="absolute bottom-[-18rem] left-[-10rem] h-[34rem] w-[34rem] rounded-full bg-[#00FF88]/[0.055] blur-[120px]" />
+      <div className="wire-cube absolute right-[8%] top-[16%] hidden h-40 w-40 md:block lg:right-[43%] xl:right-[38%]">
+        <span className="cube-face cube-front" />
+        <span className="cube-face cube-back" />
+        <span className="cube-edge edge-1" />
+        <span className="cube-edge edge-2" />
+        <span className="cube-edge edge-3" />
+        <span className="cube-edge edge-4" />
+      </div>
+      <div className="orbit-system absolute right-[4%] top-[46%] hidden h-64 w-64 md:block lg:right-[38%] xl:right-[34%]">
+        <span className="orbit-ring orbit-ring-a" />
+        <span className="orbit-ring orbit-ring-b" />
+        <span className="orbit-dot" />
+      </div>
+      <div className="absolute inset-y-16 right-2 hidden w-[48%] lg:block">
+        {planes.map((plane, index) => (
+          <div
+            key={plane.title}
+            className={`event-plane absolute min-w-48 border border-white/[0.08] bg-black/70 p-3 shadow-[0_0_34px_rgba(0,255,136,0.055)] backdrop-blur-sm ${plane.className}`}
+            style={{ animationDelay: `${index * 640}ms` }}
+          >
+            <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#00FF88]">{plane.title}</p>
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-white/45">{plane.meta}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PartnerMarquee() {
+  const repeatedPartners = [...partners, ...partners];
+
+  return (
+    <div className="relative z-10 mt-8 overflow-hidden border-y border-white/[0.05] bg-black/40 py-3">
+      <div className="partner-marquee flex w-max gap-3 px-3 md:gap-4">
+        {repeatedPartners.map((partner, index) => (
+          <span
+            key={`${partner}-${index}`}
+            className="group inline-flex min-h-11 shrink-0 items-center gap-3 border border-white/[0.07] bg-[#020202] px-4 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38 transition duration-300 hover:border-[#00FF88]/30 hover:text-white hover:shadow-[0_0_28px_rgba(0,255,136,0.055)] sm:px-5 sm:text-xs sm:tracking-[0.22em]"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-white/20 transition duration-300 group-hover:bg-[#00FF88] group-hover:shadow-[0_0_12px_rgba(0,255,136,0.65)]" aria-hidden="true" />
+            {partner}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const revealStyle = (index: number) => ({
   animationDelay: `${index * 90}ms`
 });
@@ -170,8 +232,9 @@ export default function HomePage() {
     <div className="relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 -z-20 bg-[linear-gradient(rgba(255,255,255,0.018)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.018)_1px,transparent_1px)] bg-[size:80px_80px]" />
       <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.045] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:4px_4px]" />
-      <section className="relative overflow-hidden">
-        <div className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-center gap-10 px-3 py-14 sm:px-6 sm:py-24 md:px-10 md:py-28 lg:grid-cols-[1.1fr_0.9fr] lg:px-12 2xl:max-w-[1500px]">
+      <section className="relative isolate overflow-hidden">
+        <HeroVisualSystem />
+        <div className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-center gap-8 px-3 py-12 sm:px-6 sm:py-20 md:px-10 md:py-24 lg:grid-cols-[1.08fr_0.92fr] lg:gap-10 lg:px-12 2xl:max-w-[1500px]">
           <div className="max-w-4xl">
             <p className="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 border border-white/[0.05] bg-[#020202] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/55 sm:px-4 sm:tracking-[0.24em]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#00FF88] shadow-[0_0_16px_rgba(0,255,136,0.75)]" aria-hidden="true" />
@@ -208,7 +271,7 @@ export default function HomePage() {
                 }
               />
             </p>
-            <div className="mt-10 flex flex-col gap-3 motion-safe:animate-[fadeUp_520ms_cubic-bezier(0.16,1,0.3,1)_460ms_both] sm:flex-row">
+            <div className="mt-8 flex flex-col gap-3 motion-safe:animate-[fadeUp_520ms_cubic-bezier(0.16,1,0.3,1)_460ms_both] min-[420px]:flex-row sm:mt-10">
               <Link
                 href="/events"
                 className="focus-ring group relative inline-flex min-h-12 items-center justify-center overflow-hidden border border-[#00FF88] px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.13em] text-[#00FF88] transition duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:text-black hover:shadow-[0_0_30px_rgba(0,255,136,0.12)] active:scale-[0.98] sm:tracking-widest"
@@ -227,7 +290,7 @@ export default function HomePage() {
                 <span className="relative z-10"><LocalizedText ua="Панель організатора" en="Organizer OS" /></span>
               </Link>
             </div>
-            <div className="mt-10 grid gap-4 sm:grid-cols-3">
+            <div className="mt-8 grid gap-3 sm:mt-10 sm:grid-cols-3 sm:gap-4">
               {heroStats.map(({ value, label }, index) => (
                 <div
                   key={label.en}
@@ -243,7 +306,7 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-          <div className="relative">
+          <div className="relative min-w-0">
             <div className="group relative overflow-hidden border border-white/[0.05] bg-[#020202] transition duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-[#00FF88]/30 hover:shadow-[0_0_80px_rgba(0,255,136,0.08)]">
               <CornerBrackets />
               <div className="relative aspect-[4/5]">
@@ -287,16 +350,7 @@ export default function HomePage() {
             />
           </p>
         </div>
-        <div className="relative z-10 mx-auto flex max-w-7xl flex-wrap justify-center gap-x-6 gap-y-3 px-4 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/25 sm:px-6 sm:text-xs sm:tracking-[0.22em] md:px-10 lg:px-12 2xl:max-w-[1500px]">
-          {partners.map((partner) => (
-            <span
-              key={partner}
-              className="whitespace-nowrap opacity-70 transition duration-500 hover:opacity-100 hover:text-[#00FF88] hover:[text-shadow:0_0_18px_rgba(0,255,136,0.22)]"
-            >
-              {partner}
-            </span>
-          ))}
-        </div>
+        <PartnerMarquee />
       </section>
 
       <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#000000] px-4 py-16 sm:px-6 md:px-10 md:py-28 lg:px-12 2xl:max-w-[1500px]">
@@ -309,8 +363,8 @@ export default function HomePage() {
           </div>
           <p className="max-w-lg text-sm leading-6 text-white/45">
             <LocalizedText
-              ua="Rave'era поєднує пошук подій, реєстрації, Telegram-підтвердження, реферали та майбутній wallet-доступ без відчуття generic ticketing software."
-              en="Rave'era connects discovery, registration, Telegram execution, referral growth, and Solana-ready access without turning the experience into generic ticketing software."
+              ua="Rave'era поєднує пошук подій, реєстрації, Telegram-підтвердження, реферали та операційний доступ без відчуття generic ticketing software."
+              en="Rave'era connects discovery, registration, Telegram execution, referral growth, and operations without turning the experience into generic ticketing software."
             />
           </p>
         </div>
@@ -416,8 +470,8 @@ export default function HomePage() {
             </h2>
             <p className="mt-5 max-w-lg text-sm leading-6 text-white/45">
               <LocalizedText
-                ua="Rave'era зберігає преміальну подієву поверхню та додає операційні шари для зростання: дистрибуцію, підтвердження, аналітику й майбутню wallet-утиліту."
-                en="Rave'era keeps the premium event surface intact while adding the operating layers an organizer needs to grow: distribution, confirmation, analytics, and future wallet utility."
+                ua="Rave'era зберігає преміальну подієву поверхню та додає операційні шари для зростання: дистрибуцію, підтвердження, аналітику й check-in."
+                en="Rave'era keeps the premium event surface intact while adding the operating layers an organizer needs to grow: distribution, confirmation, analytics, and check-in."
               />
             </p>
           </div>
@@ -529,6 +583,112 @@ export default function HomePage() {
                 opacity: 1;
               }
             }
+            @keyframes gridDrift {
+              from { transform: translate3d(0, 0, 0); }
+              to { transform: translate3d(72px, 72px, 0); }
+            }
+            @keyframes scanFall {
+              from { transform: translateY(-100%); opacity: 0; }
+              18% { opacity: 0.48; }
+              to { transform: translateY(82vh); opacity: 0; }
+            }
+            @keyframes cubeFloat {
+              0%, 100% { transform: translate3d(0, 0, 0) rotateX(58deg) rotateZ(42deg); }
+              50% { transform: translate3d(0, -12px, 0) rotateX(62deg) rotateZ(48deg); }
+            }
+            @keyframes orbitSpin {
+              to { transform: rotate(360deg); }
+            }
+            @keyframes planeFloat {
+              0%, 100% { transform: translate3d(0, 0, 0) rotate(var(--plane-rotate, 0deg)); }
+              50% { transform: translate3d(0, -10px, 0) rotate(var(--plane-rotate, 0deg)); }
+            }
+            @keyframes marquee {
+              from { transform: translateX(0); }
+              to { transform: translateX(-50%); }
+            }
+            .hero-grid {
+              background-image:
+                linear-gradient(rgba(0,255,136,0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,136,0.08) 1px, transparent 1px),
+                linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+              background-size: 72px 72px, 72px 72px, 18px 18px, 18px 18px;
+              mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+              animation: gridDrift 24s linear infinite;
+            }
+            .hero-scan {
+              background: linear-gradient(180deg, transparent, rgba(0,255,136,0.12), transparent);
+              animation: scanFall 9s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+            }
+            .wire-cube {
+              transform-style: preserve-3d;
+              animation: cubeFloat 8s ease-in-out infinite;
+            }
+            .cube-face,
+            .cube-edge,
+            .orbit-ring,
+            .orbit-dot {
+              position: absolute;
+              display: block;
+            }
+            .cube-face {
+              inset: 24px;
+              border: 1px solid rgba(0, 255, 136, 0.34);
+              box-shadow: 0 0 38px rgba(0,255,136,0.08);
+            }
+            .cube-back {
+              transform: translate3d(28px, -28px, -42px);
+              border-color: rgba(255,255,255,0.12);
+            }
+            .edge-1,
+            .edge-2,
+            .edge-3,
+            .edge-4 {
+              width: 42px;
+              height: 1px;
+              background: rgba(0,255,136,0.3);
+              transform: rotate(-45deg);
+            }
+            .edge-1 { left: 28px; top: 24px; }
+            .edge-2 { right: 14px; top: 24px; }
+            .edge-3 { left: 28px; bottom: 48px; }
+            .edge-4 { right: 14px; bottom: 48px; }
+            .orbit-ring {
+              inset: 18px;
+              border: 1px solid rgba(0,255,136,0.22);
+              border-radius: 9999px;
+              transform: rotate(24deg) skewX(18deg);
+            }
+            .orbit-ring-a {
+              animation: orbitSpin 18s linear infinite;
+            }
+            .orbit-ring-b {
+              inset: 46px;
+              border-color: rgba(255,255,255,0.1);
+              animation: orbitSpin 28s linear infinite reverse;
+            }
+            .orbit-dot {
+              left: 50%;
+              top: 7px;
+              height: 7px;
+              width: 7px;
+              border-radius: 9999px;
+              background: #00FF88;
+              box-shadow: 0 0 20px rgba(0,255,136,0.8);
+              transform-origin: 0 121px;
+              animation: orbitSpin 9s linear infinite;
+            }
+            .event-plane {
+              --plane-rotate: 0deg;
+              animation: planeFloat 7s ease-in-out infinite;
+            }
+            .event-plane.rotate-\\[-7deg\\] { --plane-rotate: -7deg; }
+            .event-plane.rotate-\\[6deg\\] { --plane-rotate: 6deg; }
+            .event-plane.rotate-\\[4deg\\] { --plane-rotate: 4deg; }
+            .partner-marquee {
+              animation: marquee 34s linear infinite;
+            }
             @supports (animation-timeline: view()) {
               .scroll-reveal {
                 opacity: 0;
@@ -552,12 +712,35 @@ export default function HomePage() {
               }
             }
             @media (prefers-reduced-motion: reduce) {
+              .hero-grid,
+              .hero-scan,
+              .wire-cube,
+              .orbit-ring,
+              .orbit-dot,
+              .event-plane,
+              .partner-marquee,
               .scroll-reveal,
               .scroll-card,
               .scroll-line {
                 opacity: 1;
                 transform: none;
                 animation: none;
+              }
+              .partner-marquee {
+                flex-wrap: wrap;
+                width: auto;
+              }
+            }
+            @media (max-width: 767px) {
+              .partner-marquee {
+                width: auto;
+                flex-wrap: wrap;
+                justify-content: center;
+                animation: none;
+              }
+              .hero-grid {
+                animation-duration: 38s;
+                opacity: 0.48;
               }
             }
           `

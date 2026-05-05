@@ -545,7 +545,9 @@ export function CheckInPanel() {
         </div>
 
         {scannerOpen ? (
-          <div className="mt-4 overflow-hidden border border-primary/20 bg-black shadow-[0_0_42px_rgba(0,255,136,0.055)]">
+          <div className="relative mt-4 overflow-hidden border border-primary/25 bg-black shadow-[0_0_54px_rgba(0,255,136,0.075)]">
+            <span className="visual-scan-line pointer-events-none absolute inset-x-0 top-0 z-10 h-20 opacity-70" aria-hidden="true" />
+            <span className="pointer-events-none absolute inset-3 z-10 border border-primary/10" aria-hidden="true" />
             <div className="aspect-[3/4] max-h-[70vh] w-full bg-[#030303] min-[390px]:aspect-square sm:aspect-[4/3]">
               <video ref={videoRef} className="h-full w-full object-cover" muted playsInline aria-label="QR scanner camera preview" />
               <canvas ref={canvasRef} className="hidden" aria-hidden="true" />

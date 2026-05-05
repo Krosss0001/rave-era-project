@@ -1,5 +1,6 @@
 import { EventBrowser } from "@/components/events/event-browser";
 import { LocalizedText } from "@/components/shared/localized-text";
+import { BackgroundGrid, GlowField, ScanLine, VisualSystemStyles } from "@/components/shared/visual-system";
 import { getPublicEventsWithFallback } from "@/lib/supabase/events";
 import type { ReactNode } from "react";
 
@@ -22,8 +23,9 @@ export default async function EventsPage() {
 
   return (
     <div className="relative overflow-hidden bg-[#000000]">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.018)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.018)_1px,transparent_1px)] bg-[size:80px_80px]" />
-      <div className="pointer-events-none absolute right-[-20%] top-[-8%] -z-10 h-[45vw] w-[45vw] bg-[#00FF88]/10 blur-[150px]" />
+      <BackgroundGrid />
+      <GlowField />
+      <ScanLine className="opacity-50" />
 
       <section className="mx-auto max-w-7xl px-3 py-14 sm:px-6 sm:py-20 md:px-10 md:py-24 lg:px-12 2xl:max-w-[1500px]">
         <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
@@ -43,6 +45,7 @@ export default async function EventsPage() {
       </section>
 
       <EventBrowser events={events} />
+      <VisualSystemStyles />
       <style
         dangerouslySetInnerHTML={{
           __html: `
