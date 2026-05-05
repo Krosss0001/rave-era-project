@@ -60,8 +60,8 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
   }
 
   const referralCode = searchParams?.ref?.trim() || null;
-  const stats = await getEventDetailStatsWithFallback(event);
-  const registeredCount = stats.totalRegistrations;
+  const stats = event.stats ?? await getEventDetailStatsWithFallback(event);
+  const registeredCount = stats.total_registrations;
   const telegramUrl = buildTelegramUrl(event.slug, referralCode);
   const eventStatusLabel =
     event.status === "soon"
@@ -70,7 +70,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
         ? { ua: "Обмежено", en: "LIMITED" }
         : { ua: "Наживо", en: "LIVE" };
   const aboutParagraphs = getEventParagraphs(event.description);
-  const capacityPercent = stats.fillPercent;
+  const capacityPercent = stats.fill_percent;
   const urgent = capacityPercent >= 60;
   const locationLabel = [event.city, event.venue].filter(Boolean).join(", ") || event.address || "Локація уточнюється";
   const capacityTone =
@@ -274,19 +274,19 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
             </div>
             <div className="mt-4 border-b border-white/[0.05] pb-4">
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35"><LocalizedText ua="Залишилось" en="Remaining" /></p>
-              <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-white">{stats.remainingCapacity}</p>
+              <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-white">{stats.remaining_capacity}</p>
             </div>
             <div className="mt-4 grid gap-2 border-b border-white/[0.05] pb-4 min-[360px]:grid-cols-2">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35"><LocalizedText ua="Підтверджено / очікують" en="Confirmed / pending" /></p>
                 <p className="mt-1 font-mono text-sm font-semibold tabular-nums text-white">
-                  {stats.confirmedRegistrations} / {stats.pendingRegistrations}
+                  {stats.confirmed_registrations} / {stats.pending_registrations}
                 </p>
               </div>
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35"><LocalizedText ua="Оплачено / резерв" en="Paid / reserved" /></p>
                 <p className="mt-1 font-mono text-sm font-semibold tabular-nums text-white">
-                  {stats.paidTickets} / {stats.reservedTickets}
+                  {stats.paid_tickets} / {stats.reserved_tickets}
                 </p>
               </div>
             </div>

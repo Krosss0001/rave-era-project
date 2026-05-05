@@ -60,7 +60,7 @@ export function mapDatabaseEvent(row: EventRow): RaveeraEvent {
     price: Number(row.price),
     currency: row.currency || fallback?.currency || "UAH",
     capacity: Math.max(row.capacity, fallback?.capacity ?? 1),
-    registered: fallback?.registered ?? 0,
+    registered: 0,
     status: normalizeStatus(row.status),
     tags: parseList(row.tags, fallback?.tags || ["Event", "Telegram", "Rave'era"]),
     lineup: parseList(row.lineup, fallback?.lineup || ["Rave'era Residents"]),

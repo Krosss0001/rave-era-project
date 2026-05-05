@@ -7,8 +7,9 @@ import { Copy, CreditCard, Gauge, QrCode, Share2, Users } from "lucide-react";
 import { events as mockEvents, type RaveeraEvent } from "@/data/events";
 import { getCurrentRole } from "@/lib/auth/get-role";
 import { canManagePlatform } from "@/lib/auth/roles";
+import { calculateEventStatsFromRows } from "@/lib/event-stats";
 import { useLanguage } from "@/lib/i18n/use-language";
-import { formatEventDate, getCapacityPercent } from "@/lib/format";
+import { formatEventDate } from "@/lib/format";
 import { getPaymentPlaceholderCopy } from "@/lib/payment-placeholder";
 import { slugify } from "@/lib/slugify";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -185,6 +186,17 @@ export function OrganizerEventPortfolio() {
 
       if (!mounted) {
         return;
+      }
+
+      const registrationError = "error" in registrationResult ? registrationResult.error : null;
+      const ticketError = "error" in ticketResult ? ticketResult.error : null;
+
+      if (registrationError || ticketError) {
+        console.warn("Organizer event stats query failed", {
+          eventIds,
+          registrationReason: registrationError?.message,
+          ticketReason: ticketError?.message
+        });
       }
 
       setEvents(visibleEvents);
@@ -1111,13 +1123,17 @@ export function OrganizerEventPortfolio() {
 
             return true;
           });
-          const totalRegistrations = registrationRows.length;
-          const confirmedRegistrations = registrationRows.filter((row) => row.registration.status === "confirmed").length;
-          const pendingRegistrations = registrationRows.filter((row) => row.registration.status === "pending").length;
-          const paidTickets = registrationRows.filter((row) => row.paymentStatus === "paid").length;
-          const checkedInTickets = registrationRows.filter((row) => row.checkInStatus === "used").length;
-          const registered = relatedRegistrations.length || event.registered;
-          const capacity = getCapacityPercent(registered, event.capacity);
+          const eventStats = calculateEventStatsFromRows(event, relatedRegistrations, relatedTickets);
+          const totalRegistrations = eventStats.totalRegistrations;
+          const confirmedRegistrations = eventStats.confirmedRegistrations;
+          const pendingRegistrations = eventStats.pendingRegistrations;
+          const paidTickets = eventStats.paidTickets;
+          const reservedTickets = eventStats.reservedTickets;
+          const activeTickets = eventStats.activeTickets;
+          const usedTickets = eventStats.usedTickets;
+          const checkedInTickets = eventStats.checkedInCount;
+          const registered = eventStats.totalRegistrations;
+          const capacity = eventStats.fillPercent;
           const performancePanels = [
             {
               key: "registrations",
@@ -1130,15 +1146,15 @@ export function OrganizerEventPortfolio() {
                     ? "Поки немає реєстрацій"
                     : "No registrations yet",
               Icon: Users,
-              progress: event.capacity > 0 ? Math.min(100, Math.round((totalRegistrations / event.capacity) * 100)) : 0
+              progress: capacity
             },
             {
               key: "paid",
               title: language === "ua" ? "Оплати" : "Paid",
               value: paidTickets.toString(),
               detail:
-                paidTickets > 0
-                  ? `${paidTickets}/${totalRegistrations || 0} ${language === "ua" ? "квитків оплачено" : "tickets paid"}`
+                paidTickets > 0 || reservedTickets > 0
+                  ? `${paidTickets}/${reservedTickets} ${language === "ua" ? "оплачено / резерв" : "paid / reserved"}`
                   : language === "ua"
                     ? "Оплачених квитків ще немає"
                     : "No paid tickets yet",
@@ -1151,7 +1167,7 @@ export function OrganizerEventPortfolio() {
               value: checkedInTickets.toString(),
               detail:
                 checkedInTickets > 0
-                  ? `${checkedInTickets}/${paidTickets || totalRegistrations || 0} ${language === "ua" ? "пройшли вхід" : "checked in"}`
+                  ? `${checkedInTickets}/${activeTickets + usedTickets || totalRegistrations || 0} ${language === "ua" ? "пройшли вхід" : "checked in"}`
                   : language === "ua"
                     ? "Вхід ще не зафіксовано"
                     : "No check-ins yet",

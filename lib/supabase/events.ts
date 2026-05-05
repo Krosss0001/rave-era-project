@@ -1,37 +1,19 @@
 import { events as mockEvents, type RaveeraEvent } from "@/data/events";
+import {
+  calculateEventStatsFromRows,
+  getFallbackEventStats,
+  normalizeRpcEventStats,
+  type EventDetailStats,
+  type EventStatsRegistrationRow,
+  type EventStatsTicketRow,
+  type RpcEventStatsRow
+} from "@/lib/event-stats";
 import { getSupabaseServerClient, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { EVENT_SELECT_FIELDS } from "@/lib/supabase/event-fields";
 import { mapDatabaseEvent } from "@/lib/supabase/event-mapper";
 import type { Database, EventStatus } from "@/lib/supabase/types";
 
 type EventRow = Database["public"]["Tables"]["events"]["Row"];
-type RegistrationStatsRow = Pick<Database["public"]["Tables"]["registrations"]["Row"], "status">;
-type TicketStatsRow = Pick<Database["public"]["Tables"]["tickets"]["Row"], "status" | "payment_status" | "checked_in" | "checked_in_at">;
-
-type PublicEventStatsRow = {
-  event_id: string;
-  total_registrations: number;
-  confirmed_registrations: number;
-  pending_registrations: number;
-  paid_tickets: number;
-  reserved_tickets: number;
-  active_tickets: number;
-  used_tickets: number;
-  checked_in_count: number;
-};
-
-export type EventDetailStats = {
-  totalRegistrations: number;
-  confirmedRegistrations: number;
-  pendingRegistrations: number;
-  paidTickets: number;
-  reservedTickets: number;
-  activeTickets: number;
-  usedTickets: number;
-  checkedInCount: number;
-  remainingCapacity: number;
-  fillPercent: number;
-};
 
 const PUBLIC_EVENT_STATUSES: EventStatus[] = ["published", "live", "limited", "soon"];
 
@@ -40,9 +22,7 @@ function isUuid(value: string) {
 }
 
 function logPublicEventIssue(message: string, details: Record<string, unknown> = {}) {
-  if (process.env.NODE_ENV !== "production") {
-    console.warn(message, details);
-  }
+  console.warn(message, details);
 }
 
 export async function getPublicEventsWithFallback(): Promise<RaveeraEvent[]> {
@@ -88,7 +68,23 @@ export async function getPublicEventBySlugWithFallback(slug: string): Promise<Ra
     }
 
     if (data) {
-      return mapDatabaseEvent(data as unknown as EventRow);
+      const event = mapDatabaseEvent(data as unknown as EventRow);
+      const statsByEventId = await getPublicEventStatsByEventId([event]);
+      const stats = statsByEventId?.get(event.id);
+
+      if (stats) {
+        return {
+          ...event,
+          registered: stats.total_registrations,
+          stats
+        };
+      }
+
+      if (statsByEventId) {
+        logPublicEventIssue("Public event detail stats map missed event id", { eventId: event.id, slug: event.slug });
+      }
+
+      return event;
     }
 
     return null;
@@ -102,12 +98,18 @@ async function enrichEventsWithStats(events: RaveeraEvent[]) {
 
   if (realStatsByEventId) {
     return events.map((event) => {
-      const stats = realStatsByEventId.get(event.id) ?? getFallbackStats(event);
+      const stats = realStatsByEventId.get(event.id);
+
+      if (!stats) {
+        logPublicEventIssue("Public event stats map missed event id", { eventId: event.id, slug: event.slug });
+      }
+
+      const resolvedStats = stats ?? getFallbackEventStats(event);
 
       return {
         ...event,
-        registered: stats.totalRegistrations,
-        stats
+        registered: resolvedStats.total_registrations,
+        stats: resolvedStats
       };
     });
   }
@@ -117,34 +119,18 @@ async function enrichEventsWithStats(events: RaveeraEvent[]) {
       const stats = await getEventDetailStatsWithFallback(event);
       return {
         ...event,
-        registered: stats.totalRegistrations,
+        registered: stats.total_registrations,
         stats
       };
     })
   );
 }
 
-function getFallbackStats(event: RaveeraEvent): EventDetailStats {
-  const totalRegistrations = Math.max(0, event.registered);
-
-  return {
-    totalRegistrations,
-    confirmedRegistrations: totalRegistrations,
-    pendingRegistrations: 0,
-    paidTickets: 0,
-    reservedTickets: 0,
-    activeTickets: 0,
-    usedTickets: 0,
-    checkedInCount: 0,
-    remainingCapacity: Math.max(0, event.capacity - totalRegistrations),
-    fillPercent: event.capacity > 0 ? Math.min(100, Math.round((totalRegistrations / event.capacity) * 100)) : 0
-  };
-}
-
 export async function getEventDetailStatsWithFallback(event: RaveeraEvent): Promise<EventDetailStats> {
-  const fallbackStats = getFallbackStats(event);
+  const fallbackStats = event.stats ?? getFallbackEventStats(event);
 
   if (!isUuid(event.id)) {
+    logPublicEventIssue("Event stats skipped because event id is not a UUID", { eventId: event.id, slug: event.slug });
     return fallbackStats;
   }
 
@@ -157,6 +143,7 @@ export async function getEventDetailStatsWithFallback(event: RaveeraEvent): Prom
   const supabase = getSupabaseServiceRoleClient();
 
   if (!supabase) {
+    logPublicEventIssue("Event stats fallback unavailable because service role client is not configured", { eventId: event.id, slug: event.slug });
     return fallbackStats;
   }
 
@@ -173,52 +160,28 @@ export async function getEventDetailStatsWithFallback(event: RaveeraEvent): Prom
 
   const registrations = registrationResult.error || !registrationResult.data
     ? null
-    : registrationResult.data as RegistrationStatsRow[];
-  const tickets = ticketResult.error || !ticketResult.data ? null : ticketResult.data as TicketStatsRow[];
+    : registrationResult.data as EventStatsRegistrationRow[];
+  const tickets = ticketResult.error || !ticketResult.data ? null : ticketResult.data as EventStatsTicketRow[];
 
   if (!registrations || !tickets) {
+    logPublicEventIssue("Event stats fallback query failed", {
+      eventId: event.id,
+      slug: event.slug,
+      registrationReason: registrationResult.error?.message,
+      ticketReason: ticketResult.error?.message
+    });
     return fallbackStats;
   }
 
-  return calculateEventStats(event, {
-    totalRegistrations: registrations.length,
-    confirmedRegistrations: registrations.filter((registration) => registration.status === "confirmed").length,
-    pendingRegistrations: registrations.filter((registration) => registration.status === "pending").length,
-    paidTickets: tickets.filter((ticket) => ticket.payment_status === "paid").length,
-    reservedTickets: tickets.filter((ticket) => ticket.status === "reserved").length,
-    activeTickets: tickets.filter((ticket) => ticket.status === "active").length,
-    usedTickets: tickets.filter((ticket) => ticket.status === "used").length,
-    checkedInCount: tickets.filter((ticket) => ticket.checked_in || ticket.checked_in_at || ticket.status === "used").length
-  });
+  return calculateEventStatsFromRows(event, registrations, tickets);
 }
 
-function calculateEventStats(
-  event: RaveeraEvent,
-  counts: Omit<EventDetailStats, "remainingCapacity" | "fillPercent">
-): EventDetailStats {
-  const remainingCapacity = Math.max(0, event.capacity - counts.totalRegistrations);
-  const fillPercent = event.capacity > 0
-    ? Math.min(100, Math.round((counts.totalRegistrations / event.capacity) * 100))
-    : 0;
-
-  return {
-    ...counts,
-    remainingCapacity,
-    fillPercent
-  };
+function normalizeEventId(value: unknown) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
-function mapPublicStatsRow(event: RaveeraEvent, row: PublicEventStatsRow): EventDetailStats {
-  return calculateEventStats(event, {
-    totalRegistrations: Number(row.total_registrations ?? 0),
-    confirmedRegistrations: Number(row.confirmed_registrations ?? 0),
-    pendingRegistrations: Number(row.pending_registrations ?? 0),
-    paidTickets: Number(row.paid_tickets ?? 0),
-    reservedTickets: Number(row.reserved_tickets ?? 0),
-    activeTickets: Number(row.active_tickets ?? 0),
-    usedTickets: Number(row.used_tickets ?? 0),
-    checkedInCount: Number(row.checked_in_count ?? 0)
-  });
+function mapPublicStatsRow(event: RaveeraEvent, row: RpcEventStatsRow): EventDetailStats {
+  return normalizeRpcEventStats(event, row);
 }
 
 async function getPublicEventStatsByEventId(events: RaveeraEvent[]): Promise<Map<string, EventDetailStats> | null> {
@@ -237,17 +200,40 @@ async function getPublicEventStatsByEventId(events: RaveeraEvent[]): Promise<Map
   const { data, error } = await supabase.rpc("get_public_event_stats", { event_ids: eventIds });
 
   if (error || !data) {
+    logPublicEventIssue("Public event stats RPC failed", {
+      eventIds,
+      reason: error?.message ?? "No data returned"
+    });
     return null;
   }
 
-  const eventById = new Map(events.map((event) => [event.id, event]));
+  const rows = data as RpcEventStatsRow[];
+  const eventById = new Map(events.map((event) => [normalizeEventId(event.id), event]));
   const statsByEventId = new Map<string, EventDetailStats>();
 
-  for (const row of data as PublicEventStatsRow[]) {
-    const event = eventById.get(row.event_id);
+  for (const row of rows) {
+    const rowEventId = normalizeEventId(row.event_id ?? row.eventId);
+    const event = eventById.get(rowEventId);
 
     if (event) {
-      statsByEventId.set(row.event_id, mapPublicStatsRow(event, row));
+      statsByEventId.set(event.id, mapPublicStatsRow(event, row));
+    } else {
+      logPublicEventIssue("Public event stats RPC returned a row without a matching event", {
+        eventId: row.event_id ?? row.eventId,
+        knownEventIds: eventIds
+      });
+    }
+  }
+
+  if (rows.length > 0) {
+    for (const event of events) {
+      if (isUuid(event.id) && !statsByEventId.has(event.id)) {
+        logPublicEventIssue("Public event stats RPC returned rows but no stats were attached to event", {
+          eventId: event.id,
+          slug: event.slug,
+          returnedEventIds: rows.map((row) => row.event_id ?? row.eventId).filter(Boolean)
+        });
+      }
     }
   }
 

@@ -15,6 +15,16 @@ export type RaveeraEvent = {
   capacity: number;
   registered: number;
   stats?: {
+    total_registrations: number;
+    confirmed_registrations: number;
+    pending_registrations: number;
+    paid_tickets: number;
+    reserved_tickets: number;
+    active_tickets: number;
+    used_tickets: number;
+    checked_in_count: number;
+    remaining_capacity: number;
+    fill_percent: number;
     totalRegistrations: number;
     confirmedRegistrations: number;
     pendingRegistrations: number;

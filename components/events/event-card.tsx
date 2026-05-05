@@ -13,11 +13,11 @@ type EventCardProps = {
 };
 
 export function EventCard({ event, featured = false }: EventCardProps) {
-  const registeredCount = event.stats?.totalRegistrations ?? event.registered;
-  const remainingCapacity = event.stats?.remainingCapacity ?? Math.max(0, event.capacity - registeredCount);
-  const capacityPercent = event.stats?.fillPercent ?? getCapacityPercent(registeredCount, event.capacity);
-  const paidTickets = event.stats?.paidTickets ?? 0;
-  const reservedTickets = event.stats?.reservedTickets ?? 0;
+  const registeredCount = event.stats?.total_registrations ?? event.registered;
+  const remainingCapacity = event.stats?.remaining_capacity ?? Math.max(0, event.capacity - registeredCount);
+  const capacityPercent = event.stats?.fill_percent ?? getCapacityPercent(registeredCount, event.capacity);
+  const paidTickets = event.stats?.paid_tickets ?? 0;
+  const reservedTickets = event.stats?.reserved_tickets ?? 0;
   const statusLabel =
     capacityPercent >= 70
       ? { ua: "Майже повно", en: "Almost full" }
