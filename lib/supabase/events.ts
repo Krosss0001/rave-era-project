@@ -14,6 +14,7 @@ import { mapDatabaseEvent } from "@/lib/supabase/event-mapper";
 import type { Database, EventStatus } from "@/lib/supabase/types";
 
 type EventRow = Database["public"]["Tables"]["events"]["Row"];
+type ServiceRegistrationStatsRow = Pick<Database["public"]["Tables"]["registrations"]["Row"], "id" | "status">;
 
 const PUBLIC_EVENT_STATUSES: EventStatus[] = ["published", "live", "limited", "soon"];
 
@@ -92,7 +93,13 @@ export async function getPublicEventBySlugWithFallback(slug: string): Promise<Ra
         logPublicEventIssue("Public event detail stats map missed event id", { eventId: event.id, slug: event.slug });
       }
 
-      return event;
+      const fallbackStats = await getEventStatsFromServiceRole(event, "detail RPC returned no attachable stats");
+
+      return {
+        ...event,
+        registered: fallbackStats.total_registrations,
+        stats: fallbackStats
+      };
     }
 
     return null;
@@ -105,21 +112,21 @@ async function enrichEventsWithStats(events: RaveeraEvent[]) {
   const realStatsByEventId = await getPublicEventStatsByEventId(events);
 
   if (realStatsByEventId && realStatsByEventId.size > 0) {
-    return events.map((event) => {
+    return Promise.all(events.map(async (event) => {
       const stats = realStatsByEventId.get(event.id);
 
       if (!stats) {
         logPublicEventIssue("Public event stats map missed event id", { eventId: event.id, slug: event.slug });
       }
 
-      const resolvedStats = stats ?? getFallbackEventStats(event);
+      const resolvedStats = stats ?? await getEventStatsFromServiceRole(event, "list RPC missed event id");
 
       return {
         ...event,
         registered: resolvedStats.total_registrations,
         stats: resolvedStats
       };
-    });
+    }));
   }
 
   if (realStatsByEventId && realStatsByEventId.size === 0) {
@@ -132,7 +139,7 @@ async function enrichEventsWithStats(events: RaveeraEvent[]) {
 
   return Promise.all(
     events.map(async (event) => {
-      const stats = await getEventDetailStatsWithFallback(event);
+      const stats = await getEventStatsFromServiceRole(event, "list RPC returned empty/error/no attachable stats");
       return {
         ...event,
         registered: stats.total_registrations,
@@ -156,6 +163,17 @@ export async function getEventDetailStatsWithFallback(event: RaveeraEvent): Prom
     return publicStats.get(event.id)!;
   }
 
+  return getEventStatsFromServiceRole(event, "detail RPC returned empty/error/no attachable stats");
+}
+
+async function getEventStatsFromServiceRole(event: RaveeraEvent, reason: string): Promise<EventDetailStats> {
+  const fallbackStats = event.stats ?? getFallbackEventStats(event);
+
+  if (!isUuid(event.id)) {
+    logPublicEventIssue("Event stats service fallback skipped because event id is not a UUID", { eventId: event.id, slug: event.slug });
+    return fallbackStats;
+  }
+
   const supabase = getSupabaseServiceRoleClient();
 
   if (!supabase) {
@@ -163,33 +181,52 @@ export async function getEventDetailStatsWithFallback(event: RaveeraEvent): Prom
     return fallbackStats;
   }
 
-  const [registrationResult, ticketResult] = await Promise.all([
-    supabase
-      .from("registrations")
-      .select("status")
-      .eq("event_id", event.id),
-    supabase
-      .from("tickets")
-      .select("status,payment_status,checked_in,checked_in_at")
-      .eq("event_id", event.id)
-  ]);
+  logPublicEventIssue("RPC stats failed, using service fallback", {
+    eventId: event.id,
+    slug: event.slug,
+    reason,
+    supabaseProject: getSupabaseProjectRef()
+  });
+
+  const registrationResult = await supabase
+    .from("registrations")
+    .select("id,status")
+    .eq("event_id", event.id);
 
   const registrations = registrationResult.error || !registrationResult.data
     ? null
-    : registrationResult.data as EventStatsRegistrationRow[];
-  const tickets = ticketResult.error || !ticketResult.data ? null : ticketResult.data as EventStatsTicketRow[];
+    : registrationResult.data as ServiceRegistrationStatsRow[];
 
-  if (!registrations || !tickets) {
-    logPublicEventIssue("Event stats fallback query failed", {
+  if (!registrations) {
+    logPublicEventIssue("Event stats service fallback registration query failed", {
       eventId: event.id,
       slug: event.slug,
-      registrationReason: registrationResult.error?.message,
-      ticketReason: ticketResult.error?.message
+      registrationReason: registrationResult.error?.message
     });
     return fallbackStats;
   }
 
-  const fallbackStatsFromRows = calculateEventStatsFromRows(event, registrations, tickets);
+  const registrationIds = registrations.map((registration) => registration.id);
+  const ticketResult = registrationIds.length > 0
+    ? await supabase
+        .from("tickets")
+        .select("status,payment_status,checked_in,checked_in_at")
+        .in("registration_id", registrationIds)
+    : { data: [] };
+
+  const ticketError = "error" in ticketResult ? ticketResult.error : null;
+  const tickets = ticketError || !ticketResult.data ? null : ticketResult.data as EventStatsTicketRow[];
+
+  if (!tickets) {
+    logPublicEventIssue("Event stats fallback query failed", {
+      eventId: event.id,
+      slug: event.slug,
+      ticketReason: ticketError?.message
+    });
+    return fallbackStats;
+  }
+
+  const fallbackStatsFromRows = calculateEventStatsFromRows(event, registrations as EventStatsRegistrationRow[], tickets);
 
   logPublicEventIssue("Event stats service fallback response", {
     eventId: event.id,
