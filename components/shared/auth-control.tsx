@@ -17,7 +17,11 @@ function getEmailRedirectTo() {
   return `${window.location.origin}/dashboard`;
 }
 
-export function AuthControl() {
+type AuthControlProps = {
+  onSessionChange?: (signedIn: boolean) => void;
+};
+
+export function AuthControl({ onSessionChange }: AuthControlProps) {
   const { dictionary, language } = useLanguage();
   const configured = isSupabaseConfigured();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
@@ -54,17 +58,19 @@ export function AuthControl() {
 
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
+      onSessionChange?.(Boolean(data.session));
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
+      onSessionChange?.(Boolean(nextSession));
       if (nextSession) {
         setOpen(false);
       }
     });
 
     return () => listener.subscription.unsubscribe();
-  }, [supabase]);
+  }, [onSessionChange, supabase]);
 
   useEffect(() => {
     if (!open) {
@@ -118,6 +124,7 @@ export function AuthControl() {
     setStatus("loading");
     await supabase.auth.signOut();
     setSession(null);
+    onSessionChange?.(false);
     setStatus("idle");
     setMessage("");
   }

@@ -1,13 +1,19 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { AuthControl } from "@/components/shared/auth-control";
+import { WalletConnect } from "@/components/shared/wallet-connect";
 import { RoleNav } from "@/components/layout/role-nav";
 import { LanguageToggle } from "@/components/layout/language-toggle";
 import { useLanguage } from "@/lib/i18n/use-language";
 
 export function Header() {
   const { dictionary } = useLanguage();
+  const [signedIn, setSignedIn] = useState(false);
+  const handleSessionChange = useCallback((nextSignedIn: boolean) => {
+    setSignedIn(nextSignedIn);
+  }, []);
   const navItems = [
     { href: "/events", label: dictionary.nav.events }
   ];
@@ -20,7 +26,7 @@ export function Header() {
             RAVE<span className="text-primary">&apos;</span>ERA <span className="hidden text-white/50 min-[390px]:inline">GROUP</span> <span className="text-primary" aria-hidden="true">{"\u00B7"}</span> <span className="hidden min-[360px]:inline">EVENTS </span>ASSISTANT
           </span>
         </Link>
-        <div className="grid min-w-0 flex-1 basis-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1.5 sm:basis-auto sm:flex sm:justify-end sm:gap-2">
+        <div className="grid min-w-0 flex-1 basis-full grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-1.5 sm:basis-auto sm:flex sm:justify-end sm:gap-2">
           <nav className="-mx-1 flex min-w-0 items-center gap-1 overflow-x-auto px-1 [scrollbar-width:none] md:gap-2 [&::-webkit-scrollbar]:hidden" aria-label="Primary navigation">
             {navItems.map((item) => (
               <Link
@@ -35,7 +41,8 @@ export function Header() {
             <RoleNav />
           </nav>
           <LanguageToggle />
-          <AuthControl />
+          <AuthControl onSessionChange={handleSessionChange} />
+          {signedIn ? <WalletConnect /> : null}
         </div>
       </div>
     </header>
