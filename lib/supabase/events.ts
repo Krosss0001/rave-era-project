@@ -18,8 +18,16 @@ type ServiceRegistrationStatsRow = Pick<Database["public"]["Tables"]["registrati
 
 const PUBLIC_EVENT_STATUSES: EventStatus[] = ["published", "live", "limited", "soon"];
 
-function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(value);
+function normalizeEventId(value: unknown) {
+  return String(value ?? "").trim();
+}
+
+function normalizeEventIdKey(value: unknown) {
+  return normalizeEventId(value).toLowerCase();
+}
+
+function isUuid(value: unknown) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizeEventId(value));
 }
 
 function logPublicEventIssue(message: string, details: Record<string, unknown> = {}) {
@@ -78,8 +86,9 @@ export async function getPublicEventBySlugWithFallback(slug: string): Promise<Ra
 
     if (data) {
       const event = mapDatabaseEvent(data as unknown as EventRow);
+      const eventId = normalizeEventId(event.id);
       const statsByEventId = await getPublicEventStatsByEventId([event]);
-      const stats = statsByEventId?.get(event.id);
+      const stats = statsByEventId?.get(eventId);
 
       if (stats) {
         return {
@@ -90,7 +99,7 @@ export async function getPublicEventBySlugWithFallback(slug: string): Promise<Ra
       }
 
       if (statsByEventId) {
-        logPublicEventIssue("Public event detail stats map missed event id", { eventId: event.id, slug: event.slug });
+        logPublicEventIssue("Public event detail stats map missed event id", { eventId, slug: event.slug });
       }
 
       const fallbackStats = await getEventStatsFromServiceRole(event, "detail RPC returned no attachable stats");
@@ -113,10 +122,11 @@ async function enrichEventsWithStats(events: RaveeraEvent[]) {
 
   if (realStatsByEventId && realStatsByEventId.size > 0) {
     return Promise.all(events.map(async (event) => {
-      const stats = realStatsByEventId.get(event.id);
+      const eventId = normalizeEventId(event.id);
+      const stats = realStatsByEventId.get(eventId);
 
       if (!stats) {
-        logPublicEventIssue("Public event stats map missed event id", { eventId: event.id, slug: event.slug });
+        logPublicEventIssue("Public event stats map missed event id", { eventId, slug: event.slug });
       }
 
       const resolvedStats = stats ?? await getEventStatsFromServiceRole(event, "list RPC missed event id");
@@ -131,7 +141,7 @@ async function enrichEventsWithStats(events: RaveeraEvent[]) {
 
   if (realStatsByEventId && realStatsByEventId.size === 0) {
     logPublicEventIssue("Public event stats RPC returned no attachable stats; using per-event server fallback", {
-      eventIds: events.map((event) => event.id),
+      eventIds: events.map((event) => normalizeEventId(event.id)),
       slugs: events.map((event) => event.slug),
       supabaseProject: getSupabaseProjectRef()
     });
@@ -151,16 +161,17 @@ async function enrichEventsWithStats(events: RaveeraEvent[]) {
 
 export async function getEventDetailStatsWithFallback(event: RaveeraEvent): Promise<EventDetailStats> {
   const fallbackStats = event.stats ?? getFallbackEventStats(event);
+  const eventId = normalizeEventId(event.id);
 
-  if (!isUuid(event.id)) {
-    logPublicEventIssue("Event stats skipped because event id is not a UUID", { eventId: event.id, slug: event.slug });
+  if (!isUuid(eventId)) {
+    logPublicEventIssue("Event stats skipped because event id is not a UUID", { eventId, slug: event.slug });
     return fallbackStats;
   }
 
   const publicStats = await getPublicEventStatsByEventId([event]);
 
-  if (publicStats?.has(event.id)) {
-    return publicStats.get(event.id)!;
+  if (publicStats?.has(eventId)) {
+    return publicStats.get(eventId)!;
   }
 
   return getEventStatsFromServiceRole(event, "detail RPC returned empty/error/no attachable stats");
@@ -168,21 +179,22 @@ export async function getEventDetailStatsWithFallback(event: RaveeraEvent): Prom
 
 async function getEventStatsFromServiceRole(event: RaveeraEvent, reason: string): Promise<EventDetailStats> {
   const fallbackStats = event.stats ?? getFallbackEventStats(event);
+  const eventId = normalizeEventId(event.id);
 
-  if (!isUuid(event.id)) {
-    logPublicEventIssue("Event stats service fallback skipped because event id is not a UUID", { eventId: event.id, slug: event.slug });
+  if (!isUuid(eventId)) {
+    logPublicEventIssue("Event stats service fallback skipped because event id is not a UUID", { eventId, slug: event.slug });
     return fallbackStats;
   }
 
   const supabase = getSupabaseServiceRoleClient();
 
   if (!supabase) {
-    logPublicEventIssue("Event stats fallback unavailable because service role client is not configured", { eventId: event.id, slug: event.slug });
+    logPublicEventIssue("Event stats fallback unavailable because service role client is not configured", { eventId, slug: event.slug });
     return fallbackStats;
   }
 
   logPublicEventIssue("RPC stats failed, using service fallback", {
-    eventId: event.id,
+    eventId,
     slug: event.slug,
     reason,
     supabaseProject: getSupabaseProjectRef()
@@ -191,7 +203,7 @@ async function getEventStatsFromServiceRole(event: RaveeraEvent, reason: string)
   const registrationResult = await supabase
     .from("registrations")
     .select("id,status")
-    .eq("event_id", event.id);
+    .eq("event_id", eventId);
 
   const registrations = registrationResult.error || !registrationResult.data
     ? null
@@ -199,7 +211,7 @@ async function getEventStatsFromServiceRole(event: RaveeraEvent, reason: string)
 
   if (!registrations) {
     logPublicEventIssue("Event stats service fallback registration query failed", {
-      eventId: event.id,
+      eventId,
       slug: event.slug,
       registrationReason: registrationResult.error?.message
     });
@@ -219,7 +231,7 @@ async function getEventStatsFromServiceRole(event: RaveeraEvent, reason: string)
 
   if (!tickets) {
     logPublicEventIssue("Event stats fallback query failed", {
-      eventId: event.id,
+      eventId,
       slug: event.slug,
       ticketReason: ticketError?.message
     });
@@ -229,7 +241,7 @@ async function getEventStatsFromServiceRole(event: RaveeraEvent, reason: string)
   const fallbackStatsFromRows = calculateEventStatsFromRows(event, registrations as EventStatsRegistrationRow[], tickets);
 
   logPublicEventIssue("Event stats service fallback response", {
-    eventId: event.id,
+    eventId,
     slug: event.slug,
     registrationRows: registrations.length,
     ticketRows: tickets.length,
@@ -240,20 +252,16 @@ async function getEventStatsFromServiceRole(event: RaveeraEvent, reason: string)
   return fallbackStatsFromRows;
 }
 
-function normalizeEventId(value: unknown) {
-  return typeof value === "string" ? value.trim().toLowerCase() : "";
-}
-
 function mapPublicStatsRow(event: RaveeraEvent, row: RpcEventStatsRow): EventDetailStats {
   return normalizeRpcEventStats(event, row);
 }
 
 async function getPublicEventStatsByEventId(events: RaveeraEvent[]): Promise<Map<string, EventDetailStats> | null> {
-  const eventIds = events.map((event) => event.id).filter(isUuid);
+  const eventIds = events.map((event) => normalizeEventId(event.id)).filter(isUuid);
 
   if (eventIds.length === 0) {
     logPublicEventIssue("Public event stats RPC skipped because no UUID event ids were available", {
-      eventIds: events.map((event) => event.id),
+      eventIds: events.map((event) => normalizeEventId(event.id)),
       slugs: events.map((event) => event.slug),
       supabaseProject: getSupabaseProjectRef()
     });
@@ -295,15 +303,15 @@ async function getPublicEventStatsByEventId(events: RaveeraEvent[]): Promise<Map
     supabaseProject: getSupabaseProjectRef()
   });
 
-  const eventById = new Map(events.map((event) => [normalizeEventId(event.id), event]));
+  const eventById = new Map(events.map((event) => [normalizeEventIdKey(event.id), event]));
   const statsByEventId = new Map<string, EventDetailStats>();
 
   for (const row of rows) {
-    const rowEventId = normalizeEventId(row.event_id ?? row.eventId);
+    const rowEventId = normalizeEventIdKey(row.event_id ?? row.eventId);
     const event = eventById.get(rowEventId);
 
     if (event) {
-      statsByEventId.set(event.id, mapPublicStatsRow(event, row));
+      statsByEventId.set(normalizeEventId(event.id), mapPublicStatsRow(event, row));
     } else {
       logPublicEventIssue("Public event stats RPC returned a row without a matching event", {
         eventId: row.event_id ?? row.eventId,
@@ -314,9 +322,11 @@ async function getPublicEventStatsByEventId(events: RaveeraEvent[]): Promise<Map
 
   if (rows.length > 0) {
     for (const event of events) {
-      if (isUuid(event.id) && !statsByEventId.has(event.id)) {
+      const eventId = normalizeEventId(event.id);
+
+      if (isUuid(eventId) && !statsByEventId.has(eventId)) {
         logPublicEventIssue("Public event stats RPC returned rows but no stats were attached to event", {
-          eventId: event.id,
+          eventId,
           slug: event.slug,
           returnedEventIds: rows.map((row) => row.event_id ?? row.eventId).filter(Boolean)
         });
