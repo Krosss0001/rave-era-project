@@ -25,6 +25,14 @@ function logPublicEventIssue(message: string, details: Record<string, unknown> =
   console.warn(message, details);
 }
 
+function getSupabaseProjectRef() {
+  try {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname : "missing";
+  } catch {
+    return "invalid";
+  }
+}
+
 export async function getPublicEventsWithFallback(): Promise<RaveeraEvent[]> {
   const supabase = getSupabaseServerClient();
 
@@ -96,7 +104,7 @@ export async function getPublicEventBySlugWithFallback(slug: string): Promise<Ra
 async function enrichEventsWithStats(events: RaveeraEvent[]) {
   const realStatsByEventId = await getPublicEventStatsByEventId(events);
 
-  if (realStatsByEventId) {
+  if (realStatsByEventId && realStatsByEventId.size > 0) {
     return events.map((event) => {
       const stats = realStatsByEventId.get(event.id);
 
@@ -111,6 +119,14 @@ async function enrichEventsWithStats(events: RaveeraEvent[]) {
         registered: resolvedStats.total_registrations,
         stats: resolvedStats
       };
+    });
+  }
+
+  if (realStatsByEventId && realStatsByEventId.size === 0) {
+    logPublicEventIssue("Public event stats RPC returned no attachable stats; using per-event server fallback", {
+      eventIds: events.map((event) => event.id),
+      slugs: events.map((event) => event.slug),
+      supabaseProject: getSupabaseProjectRef()
     });
   }
 
@@ -173,7 +189,18 @@ export async function getEventDetailStatsWithFallback(event: RaveeraEvent): Prom
     return fallbackStats;
   }
 
-  return calculateEventStatsFromRows(event, registrations, tickets);
+  const fallbackStatsFromRows = calculateEventStatsFromRows(event, registrations, tickets);
+
+  logPublicEventIssue("Event stats service fallback response", {
+    eventId: event.id,
+    slug: event.slug,
+    registrationRows: registrations.length,
+    ticketRows: tickets.length,
+    totalRegistrations: fallbackStatsFromRows.total_registrations,
+    supabaseProject: getSupabaseProjectRef()
+  });
+
+  return fallbackStatsFromRows;
 }
 
 function normalizeEventId(value: unknown) {
@@ -188,14 +215,30 @@ async function getPublicEventStatsByEventId(events: RaveeraEvent[]): Promise<Map
   const eventIds = events.map((event) => event.id).filter(isUuid);
 
   if (eventIds.length === 0) {
+    logPublicEventIssue("Public event stats RPC skipped because no UUID event ids were available", {
+      eventIds: events.map((event) => event.id),
+      slugs: events.map((event) => event.slug),
+      supabaseProject: getSupabaseProjectRef()
+    });
     return null;
   }
 
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
+    logPublicEventIssue("Public event stats RPC skipped because Supabase anon client is not configured", {
+      eventIds,
+      hasUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+      hasAnonKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+    });
     return null;
   }
+
+  logPublicEventIssue("Public event stats RPC request", {
+    eventIds,
+    slugs: events.map((event) => event.slug),
+    supabaseProject: getSupabaseProjectRef()
+  });
 
   const { data, error } = await supabase.rpc("get_public_event_stats", { event_ids: eventIds });
 
@@ -208,6 +251,13 @@ async function getPublicEventStatsByEventId(events: RaveeraEvent[]): Promise<Map
   }
 
   const rows = data as RpcEventStatsRow[];
+  logPublicEventIssue("Public event stats RPC response", {
+    eventIds,
+    rowCount: rows.length,
+    firstRow: rows[0] ?? null,
+    supabaseProject: getSupabaseProjectRef()
+  });
+
   const eventById = new Map(events.map((event) => [normalizeEventId(event.id), event]));
   const statsByEventId = new Map<string, EventDetailStats>();
 
