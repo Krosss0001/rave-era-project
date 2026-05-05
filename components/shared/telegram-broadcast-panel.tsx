@@ -90,6 +90,7 @@ export function TelegramBroadcastPanel({
   const selectedEvent = events.find((event) => event.id === eventId) ?? null;
   const eventRequired = requireEvent || isEventAudience(audience);
   const previewMessage = formatPreviewMessage({ message, event: eventRequired ? selectedEvent : null });
+  const previewCount = preview?.estimatedRecipientCount ?? 0;
 
   useEffect(() => {
     if (eventRequired && !selectedEvent && events[0]) {
@@ -163,6 +164,14 @@ export function TelegramBroadcastPanel({
 
     try {
       validateForm();
+      if (!preview?.ok) {
+        throw new Error("Preview the audience before sending.");
+      }
+
+      if (!window.confirm(`Are you sure you want to send to ${previewCount} users?`)) {
+        return;
+      }
+
       setBusy("send");
       setSendResult(await callBroadcastApi<SendResponse>("/api/telegram/broadcast/send"));
     } catch (requestError) {
@@ -171,6 +180,34 @@ export function TelegramBroadcastPanel({
     } finally {
       setBusy(null);
     }
+  }
+
+  function formatPercent(value: number | undefined, total: number | undefined) {
+    const denominator = total ?? 0;
+
+    if (!denominator) {
+      return "0%";
+    }
+
+    return `${Math.round(((value ?? 0) / denominator) * 100)}%`;
+  }
+
+  function getReadableError(reason: string) {
+    const normalized = reason.toLowerCase();
+
+    if (normalized.includes("token")) {
+      return "Telegram bot token missing or invalid.";
+    }
+
+    if (normalized.includes("/start") || normalized.includes("chat_id") || normalized.includes("blocked")) {
+      return "User has not started the bot or cannot receive messages.";
+    }
+
+    if (normalized.includes("telegram api")) {
+      return reason;
+    }
+
+    return reason;
   }
 
   return (
@@ -259,7 +296,7 @@ export function TelegramBroadcastPanel({
             <button
               type="button"
               onClick={sendBroadcast}
-              disabled={busy !== null}
+              disabled={busy !== null || !preview?.ok}
               className="focus-ring min-h-12 bg-primary px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-black motion-safe:transition-[filter,transform,opacity] motion-safe:duration-300 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
             >
               {busy === "send" ? "Sending" : "Send broadcast"}
@@ -284,11 +321,13 @@ export function TelegramBroadcastPanel({
               <p className="text-xs leading-5 text-white/45">
                 Sample: {(preview.sampleRecipients ?? []).map((recipient) => recipient.chat_id).join(", ") || "No recipients yet"}
               </p>
-              <p className="text-xs leading-5 text-white/45">Skipped: {preview.skippedCount ?? 0}</p>
+              <p className="text-xs leading-5 text-white/45">
+                Preview count before send: {preview.estimatedRecipientCount ?? 0}. Skipped: {preview.skippedCount ?? 0}.
+              </p>
               {(preview.firstFailureReasons ?? []).length > 0 ? (
                 <ul className="grid gap-1 text-xs leading-5 text-red-100/80">
                   {preview.firstFailureReasons?.map((reason) => (
-                    <li key={reason}>{reason}</li>
+                    <li key={reason}>{getReadableError(reason)}</li>
                   ))}
                 </ul>
               ) : null}
@@ -299,12 +338,12 @@ export function TelegramBroadcastPanel({
             <div className="mt-5 grid gap-3 border border-primary/25 bg-primary/[0.035] p-4" aria-live="polite">
               <StatusBadge label="Send result" variant="success" size="sm" className="justify-self-start" />
               <p className="text-sm leading-6 text-white/70">
-                Sent: {sendResult.sent ?? 0}. Failed: {sendResult.failed ?? 0}. Skipped: {sendResult.skipped ?? 0}. Total: {sendResult.total ?? 0}.
+                Sent: {sendResult.sent ?? 0} ({formatPercent(sendResult.sent, sendResult.total)}). Failed: {sendResult.failed ?? 0} ({formatPercent(sendResult.failed, sendResult.total)}). Skipped: {sendResult.skipped ?? 0} ({formatPercent(sendResult.skipped, sendResult.total)}). Total: {sendResult.total ?? 0}.
               </p>
               {(sendResult.firstFailureReasons ?? []).length > 0 ? (
                 <ul className="grid gap-1 text-xs leading-5 text-red-100/80">
                   {sendResult.firstFailureReasons?.map((reason) => (
-                    <li key={reason}>{reason}</li>
+                    <li key={reason}>{getReadableError(reason)}</li>
                   ))}
                 </ul>
               ) : null}

@@ -6,6 +6,7 @@ import {
   buildEventConfirmationMessage,
   buildSummaryMessage,
   escapeHtml,
+  formatTelegramDate,
   formatTelegramStatus,
   getEventSpecificConfirmationMessage,
   getTelegramCopy,
@@ -98,8 +99,15 @@ function getEventUrl(eventSlug: string) {
   return `${getAppUrl()}/events/${eventSlug}`;
 }
 
-function getEventShareUrl(eventSlug: string, title: string) {
+function getEventReferralUrl(eventSlug: string, referralCode: string | null | undefined) {
   const eventUrl = getEventUrl(eventSlug);
+  const code = referralCode?.trim();
+
+  return code ? `${eventUrl}?ref=${encodeURIComponent(code)}` : eventUrl;
+}
+
+function getEventShareUrl(eventSlug: string, title: string, referralCode?: string | null) {
+  const eventUrl = getEventReferralUrl(eventSlug, referralCode);
   return `https://t.me/share/url?url=${encodeURIComponent(eventUrl)}&text=${encodeURIComponent(title)}`;
 }
 
@@ -275,12 +283,14 @@ async function sendMyTickets(
   for (const item of ticketRows) {
     const event = Array.isArray(item.registration.events) ? item.registration.events[0] : item.registration.events;
     const eventTitle = event?.title || copy.eventFallback;
+    const eventDate = event?.date ? formatTelegramDate(event.date, language) : copy.dateFallback;
 
     await sendTelegramMessage(
       chatId,
       [
         `<b>${escapeHtml(eventTitle)}</b>`,
         "",
+        `${copy.dateLabel}: ${escapeHtml(eventDate)}`,
         `${copy.ticketLabel}: ${escapeHtml(item.ticket.ticket_code)}`,
         `${copy.statusLabel}: ${escapeHtml(formatTelegramStatus(item.ticket.status))}`,
         `${copy.paymentLabel}: ${escapeHtml(formatTelegramStatus(item.ticket.payment_status))}`,
@@ -289,7 +299,8 @@ async function sendMyTickets(
       {
         inlineKeyboard: [
           [{ text: copy.showQr, callback_data: `qr:${item.ticket.ticket_code}` }],
-          ...(event?.slug ? [[{ text: copy.openEvent, url: getEventUrl(event.slug) }]] : [])
+          ...(event?.slug ? [[{ text: copy.openEvent, url: getEventUrl(event.slug) }]] : []),
+          ...(event?.slug ? [[{ text: copy.shareButton, url: getEventShareUrl(event.slug, eventTitle, item.ticket.ticket_code) }]] : [])
         ]
       }
     );
@@ -300,11 +311,16 @@ async function finishRegistration(chatId: string, session: TelegramSession, lang
   const copy = getTelegramCopy(language);
   const supabase = getTelegramSupabaseClient();
   const event = session.event_slug ? await getEventBySlug(supabase, session.event_slug) : null;
+  if (!event) {
+    throw new Error("event_missing");
+  }
+
   const isFreeEvent = Number(event?.price ?? 0) <= 0;
-  const eventUrl = event?.slug ? getEventUrl(event.slug) : `${getAppUrl()}/events`;
   const { ticket } = isFreeEvent
     ? await confirmFreeRegistrationAndTicket(supabase, session)
     : await createPendingRegistrationAndTicket(supabase, session);
+  const referralCode = session.referral_code || ticket.ticket_code;
+  const eventUrl = getEventReferralUrl(event.slug, referralCode);
 
   await sendTelegramMessage(
     chatId,
@@ -314,6 +330,9 @@ async function finishRegistration(chatId: string, session: TelegramSession, lang
       `${copy.ticketLabel}: ${escapeHtml(ticket.ticket_code)}`,
       `${copy.statusLabel}: ${escapeHtml(formatTelegramStatus(ticket.status))}`,
       `${copy.paymentLabel}: ${escapeHtml(formatTelegramStatus(ticket.payment_status))}`,
+      `${copy.qrStatusLabel}: ${isFreeEvent ? copy.qrAvailable : copy.qrUnavailable}`,
+      "",
+      `${copy.referralLinkLabel}: ${escapeHtml(eventUrl)}`,
       ...(isFreeEvent ? [] : ["", copy.qrLocked])
     ].join("\n"),
     {
@@ -321,10 +340,12 @@ async function finishRegistration(chatId: string, session: TelegramSession, lang
         ? [
             [{ text: copy.showQr, callback_data: `qr:${ticket.ticket_code}` }],
             [{ text: copy.myTickets, callback_data: "my_tickets" }],
+            [{ text: copy.shareButton, url: getEventShareUrl(event.slug, event.title, referralCode || ticket.ticket_code) }],
             [{ text: copy.openOnSite, url: eventUrl }]
           ]
         : [
             [{ text: copy.myTickets, callback_data: "my_tickets" }],
+            [{ text: copy.shareButton, url: getEventShareUrl(event.slug, event.title, referralCode || ticket.ticket_code) }],
             [{ text: copy.openOnSite, url: eventUrl }]
           ],
       removeKeyboard: true
@@ -637,9 +658,12 @@ async function handleCallback(callbackQuery: TelegramCallbackQuery) {
         eventSlug: session.event_slug,
         reason: error instanceof Error ? error.message : "unknown"
       });
-      const message = error instanceof Error && error.message.toLowerCase().includes("sold out")
+      const reason = error instanceof Error ? error.message.toLowerCase() : "";
+      const message = reason.includes("sold out")
         ? copy.soldOut
-        : copy.genericError;
+        : reason.includes("event_missing")
+          ? copy.eventMissing
+          : copy.registrationFailed;
       await sendTelegramMessage(user.chatId, message);
     }
     return;

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Copy, CreditCard, Gauge, QrCode, Share2, Users } from "lucide-react";
+import { Archive, Copy, CreditCard, ExternalLink, Gauge, QrCode, Share2, Trash2, Users } from "lucide-react";
 import type { RaveeraEvent } from "@/data/events";
 import { getCurrentRole } from "@/lib/auth/get-role";
 import { canManagePlatform } from "@/lib/auth/roles";
@@ -46,7 +46,7 @@ type EventValidationResult =
   | { error: string }
   | { title: string; slug: string; capacity: number; price: number };
 
-const eventStatusOptions: EventStatus[] = ["draft", "live", "limited", "soon"];
+const eventStatusOptions: EventStatus[] = ["draft", "published", "live", "limited", "soon", "archived", "cancelled"];
 const registrationFilters: Array<{ value: RegistrationFilter; label: { ua: string; en: string } }> = [
   { value: "all", label: { ua: "Усі", en: "All" } },
   { value: "confirmed", label: { ua: "Підтверджені", en: "Confirmed" } },
@@ -108,6 +108,7 @@ export function OrganizerEventPortfolio() {
   const [tickets, setTickets] = useState<TicketRow[]>([]);
   const [referrals, setReferrals] = useState<ReferralRow[]>([]);
   const [registrationFilterByEvent, setRegistrationFilterByEvent] = useState<Record<string, RegistrationFilter>>({});
+  const [registrationSearchByEvent, setRegistrationSearchByEvent] = useState<Record<string, string>>({});
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [canEditAllEvents, setCanEditAllEvents] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -117,6 +118,7 @@ export function OrganizerEventPortfolio() {
   const [editForm, setEditForm] = useState(initialForm);
   const [saving, setSaving] = useState(false);
   const [updatingEventId, setUpdatingEventId] = useState<string | null>(null);
+  const [eventActionKey, setEventActionKey] = useState<string | null>(null);
   const [selectedRegistrationAction, setSelectedRegistrationAction] = useState<Record<string, RegistrationAction | "">>({});
   const [registrationActionKey, setRegistrationActionKey] = useState<string | null>(null);
   const [registrationActionError, setRegistrationActionError] = useState<Record<string, string>>({});
@@ -480,6 +482,117 @@ export function OrganizerEventPortfolio() {
     }
   }
 
+  async function updateEventStatus(targetEvent: OrganizerEvent, status: EventStatus, successText: string) {
+    if (!supabase || !currentUserId) {
+      setMessage({ type: "error", text: dictionary.organizer.sessionMissing });
+      return;
+    }
+
+    setEventActionKey(`${targetEvent.id}:${status}`);
+    setMessage(null);
+
+    let query = supabase.from("events").update({ status }).eq("id", targetEvent.id);
+
+    if (!canEditAllEvents) {
+      query = query.eq("organizer_id", currentUserId);
+    }
+
+    const { data, error } = await query.select(EVENT_SELECT_FIELDS).single();
+    setEventActionKey(null);
+
+    if (error) {
+      setMessage({ type: "error", text: error.message });
+      return;
+    }
+
+    if (data) {
+      const updatedRow = data as unknown as EventRow;
+      const updatedEvent: OrganizerEvent = {
+        ...mapDatabaseEvent(updatedRow),
+        dbStatus: updatedRow.status
+      };
+
+      setEvents((current) => current.map((item) => (item.id === updatedEvent.id ? updatedEvent : item)));
+      setMessage({ type: "success", text: successText });
+      router.refresh();
+    }
+  }
+
+  async function archiveEvent(targetEvent: OrganizerEvent) {
+    await updateEventStatus(targetEvent, "archived", "Event archived.");
+  }
+
+  async function unarchiveEvent(targetEvent: OrganizerEvent) {
+    await updateEventStatus(targetEvent, "draft", "Event restored as draft.");
+  }
+
+  async function softDeleteEvent(targetEvent: OrganizerEvent) {
+    if (!window.confirm(`Delete "${targetEvent.title}"? This keeps the event data but marks it cancelled.`)) {
+      return;
+    }
+
+    await updateEventStatus(targetEvent, "cancelled", "Event marked cancelled.");
+  }
+
+  async function duplicateEvent(targetEvent: OrganizerEvent) {
+    if (!supabase || !currentUserId) {
+      setMessage({ type: "error", text: dictionary.organizer.sessionMissing });
+      return;
+    }
+
+    setEventActionKey(`${targetEvent.id}:duplicate`);
+    setMessage(null);
+
+    let sourceQuery = supabase.from("events").select(EVENT_SELECT_FIELDS).eq("id", targetEvent.id);
+
+    if (!canEditAllEvents) {
+      sourceQuery = sourceQuery.eq("organizer_id", currentUserId);
+    }
+
+    const { data: source, error: sourceError } = await sourceQuery.single();
+
+    if (sourceError || !source) {
+      setEventActionKey(null);
+      setMessage({ type: "error", text: sourceError?.message || "Event could not be duplicated." });
+      return;
+    }
+
+    const sourceRow = source as unknown as EventRow;
+    const { id: _id, created_at: _createdAt, ...sourcePayload } = sourceRow;
+    const { data, error } = await supabase
+      .from("events")
+      .insert({
+        ...sourcePayload,
+        title: `${sourceRow.title} Copy`,
+        slug: `${sourceRow.slug}-copy-${Date.now().toString(36)}`,
+        status: "draft",
+        organizer_id: sourceRow.organizer_id || currentUserId,
+        created_at: new Date().toISOString()
+      })
+      .select(EVENT_SELECT_FIELDS)
+      .single();
+
+    setEventActionKey(null);
+
+    if (error) {
+      setMessage({ type: "error", text: error.message });
+      return;
+    }
+
+    if (data) {
+      const duplicatedRow = data as unknown as EventRow;
+      const duplicatedEvent: OrganizerEvent = {
+        ...mapDatabaseEvent(duplicatedRow),
+        dbStatus: duplicatedRow.status
+      };
+
+      setEvents((current) => [duplicatedEvent, ...current]);
+      setSuccessSlug(duplicatedRow.slug);
+      setMessage({ type: "success", text: "Event duplicated as draft." });
+      router.refresh();
+    }
+  }
+
   function getRegistrationActionLabel(action: RegistrationAction) {
     const labels: Record<RegistrationAction, string> = {
       confirm_registration: language === "ua" ? "Підтвердити" : "Confirm",
@@ -696,6 +809,12 @@ export function OrganizerEventPortfolio() {
     chooseAction: language === "ua" ? "Оберіть дію" : "Choose action",
     applyAction: language === "ua" ? "Застосувати" : "Apply",
     exportCsv: language === "ua" ? "Експорт CSV" : "Export CSV",
+    searchPlaceholder: language === "ua" ? "Пошук: імʼя, email, Telegram" : "Search name, email, Telegram",
+    openCheckIn: language === "ua" ? "Відкрити check-in" : "Open check-in",
+    archive: language === "ua" ? "Архівувати" : "Archive",
+    unarchive: language === "ua" ? "Розархівувати" : "Unarchive",
+    duplicate: language === "ua" ? "Дублювати" : "Duplicate",
+    delete: language === "ua" ? "Видалити" : "Delete",
     noAvailableActions: language === "ua" ? "Немає доступних дій" : "No available actions",
     referralTitle: language === "ua" ? "Реферальна аналітика" : "Referral analytics",
     referralClicks: language === "ua" ? "Реферальні кліки" : "Referral clicks",
@@ -1052,6 +1171,7 @@ export function OrganizerEventPortfolio() {
           const topReferralCode = topReferral?.code ?? null;
           const hasReferralActivity = referralStarts > 0 || referralRegistrations > 0 || confirmedReferralRegistrations > 0 || paidReferralRegistrations > 0 || checkedInReferralRegistrations > 0 || Boolean(topReferralCode);
           const activeFilter = registrationFilterByEvent[event.id] ?? "all";
+          const activeSearch = (registrationSearchByEvent[event.id] ?? "").trim().toLowerCase();
           const registrationRows = relatedRegistrations.map((registration) => {
             const registrationTickets = relatedTickets.filter((ticket) => ticket.registration_id === registration.id);
             const hasTicket = registrationTickets.length > 0;
@@ -1077,6 +1197,21 @@ export function OrganizerEventPortfolio() {
             };
           });
           const filteredRows = registrationRows.filter((row) => {
+            const searchable = [
+              row.registration.name,
+              row.registration.email,
+              row.registration.telegram_username,
+              row.registration.phone,
+              row.registration.instagram_nickname
+            ]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase();
+
+            if (activeSearch && !searchable.includes(activeSearch)) {
+              return false;
+            }
+
             if (activeFilter === "confirmed") {
               return row.registration.status === "confirmed";
             }
@@ -1189,14 +1324,49 @@ export function OrganizerEventPortfolio() {
                 </div>
                 <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
                   <p className="font-mono text-sm uppercase tracking-[0.14em] text-primary sm:tracking-[0.18em]">{capacity}% capacity</p>
-                  <button
-                    type="button"
-                    onClick={() => openEditPanel(event)}
-                    aria-expanded={editingEventId === event.id}
-                    className="focus-ring min-h-10 border border-primary/70 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-primary transition-colors hover:bg-primary hover:text-black"
-                  >
-                    {editingEventId === event.id ? "Close / Закрити" : "Edit / Редагувати"}
-                  </button>
+                  <div className="flex flex-wrap justify-start gap-2 sm:justify-end">
+                    <Link
+                      href={`/check-in?event=${encodeURIComponent(event.id)}`}
+                      className="focus-ring inline-flex min-h-10 items-center gap-2 border border-white/[0.08] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-white/58 transition-colors hover:border-primary/50 hover:text-primary"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                      {registrationCopy.openCheckIn}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => openEditPanel(event)}
+                      aria-expanded={editingEventId === event.id}
+                      className="focus-ring min-h-10 border border-primary/70 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-primary transition-colors hover:bg-primary hover:text-black"
+                    >
+                      {editingEventId === event.id ? "Close / Закрити" : "Edit / Редагувати"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={eventActionKey !== null}
+                      onClick={() => (event.dbStatus === "archived" || event.dbStatus === "cancelled" ? unarchiveEvent(event) : archiveEvent(event))}
+                      className="focus-ring inline-flex min-h-10 items-center gap-2 border border-white/[0.08] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-white/58 transition-colors hover:border-primary/50 hover:text-primary disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      <Archive className="h-3.5 w-3.5" aria-hidden="true" />
+                      {event.dbStatus === "archived" || event.dbStatus === "cancelled" ? registrationCopy.unarchive : registrationCopy.archive}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={eventActionKey !== null}
+                      onClick={() => duplicateEvent(event)}
+                      className="focus-ring min-h-10 border border-white/[0.08] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-white/58 transition-colors hover:border-primary/50 hover:text-primary disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      {eventActionKey === `${event.id}:duplicate` ? "..." : registrationCopy.duplicate}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={eventActionKey !== null}
+                      onClick={() => softDeleteEvent(event)}
+                      className="focus-ring inline-flex min-h-10 items-center gap-2 border border-red-400/25 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-red-100/80 transition-colors hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      {registrationCopy.delete}
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="mt-6 h-1 overflow-hidden bg-white/[0.05]">
@@ -1498,7 +1668,22 @@ export function OrganizerEventPortfolio() {
                     );
                   })}
                 </div>
-                <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                <div className="mt-4 flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+                  <label className="block w-full lg:max-w-sm">
+                    <span className="sr-only">{registrationCopy.searchPlaceholder}</span>
+                    <input
+                      type="search"
+                      value={registrationSearchByEvent[event.id] ?? ""}
+                      onChange={(inputEvent) =>
+                        setRegistrationSearchByEvent((current) => ({
+                          ...current,
+                          [event.id]: inputEvent.target.value
+                        }))
+                      }
+                      placeholder={registrationCopy.searchPlaceholder}
+                      className="focus-ring min-h-11 w-full border border-white/[0.08] bg-[#020202] px-3 font-mono text-xs text-white outline-none transition-colors placeholder:text-white/[0.28] focus:border-primary"
+                    />
+                  </label>
                   <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/[0.34]">
                     {filteredRows.length} / {relatedRegistrations.length} {registrationCopy.sectionTitle.toLowerCase()}
                   </p>
@@ -1512,7 +1697,95 @@ export function OrganizerEventPortfolio() {
                   </button>
                 </div>
                 {relatedRegistrations.length > 0 ? (
-                  <div className="-mx-1 mt-5 overflow-x-auto [scrollbar-width:thin]">
+                  <>
+                  <div className="mt-5 grid gap-3 md:hidden">
+                    {filteredRows.length > 0 ? (
+                      filteredRows.map(({ registration, paymentStatus, ticketStatus, checkInStatus, checkedIn }) => (
+                        <div key={registration.id} className="border border-white/[0.06] bg-[#020202] p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="break-words font-semibold text-white/[0.84]">{registration.name || registrationCopy.notProvided}</p>
+                              <p className="mt-1 break-all font-mono text-xs text-white/[0.45]">{registration.email || registration.telegram_username || registration.phone || "-"}</p>
+                            </div>
+                            <StatusBadge label={registration.status} variant={getStatusBadgeVariant(registration.status)} size="sm" />
+                          </div>
+                          <div className="mt-4 grid gap-2 min-[420px]:grid-cols-3">
+                            <StatusBadge label={Number(event.price) <= 0 && paymentStatus === "paid" ? "paid/free" : paymentStatus} variant={getStatusBadgeVariant(paymentStatus)} size="sm" />
+                            <StatusBadge label={ticketStatus} variant={getStatusBadgeVariant(ticketStatus)} size="sm" />
+                            <StatusBadge label={checkInStatus} variant={getStatusBadgeVariant(checkInStatus)} size="sm" />
+                          </div>
+                          <div className="mt-4 flex flex-col gap-2">
+                            <select
+                              value={selectedRegistrationAction[registration.id] ?? ""}
+                              disabled={registrationActionKey !== null}
+                              onChange={(selectEvent) =>
+                                setSelectedRegistrationAction((current) => ({
+                                  ...current,
+                                  [registration.id]: selectEvent.target.value as RegistrationAction | ""
+                                }))
+                              }
+                              className="focus-ring min-h-11 w-full border border-white/[0.08] bg-[#020202] px-3 font-mono text-[10px] uppercase tracking-[0.08em] text-white/[0.72] outline-none transition-colors focus:border-primary disabled:cursor-not-allowed disabled:text-white/[0.28]"
+                              aria-label={registrationCopy.chooseAction}
+                            >
+                              <option value="">{registrationCopy.chooseAction}</option>
+                              {registrationActionOrder.map((action) => (
+                                <option
+                                  key={action}
+                                  value={action}
+                                  disabled={
+                                    !canRunRegistrationAction({
+                                      action,
+                                      registrationStatus: registration.status,
+                                      paymentStatus,
+                                      ticketStatus,
+                                      checkedIn
+                                    })
+                                  }
+                                >
+                                  {getRegistrationActionLabel(action)}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              disabled={
+                                registrationActionKey !== null ||
+                                !selectedRegistrationAction[registration.id] ||
+                                !canRunRegistrationAction({
+                                  action: selectedRegistrationAction[registration.id] as RegistrationAction,
+                                  registrationStatus: registration.status,
+                                  paymentStatus,
+                                  ticketStatus,
+                                  checkedIn
+                                })
+                              }
+                              onClick={() => {
+                                const action = selectedRegistrationAction[registration.id];
+
+                                if (action) {
+                                  runRegistrationAction(registration.id, action);
+                                }
+                              }}
+                              className="focus-ring min-h-11 border border-primary/45 bg-[#020202] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-primary transition-[border-color,background-color,color,opacity] hover:border-primary hover:bg-primary hover:text-black disabled:cursor-not-allowed disabled:border-white/[0.07] disabled:text-white/[0.26] disabled:hover:bg-[#020202] disabled:hover:text-white/[0.26]"
+                            >
+                              {registrationActionKey?.startsWith(`${registration.id}:`) ? "..." : registrationCopy.applyAction}
+                            </button>
+                          </div>
+                          {registrationActionError[registration.id] ? (
+                            <p className="mt-2 text-xs leading-5 text-red-200">{registrationActionError[registration.id]}</p>
+                          ) : null}
+                          {registrationActionSuccess[registration.id] ? (
+                            <p className="mt-2 text-xs leading-5 text-primary">{registrationActionSuccess[registration.id]}</p>
+                          ) : null}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="border border-white/[0.05] bg-[#030303] px-4 py-5 text-sm text-white/[0.48]">
+                        {registrationCopy.noFilterMatch}
+                      </div>
+                    )}
+                  </div>
+                  <div className="-mx-1 mt-5 hidden overflow-x-auto [scrollbar-width:thin] md:block">
                     <table className="w-full min-w-[1480px] text-left text-sm">
                       <thead className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/[0.34]">
                         <tr>
@@ -1647,6 +1920,7 @@ export function OrganizerEventPortfolio() {
                       </tbody>
                     </table>
                   </div>
+                  </>
                 ) : (
                   <div className="mt-5 border border-white/[0.05] bg-[#030303] px-4 py-5 text-sm text-white/[0.48]">
                     {registrationCopy.empty}
