@@ -24,12 +24,18 @@ function getBotToken() {
   return process.env.TELEGRAM_BOT_TOKEN;
 }
 
-async function telegramApi<T>(method: string, payload: Record<string, unknown>): Promise<T | null> {
-  const token = getBotToken();
+export function assertTelegramBotTokenConfigured() {
+  const token = getBotToken()?.trim();
 
-  if (!token) {
-    throw new Error("TELEGRAM_BOT_TOKEN is not configured.");
+  if (!token || !/^\d+:[A-Za-z0-9_-]{20,}$/.test(token)) {
+    throw new Error("Telegram bot token is missing or invalid");
   }
+
+  return token;
+}
+
+async function telegramApi<T>(method: string, payload: Record<string, unknown>): Promise<T | null> {
+  const token = assertTelegramBotTokenConfigured();
 
   const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: "POST",
@@ -41,6 +47,10 @@ async function telegramApi<T>(method: string, payload: Record<string, unknown>):
   });
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 404) {
+      throw new Error("Telegram bot token is missing or invalid");
+    }
+
     throw new Error(`Telegram API ${method} failed with ${response.status}.`);
   }
 
@@ -48,11 +58,7 @@ async function telegramApi<T>(method: string, payload: Record<string, unknown>):
 }
 
 async function telegramFormApi<T>(method: string, payload: FormData): Promise<T | null> {
-  const token = getBotToken();
-
-  if (!token) {
-    throw new Error("TELEGRAM_BOT_TOKEN is not configured.");
-  }
+  const token = assertTelegramBotTokenConfigured();
 
   const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: "POST",
@@ -61,6 +67,10 @@ async function telegramFormApi<T>(method: string, payload: FormData): Promise<T 
   });
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 404) {
+      throw new Error("Telegram bot token is missing or invalid");
+    }
+
     throw new Error(`Telegram API ${method} failed with ${response.status}.`);
   }
 
@@ -97,6 +107,10 @@ export async function sendTelegramMessage(chatId: string, text: string, options:
     disable_web_page_preview: true,
     reply_markup: getReplyMarkup(options)
   });
+}
+
+export async function verifyTelegramBotToken() {
+  return telegramApi("getMe", {});
 }
 
 export async function sendTelegramPhoto(chatId: string, photoUrl: string, options: SendPhotoOptions = {}) {

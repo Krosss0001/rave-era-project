@@ -12,13 +12,13 @@ export const EVENT_BROADCAST_AUDIENCES: BroadcastAudience[] = [
 ];
 
 export const BROADCAST_AUDIENCE_LABELS: Record<BroadcastAudience, string> = {
-  all_telegram_users: "Усі Telegram користувачі",
-  event_registered: "Реєстрації на подію",
-  event_confirmed: "Підтверджені реєстрації",
-  event_pending_payment: "Очікують підтвердження",
-  event_paid: "Підтверджені учасники",
-  event_checked_in: "Учасники з check-in",
-  bot_interacted_not_registered: "Користувачі бота без реєстрації"
+  all_telegram_users: "All Telegram users",
+  event_registered: "Registered for event",
+  event_confirmed: "Confirmed registrations",
+  event_pending_payment: "Pending payment",
+  event_paid: "Paid attendees",
+  event_checked_in: "Checked-in attendees",
+  bot_interacted_not_registered: "Bot users without registration"
 };
 
 export type BroadcastRequest = {
@@ -57,15 +57,15 @@ export function parseBroadcastRequest(body: unknown): BroadcastRequest {
   const eventId = typeof input.eventId === "string" && input.eventId.trim() ? input.eventId.trim() : null;
 
   if (!isBroadcastAudience(audience)) {
-    throw new Error("Потрібно вибрати аудиторію.");
+    throw new Error("Select an audience.");
   }
 
   if (!message) {
-    throw new Error("Потрібно ввести повідомлення.");
+    throw new Error("Enter a message.");
   }
 
   if (isEventBroadcastAudience(audience) && !eventId) {
-    throw new Error("Для цієї аудиторії потрібно вибрати подію.");
+    throw new Error("Select an event.");
   }
 
   return {
@@ -139,6 +139,10 @@ export function assertBroadcastAccess(input: {
   audience: BroadcastAudience;
   event: BroadcastEvent | null;
 }) {
+  if (input.audience === "all_telegram_users" && input.role !== "superadmin") {
+    throw new Error("forbidden");
+  }
+
   if (input.role === "admin" || input.role === "superadmin") {
     return;
   }
@@ -174,7 +178,7 @@ export async function getBroadcastEvent(eventId: string | null) {
   }
 
   if (!data) {
-    throw new Error("event not found.");
+    throw new Error("Event not found.");
   }
 
   return data;

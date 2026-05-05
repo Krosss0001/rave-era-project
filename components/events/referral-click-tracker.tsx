@@ -15,7 +15,7 @@ export function ReferralClickTracker({ eventId, referralCode }: ReferralClickTra
       return;
     }
 
-    const storageKey = `referral_clicked_${code}`;
+    const storageKey = `referral_clicked_${eventId}_${code}`;
 
     try {
       if (window.localStorage.getItem(storageKey)) {

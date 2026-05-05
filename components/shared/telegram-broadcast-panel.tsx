@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Send, UsersRound } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { BroadcastAudience } from "@/lib/supabase/types";
@@ -21,6 +21,8 @@ type PreviewResponse = {
   ok: boolean;
   audienceLabel?: string;
   estimatedRecipientCount?: number;
+  skippedCount?: number;
+  firstFailureReasons?: string[];
   sampleRecipients?: Array<{ telegram_user_id: string; chat_id: string }>;
   error?: string;
 };
@@ -32,6 +34,8 @@ type SendResponse = {
   total?: number;
   sent?: number;
   failed?: number;
+  skipped?: number;
+  firstFailureReasons?: string[];
   error?: string;
 };
 
@@ -62,7 +66,7 @@ function formatPreviewMessage(input: {
   const eventUrl = input.event?.slug ? `${getAppUrl()}/events/${input.event.slug}` : `${getAppUrl()}/events`;
   const eventLines = input.event ? [input.event.title, eventUrl] : [eventUrl];
 
-  return [header, "", ...eventLines, "", input.message || "Попередній перегляд повідомлення", "", footer].join("\n");
+  return [header, "", ...eventLines, "", input.message || "Message preview", "", footer].join("\n");
 }
 
 export function TelegramBroadcastPanel({
@@ -87,6 +91,12 @@ export function TelegramBroadcastPanel({
   const eventRequired = requireEvent || isEventAudience(audience);
   const previewMessage = formatPreviewMessage({ message, event: eventRequired ? selectedEvent : null });
 
+  useEffect(() => {
+    if (eventRequired && !selectedEvent && events[0]) {
+      setEventId(events[0].id);
+    }
+  }, [eventRequired, events, selectedEvent]);
+
   async function callBroadcastApi<T>(path: string): Promise<T> {
     if (!supabase) {
       throw new Error("Supabase is not configured.");
@@ -108,7 +118,7 @@ export function TelegramBroadcastPanel({
       },
       body: JSON.stringify({
         audience,
-        eventId: eventRequired ? eventId : null,
+        eventId: eventRequired ? selectedEvent?.id ?? null : null,
         message
       })
     });
@@ -126,7 +136,7 @@ export function TelegramBroadcastPanel({
       throw new Error("Enter a message.");
     }
 
-    if (eventRequired && !eventId) {
+    if (eventRequired && !selectedEvent) {
       throw new Error("Select an event.");
     }
   }
@@ -170,6 +180,9 @@ export function TelegramBroadcastPanel({
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">{eyebrow}</p>
           <h2 className="mt-3 text-[clamp(1.85rem,9vw,3rem)] font-black uppercase leading-[0.98] text-white">{title}</h2>
           <p className="mt-5 max-w-xl text-sm leading-6 text-white/58">{description}</p>
+          <p className="mt-4 max-w-xl border border-white/[0.06] bg-[#030303] px-4 py-3 text-xs leading-5 text-white/50">
+            Users must press /start in @Rave_era_group_bot before broadcasts can reach them.
+          </p>
           <div className="mt-8 border border-white/[0.06] bg-[#030303] p-4">
             <p className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-white/52 sm:tracking-[0.18em]">
               <Send className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
@@ -185,7 +198,12 @@ export function TelegramBroadcastPanel({
               <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">Audience</span>
               <select
                 value={audience}
-                onChange={(event) => setAudience(event.target.value as BroadcastAudience)}
+                onChange={(event) => {
+                  setAudience(event.target.value as BroadcastAudience);
+                  setPreview(null);
+                  setSendResult(null);
+                  setError("");
+                }}
                 className="mt-2 min-h-12 w-full border border-white/[0.08] bg-[#020202] px-3 font-mono text-xs uppercase text-white outline-none motion-safe:transition-colors motion-safe:duration-300 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 {audienceOptions.map((option) => (
@@ -199,8 +217,13 @@ export function TelegramBroadcastPanel({
               <label className="block md:col-span-2">
                 <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">Event</span>
                 <select
-                  value={eventId}
-                  onChange={(event) => setEventId(event.target.value)}
+                  value={selectedEvent?.id ?? ""}
+                  onChange={(event) => {
+                    setEventId(event.target.value);
+                    setPreview(null);
+                    setSendResult(null);
+                    setError("");
+                  }}
                   className="mt-2 min-h-12 w-full border border-white/[0.08] bg-[#020202] px-3 text-sm text-white outline-none motion-safe:transition-colors motion-safe:duration-300 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   {events.length === 0 ? <option value="">No available events</option> : null}
@@ -261,6 +284,14 @@ export function TelegramBroadcastPanel({
               <p className="text-xs leading-5 text-white/45">
                 Sample: {(preview.sampleRecipients ?? []).map((recipient) => recipient.chat_id).join(", ") || "No recipients yet"}
               </p>
+              <p className="text-xs leading-5 text-white/45">Skipped: {preview.skippedCount ?? 0}</p>
+              {(preview.firstFailureReasons ?? []).length > 0 ? (
+                <ul className="grid gap-1 text-xs leading-5 text-red-100/80">
+                  {preview.firstFailureReasons?.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           ) : null}
 
@@ -268,8 +299,15 @@ export function TelegramBroadcastPanel({
             <div className="mt-5 grid gap-3 border border-primary/25 bg-primary/[0.035] p-4" aria-live="polite">
               <StatusBadge label="Send result" variant="success" size="sm" className="justify-self-start" />
               <p className="text-sm leading-6 text-white/70">
-                Sent {sendResult.sent ?? 0} of {sendResult.total ?? 0}. Failed: {sendResult.failed ?? 0}.
+                Sent: {sendResult.sent ?? 0}. Failed: {sendResult.failed ?? 0}. Skipped: {sendResult.skipped ?? 0}. Total: {sendResult.total ?? 0}.
               </p>
+              {(sendResult.firstFailureReasons ?? []).length > 0 ? (
+                <ul className="grid gap-1 text-xs leading-5 text-red-100/80">
+                  {sendResult.firstFailureReasons?.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              ) : null}
               <p className="break-all font-mono text-[10px] uppercase tracking-[0.12em] text-white/35">
                 {sendResult.broadcastId}
               </p>

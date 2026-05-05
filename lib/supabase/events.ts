@@ -39,6 +39,12 @@ function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(value);
 }
 
+function logPublicEventIssue(message: string, details: Record<string, unknown> = {}) {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(message, details);
+  }
+}
+
 export async function getPublicEventsWithFallback(): Promise<RaveeraEvent[]> {
   const supabase = getSupabaseServerClient();
 
@@ -52,8 +58,13 @@ export async function getPublicEventsWithFallback(): Promise<RaveeraEvent[]> {
     .in("status", PUBLIC_EVENT_STATUSES)
     .order("date", { ascending: true, nullsFirst: false });
 
-  if (error || !data || data.length === 0) {
-    return mockEvents;
+  if (error) {
+    logPublicEventIssue("Public events query failed", { reason: error.message });
+    return [];
+  }
+
+  if (!data || data.length === 0) {
+    return [];
   }
 
   const mappedEvents = (data as unknown as EventRow[]).map(mapDatabaseEvent);
@@ -71,9 +82,16 @@ export async function getPublicEventBySlugWithFallback(slug: string): Promise<Ra
       .in("status", PUBLIC_EVENT_STATUSES)
       .maybeSingle();
 
-    if (!error && data) {
+    if (error) {
+      logPublicEventIssue("Public event detail query failed", { slug, reason: error.message });
+      return null;
+    }
+
+    if (data) {
       return mapDatabaseEvent(data as unknown as EventRow);
     }
+
+    return null;
   }
 
   return mockEvents.find((event) => event.slug === slug) ?? null;

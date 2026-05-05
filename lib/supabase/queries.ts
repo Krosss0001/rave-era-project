@@ -27,7 +27,7 @@ export async function getPublishedEvents(supabase: TypedSupabaseClient) {
   return supabase
     .from("events")
     .select(EVENT_SELECT_FIELDS)
-    .in("status", ["live", "limited", "soon"])
+    .in("status", ["published", "live", "limited", "soon"])
     .order("date", { ascending: true });
 }
 
@@ -36,7 +36,7 @@ export async function getPublishedEventBySlug(supabase: TypedSupabaseClient, slu
     .from("events")
     .select(EVENT_SELECT_FIELDS)
     .eq("slug", slug)
-    .in("status", ["live", "limited", "soon"])
+    .in("status", ["published", "live", "limited", "soon"])
     .maybeSingle();
 }
 
@@ -52,7 +52,7 @@ export async function getMyTickets(supabase: TypedSupabaseClient) {
 
   return supabase
     .from("tickets")
-    .select("id,event_id,registration_id,ticket_code,qr_payload,status,payment_status,checked_in,created_at")
+    .select("id,event_id,registration_id,ticket_code,qr_payload,status,payment_status,checked_in,checked_in_at,created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 }
@@ -69,7 +69,7 @@ export async function getMyReferrals(supabase: TypedSupabaseClient) {
 
   return supabase
     .from("referrals")
-    .select("id,event_id,owner_user_id,created_by,code,source,label,clicks,telegram_starts,registrations,confirmed,created_at")
+    .select("id,event_id,owner_user_id,created_by,code,source,label,clicks,telegram_starts,registrations,confirmed,paid,checked_in,created_at,updated_at")
     .eq("owner_user_id", user.id)
     .order("created_at", { ascending: false });
 }

@@ -124,6 +124,7 @@ export function OrganizerEventPortfolio() {
 
     async function loadEvents() {
       if (!supabase) {
+        setEvents([]);
         setLoading(false);
         return;
       }
@@ -131,6 +132,7 @@ export function OrganizerEventPortfolio() {
       const roleState = await getCurrentRole(supabase);
 
       if (!roleState.user || !roleState.role) {
+        setEvents([]);
         setLoading(false);
         return;
       }
@@ -153,7 +155,7 @@ export function OrganizerEventPortfolio() {
         ...mapDatabaseEvent(event),
         dbStatus: event.status
       }));
-      const visibleEvents = mappedEvents.length > 0 ? mappedEvents : mockEvents;
+      const visibleEvents = eventResult.error ? [] : mappedEvents;
       const eventIds = visibleEvents.map((event) => event.id);
 
       const registrationResult =
@@ -189,6 +191,7 @@ export function OrganizerEventPortfolio() {
       setRegistrations(registrationResult.data ?? []);
       setTickets(ticketResult.data ?? []);
       setReferrals(referralResult.data ?? []);
+      setMessage(eventResult.error ? { type: "error", text: eventResult.error.message } : null);
       setLoading(false);
     }
 

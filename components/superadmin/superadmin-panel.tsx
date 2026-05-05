@@ -122,7 +122,7 @@ export function SuperadminPanel() {
       setRegistrations(registrationResult.data ?? []);
       setTickets(ticketResult.data ?? []);
       setMessage(
-        profileResult.error || referralResult.error || registrationResult.error || ticketResult.error
+        profileResult.error || eventResult.error || referralResult.error || registrationResult.error || ticketResult.error
           ? "Some superadmin data is not visible. Confirm the signed-in profile has the superadmin role and patch 013 is applied."
           : ""
       );
