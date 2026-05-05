@@ -18,11 +18,11 @@ export function ReferralClickTracker({ eventId, referralCode }: ReferralClickTra
     const storageKey = `referral_clicked_${eventId}_${code}`;
 
     try {
-      if (window.localStorage.getItem(storageKey)) {
+      if (window.sessionStorage.getItem(storageKey)) {
         return;
       }
 
-      window.localStorage.setItem(storageKey, "1");
+      window.sessionStorage.setItem(storageKey, "1");
     } catch {
       // Tracking should never block the event page.
     }

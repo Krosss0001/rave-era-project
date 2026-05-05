@@ -6,6 +6,13 @@ import { getCurrentRole } from "@/lib/auth/get-role";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getTelegramBotBaseUrl } from "@/lib/telegram";
+import {
+  buildReferralMetrics,
+  formatReferralConversion,
+  sortReferralMetricsByConversion,
+  sortReferralMetricsByRegistrations,
+  type ReferralMetric
+} from "@/lib/referral-analytics";
 import type { BroadcastAudience, Database } from "@/lib/supabase/types";
 import { TelegramBroadcastPanel } from "@/components/shared/telegram-broadcast-panel";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -140,36 +147,15 @@ export function SuperadminPanel() {
     counts[profile.role] = (counts[profile.role] ?? 0) + 1;
     return counts;
   }, {});
-  const referralStatsByKey = useMemo(() => {
-    const ticketMap = tickets.reduce<Record<string, TicketReferralRow[]>>((items, ticket) => {
-      if (ticket.registration_id) {
-        items[ticket.registration_id] = [...(items[ticket.registration_id] ?? []), ticket];
-      }
-
-      return items;
-    }, {});
-
-    return registrations.reduce<Record<string, { registrations: number; confirmed: number; paid: number; checkedIn: number }>>((items, registration) => {
-      if (!registration.referral_code) {
-        return items;
-      }
-
-      const key = `${registration.event_id}:${registration.referral_code}`;
-      const current = items[key] ?? { registrations: 0, confirmed: 0, paid: 0, checkedIn: 0 };
-      const registrationTickets = ticketMap[registration.id] ?? [];
-
-      items[key] = {
-        registrations: current.registrations + 1,
-        confirmed: current.confirmed + (registration.status === "confirmed" ? 1 : 0),
-        paid: current.paid + (registrationTickets.some((ticket) => ticket.payment_status === "paid") ? 1 : 0),
-        checkedIn: current.checkedIn + (registrationTickets.some((ticket) => ticket.checked_in || ticket.checked_in_at || ticket.status === "used") ? 1 : 0)
-      };
-
-      return items;
-    }, {});
-  }, [registrations, tickets]);
+  const referralMetrics = useMemo(() => buildReferralMetrics(referrals, registrations, tickets), [referrals, registrations, tickets]);
+  const referralMetricsByRegistrations = useMemo(() => sortReferralMetricsByRegistrations(referralMetrics).slice(0, 5), [referralMetrics]);
+  const referralMetricsByConversion = useMemo(() => sortReferralMetricsByConversion(referralMetrics).slice(0, 5), [referralMetrics]);
   const selectedReferralEvent = events.find((event) => event.id === referralForm.eventId) ?? null;
   const previewLinks = selectedReferralEvent && referralForm.code ? buildReferralLinks(selectedReferralEvent, referralForm.code) : null;
+
+  function getEventForMetric(metric: ReferralMetric) {
+    return events.find((event) => event.id === metric.eventId) ?? null;
+  }
 
   function updateReferralCode(value: string) {
     setReferralForm((current) => ({
@@ -393,6 +379,51 @@ export function SuperadminPanel() {
           </div>
         </form>
 
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {([
+            ["Top referral codes by registrations", referralMetricsByRegistrations],
+            ["Top referral codes by conversion", referralMetricsByConversion]
+          ] as const).map(([title, items]) => (
+            <div key={title} className="border border-white/[0.05] bg-[#030303] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">{title}</p>
+                <StatusBadge label={`${items.length} ranked`} variant={items.length > 0 ? "success" : "neutral"} size="sm" />
+              </div>
+              {loading ? (
+                <div className="mt-4 grid gap-2">
+                  {[0, 1, 2].map((item) => (
+                    <div key={item} className="h-12 bg-white/[0.035] motion-safe:animate-pulse" />
+                  ))}
+                </div>
+              ) : items.length > 0 ? (
+                <div className="mt-4 grid gap-2">
+                  {items.map((metric, index) => {
+                    const event = getEventForMetric(metric);
+
+                    return (
+                      <div key={`${title}-${metric.key}`} className="grid gap-3 border border-white/[0.05] bg-[#020202] p-3 sm:grid-cols-[2rem_minmax(0,1fr)_auto] sm:items-center">
+                        <p className="font-mono text-xs text-white/35">#{index + 1}</p>
+                        <div className="min-w-0">
+                          <p className="break-words font-mono text-sm font-semibold text-white">{metric.code}</p>
+                          <p className="mt-1 truncate text-xs text-white/42">{event?.title ?? "Unknown event"} / {metric.source}</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-right font-mono text-xs tabular-nums text-white/62">
+                          <span>{metric.registrations} regs</span>
+                          <span>{formatReferralConversion(metric.conversionRate)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mt-4 border border-white/[0.05] bg-[#020202] p-4 text-sm leading-6 text-white/45">
+                  No referral activity yet. Create links or share event URLs with a ref code to start the leaderboard.
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+
         <div className="mt-6 overflow-x-auto border border-white/[0.05] bg-[#030303] [scrollbar-width:thin]">
           {loading ? (
             <div className="grid gap-3 p-4 md:grid-cols-4">
@@ -400,7 +431,7 @@ export function SuperadminPanel() {
                 <div key={item} className="h-20 bg-white/[0.035] motion-safe:animate-pulse" />
               ))}
             </div>
-          ) : referrals.length > 0 ? (
+          ) : referralMetrics.length > 0 ? (
             <table className="w-full min-w-[1180px] text-left text-xs">
               <thead className="border-b border-white/[0.05] font-mono uppercase tracking-[0.13em] text-white/[0.34]">
                 <tr>
@@ -412,40 +443,33 @@ export function SuperadminPanel() {
                   <th className="px-4 py-3 font-medium">Confirmed</th>
                   <th className="px-4 py-3 font-medium">Paid</th>
                   <th className="px-4 py-3 font-medium">Checked-in</th>
-                  <th className="px-4 py-3 font-medium">Conversion</th>
-                  <th className="px-4 py-3 font-medium">Website link</th>
-                  <th className="px-4 py-3 font-medium">Telegram link</th>
+                  <th className="px-4 py-3 font-medium">Conversion %</th>
+                  <th className="px-4 py-3 font-medium">Website link copy</th>
+                  <th className="px-4 py-3 font-medium">Telegram link copy</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.05]">
-                {referrals.map((referral) => {
-                  const event = events.find((item) => item.id === referral.event_id);
-                  const starts = referral.clicks + referral.telegram_starts;
-                  const calculatedStats = referral.event_id ? referralStatsByKey[`${referral.event_id}:${referral.code}`] : null;
-                  const registrationsCount = calculatedStats?.registrations ?? referral.registrations;
-                  const confirmedCount = calculatedStats?.confirmed ?? referral.confirmed;
-                  const paidCount = calculatedStats?.paid ?? referral.paid;
-                  const checkedInCount = calculatedStats?.checkedIn ?? referral.checked_in;
-                  const conversion = starts > 0 ? Math.round((registrationsCount / starts) * 100) : 0;
-                  const links = event ? buildReferralLinks(event, referral.code) : null;
+                {sortReferralMetricsByRegistrations(referralMetrics).map((metric) => {
+                  const event = getEventForMetric(metric);
+                  const links = event ? buildReferralLinks(event, metric.code) : null;
 
                   return (
-                    <tr key={referral.id} className="transition-colors hover:bg-primary/[0.018]">
+                    <tr key={metric.key} className="transition-colors hover:bg-primary/[0.018]">
                       <td className="px-4 py-4">
                         <p className="font-medium text-white">{event?.title ?? "Unknown event"}</p>
-                        <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-white/35">{event?.slug ?? referral.event_id?.slice(0, 8) ?? "-"}</p>
+                        <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-white/35">{event?.slug ?? metric.eventId.slice(0, 8)}</p>
                       </td>
                       <td className="px-4 py-4">
-                        <p className="font-mono text-sm font-semibold text-white">{referral.code}</p>
-                        <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-white/35">{referral.label || referral.source || "superadmin"}</p>
+                        <p className="font-mono text-sm font-semibold text-white">{metric.code}</p>
+                        <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-white/35">{metric.label || metric.source}</p>
                       </td>
-                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{referral.clicks}</td>
-                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{referral.telegram_starts}</td>
-                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{registrationsCount}</td>
-                      <td className="px-4 py-4 font-mono tabular-nums text-primary">{confirmedCount}</td>
-                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{paidCount}</td>
-                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{checkedInCount}</td>
-                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{conversion}%</td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{metric.clicks}</td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{metric.telegramStarts}</td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{metric.registrations}</td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-primary">{metric.confirmed}</td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{metric.paid}</td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{metric.checkedIn}</td>
+                      <td className="px-4 py-4 font-mono tabular-nums text-white/65">{formatReferralConversion(metric.conversionRate)}</td>
                       <td className="px-4 py-4">
                         {links ? (
                           <button
@@ -481,7 +505,7 @@ export function SuperadminPanel() {
             </table>
           ) : (
             <div className="p-5">
-              <p className="text-sm leading-6 text-white/45">No referral links yet. Create the first custom link above.</p>
+              <p className="text-sm leading-6 text-white/45">No referral analytics yet. Create a custom link above or share an event URL with a ref code.</p>
             </div>
           )}
         </div>

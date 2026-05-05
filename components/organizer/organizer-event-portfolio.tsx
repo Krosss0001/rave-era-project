@@ -4,13 +4,18 @@ import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Copy, CreditCard, Gauge, QrCode, Share2, Users } from "lucide-react";
-import { events as mockEvents, type RaveeraEvent } from "@/data/events";
+import type { RaveeraEvent } from "@/data/events";
 import { getCurrentRole } from "@/lib/auth/get-role";
 import { canManagePlatform } from "@/lib/auth/roles";
 import { calculateEventStatsFromRows } from "@/lib/event-stats";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { formatEventDate } from "@/lib/format";
 import { getPaymentPlaceholderCopy } from "@/lib/payment-placeholder";
+import {
+  buildReferralMetrics,
+  formatReferralConversion,
+  sortReferralMetricsByRegistrations
+} from "@/lib/referral-analytics";
 import { slugify } from "@/lib/slugify";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { EVENT_SELECT_FIELDS } from "@/lib/supabase/event-fields";
@@ -29,7 +34,7 @@ type TicketRow = Pick<
 >;
 type ReferralRow = Pick<
   Database["public"]["Tables"]["referrals"]["Row"],
-  "id" | "event_id" | "code" | "source" | "label" | "clicks" | "telegram_starts" | "registrations" | "confirmed"
+  "id" | "event_id" | "code" | "source" | "label" | "clicks" | "telegram_starts" | "registrations" | "confirmed" | "paid" | "checked_in"
 >;
 type EventRow = Database["public"]["Tables"]["events"]["Row"];
 type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
@@ -98,7 +103,7 @@ export function OrganizerEventPortfolio() {
   const { dictionary, language } = useLanguage();
   const router = useRouter();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
-  const [events, setEvents] = useState<OrganizerEvent[]>(mockEvents);
+  const [events, setEvents] = useState<OrganizerEvent[]>([]);
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
   const [tickets, setTickets] = useState<TicketRow[]>([]);
   const [referrals, setReferrals] = useState<ReferralRow[]>([]);
@@ -180,7 +185,7 @@ export function OrganizerEventPortfolio() {
         eventIds.length > 0
           ? await supabase
               .from("referrals")
-              .select("id,event_id,code,source,label,clicks,telegram_starts,registrations,confirmed")
+              .select("id,event_id,code,source,label,clicks,telegram_starts,registrations,confirmed,paid,checked_in")
               .in("event_id", eventIds)
           : { data: [] };
 
@@ -694,8 +699,11 @@ export function OrganizerEventPortfolio() {
     noAvailableActions: language === "ua" ? "Немає доступних дій" : "No available actions",
     referralTitle: language === "ua" ? "Реферальна аналітика" : "Referral analytics",
     referralClicks: language === "ua" ? "Реферальні кліки" : "Referral clicks",
+    referralTelegramStarts: language === "ua" ? "Telegram старти" : "Telegram starts",
     referralRegistrations: language === "ua" ? "Реферальні реєстрації" : "Referral registrations",
     referralConfirmed: language === "ua" ? "Підтверджені реферали" : "Confirmed referrals",
+    referralPaid: language === "ua" ? "Оплачені реферали" : "Paid referrals",
+    referralCheckedIn: language === "ua" ? "Check-in реферали" : "Checked-in referrals",
     topReferral: language === "ua" ? "Топ джерело" : "Top source",
     noReferralActivity: language === "ua" ? "Реферальної активності ще немає" : "No referral activity yet",
     copyReferralLink: language === "ua" ? "Копіювати реферальне посилання" : "Copy referral link",
@@ -1029,56 +1037,20 @@ export function OrganizerEventPortfolio() {
           const relatedRegistrations = registrations.filter((registration) => registration.event_id === event.id);
           const relatedTickets = tickets.filter((ticket) => ticket.event_id === event.id);
           const relatedReferrals = referrals.filter((referral) => referral.event_id === event.id);
-          const registrationsWithReferral = relatedRegistrations.filter((registration) => registration.referral_code);
-          const confirmedRegistrationsWithReferral = registrationsWithReferral.filter((registration) => registration.status === "confirmed");
-          const registrationReferralCounts = registrationsWithReferral.reduce<Record<string, { registrations: number; confirmed: number }>>((counts, registration) => {
-            const code = registration.referral_code;
-
-            if (code) {
-              const current = counts[code] ?? { registrations: 0, confirmed: 0 };
-              counts[code] = {
-                registrations: current.registrations + 1,
-                confirmed: current.confirmed + (registration.status === "confirmed" ? 1 : 0)
-              };
-            }
-
-            return counts;
-          }, {});
-          const referralCodes = Array.from(
-            new Set([event.slug, ...relatedReferrals.map((referral) => referral.code), ...Object.keys(registrationReferralCounts)])
-          );
-          const referralRowsByCode = new Map(relatedReferrals.map((referral) => [referral.code, referral]));
-          const referralLeaderboard = referralCodes
-            .map((code) => {
-              const referral = referralRowsByCode.get(code);
-              const registrationCounts = registrationReferralCounts[code];
-              const registrationsForCode = registrationCounts?.registrations ?? referral?.registrations ?? 0;
-              const confirmedForCode = registrationCounts?.confirmed ?? referral?.confirmed ?? 0;
-              const clicksForCode = referral?.clicks ?? 0;
-              const telegramStartsForCode = referral?.telegram_starts ?? 0;
-              const startsForCode = clicksForCode + telegramStartsForCode;
-              const conversion = startsForCode > 0 ? Math.round((registrationsForCode / startsForCode) * 100) : 0;
-
-              return {
-                code,
-                source: referral?.label ?? referral?.source ?? (code === event.slug ? "default" : "registration"),
-                clicks: startsForCode,
-                registrations: registrationsForCode,
-                confirmed: confirmedForCode,
-                conversion
-              };
-            })
-            .filter((referral) => referral.clicks > 0 || referral.registrations > 0 || referral.confirmed > 0 || referral.code === event.slug)
-            .sort((first, second) => second.confirmed - first.confirmed || second.registrations - first.registrations || second.clicks - first.clicks);
-          const topReferral = referralLeaderboard.find((referral) => referral.clicks > 0 || referral.registrations > 0 || referral.confirmed > 0);
-          const referralClicks = relatedReferrals.reduce((sum, referral) => sum + referral.clicks, 0);
-          const referralTelegramStarts = relatedReferrals.reduce((sum, referral) => sum + referral.telegram_starts, 0);
+          const referralMetrics = buildReferralMetrics(relatedReferrals, relatedRegistrations, relatedTickets);
+          const referralLeaderboard = sortReferralMetricsByRegistrations(referralMetrics)
+            .filter((referral) => referral.starts > 0 || referral.registrations > 0 || referral.confirmed > 0);
+          const topReferral = referralLeaderboard[0] ?? null;
+          const referralClicks = referralMetrics.reduce((sum, referral) => sum + referral.clicks, 0);
+          const referralTelegramStarts = referralMetrics.reduce((sum, referral) => sum + referral.telegramStarts, 0);
           const referralStarts = referralClicks + referralTelegramStarts;
-          const referralRegistrations = registrationsWithReferral.length;
-          const confirmedReferralRegistrations = confirmedRegistrationsWithReferral.length;
-          const referralConversion = referralStarts > 0 ? Math.round((referralRegistrations / referralStarts) * 100) : 0;
+          const referralRegistrations = referralMetrics.reduce((sum, referral) => sum + referral.registrations, 0);
+          const confirmedReferralRegistrations = referralMetrics.reduce((sum, referral) => sum + referral.confirmed, 0);
+          const paidReferralRegistrations = referralMetrics.reduce((sum, referral) => sum + referral.paid, 0);
+          const checkedInReferralRegistrations = referralMetrics.reduce((sum, referral) => sum + referral.checkedIn, 0);
+          const referralConversion = Math.round((referralRegistrations / Math.max(referralStarts, 1)) * 1000) / 10;
           const topReferralCode = topReferral?.code ?? null;
-          const hasReferralActivity = referralStarts > 0 || referralRegistrations > 0 || confirmedReferralRegistrations > 0 || Boolean(topReferralCode);
+          const hasReferralActivity = referralStarts > 0 || referralRegistrations > 0 || confirmedReferralRegistrations > 0 || paidReferralRegistrations > 0 || checkedInReferralRegistrations > 0 || Boolean(topReferralCode);
           const activeFilter = registrationFilterByEvent[event.id] ?? "all";
           const registrationRows = relatedRegistrations.map((registration) => {
             const registrationTickets = relatedTickets.filter((ticket) => ticket.registration_id === registration.id);
@@ -1180,7 +1152,7 @@ export function OrganizerEventPortfolio() {
               value: referralRegistrations.toString(),
               detail:
                 referralClicks > 0
-                  ? `${referralClicks} ${language === "ua" ? "кліків" : "clicks"} / ${referralConversion}% ${language === "ua" ? "конверсія" : "conversion"}`
+                  ? `${referralClicks} ${language === "ua" ? "кліків" : "clicks"} + ${referralTelegramStarts} TG / ${formatReferralConversion(referralConversion)} ${language === "ua" ? "конверсія" : "conversion"}`
                   : language === "ua"
                     ? "Реферальних кліків ще немає"
                     : "No referral clicks yet",
@@ -1238,12 +1210,15 @@ export function OrganizerEventPortfolio() {
                   <div className="min-w-0">
                     <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">{registrationCopy.referralTitle}</p>
                     {hasReferralActivity ? (
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                         {[
                           [registrationCopy.referralClicks, referralClicks.toString()],
+                          [registrationCopy.referralTelegramStarts, referralTelegramStarts.toString()],
                           [registrationCopy.referralRegistrations, referralRegistrations.toString()],
                           [registrationCopy.referralConfirmed, confirmedReferralRegistrations.toString()],
-                          ["Conversion / Конверсія", `${referralConversion}%`],
+                          [registrationCopy.referralPaid, paidReferralRegistrations.toString()],
+                          [registrationCopy.referralCheckedIn, checkedInReferralRegistrations.toString()],
+                          ["Conversion / Конверсія", formatReferralConversion(referralConversion)],
                           [registrationCopy.topReferral, topReferralCode ?? "-"]
                         ].map(([label, value]) => (
                           <div key={label} className="border border-white/[0.05] bg-[#020202] p-3">
@@ -1263,13 +1238,16 @@ export function OrganizerEventPortfolio() {
                         </p>
                       </div>
                       <div className="-mx-1 mt-3 overflow-x-auto [scrollbar-width:thin]">
-                        <table className="w-full min-w-[620px] text-left text-xs">
+                        <table className="w-full min-w-[860px] text-left text-xs">
                           <thead className="font-mono uppercase tracking-[0.13em] text-white/[0.34]">
                             <tr>
                               <th className="py-3 pr-4 font-medium">Code / source</th>
-                              <th className="py-3 pr-4 font-medium">Clicks</th>
+                              <th className="py-3 pr-4 font-medium">Website</th>
+                              <th className="py-3 pr-4 font-medium">Telegram</th>
                               <th className="py-3 pr-4 font-medium">Registrations</th>
                               <th className="py-3 pr-4 font-medium">Confirmed</th>
+                              <th className="py-3 pr-4 font-medium">Paid</th>
+                              <th className="py-3 pr-4 font-medium">Checked-in</th>
                               <th className="py-3 font-medium">Conversion</th>
                             </tr>
                           </thead>
@@ -1281,9 +1259,12 @@ export function OrganizerEventPortfolio() {
                                   <p className="mt-1 break-words font-mono text-[10px] uppercase tracking-[0.12em] text-white/[0.35]">{referral.source}</p>
                                 </td>
                                 <td className="py-3 pr-4 font-mono tabular-nums text-white/[0.62]">{referral.clicks}</td>
+                                <td className="py-3 pr-4 font-mono tabular-nums text-white/[0.62]">{referral.telegramStarts}</td>
                                 <td className="py-3 pr-4 font-mono tabular-nums text-white/[0.62]">{referral.registrations}</td>
                                 <td className="py-3 pr-4 font-mono tabular-nums text-primary">{referral.confirmed}</td>
-                                <td className="py-3 font-mono tabular-nums text-white/[0.62]">{referral.conversion}%</td>
+                                <td className="py-3 pr-4 font-mono tabular-nums text-white/[0.62]">{referral.paid}</td>
+                                <td className="py-3 pr-4 font-mono tabular-nums text-white/[0.62]">{referral.checkedIn}</td>
+                                <td className="py-3 font-mono tabular-nums text-white/[0.62]">{formatReferralConversion(referral.conversionRate)}</td>
                               </tr>
                             ))}
                           </tbody>

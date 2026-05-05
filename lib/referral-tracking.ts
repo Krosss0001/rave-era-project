@@ -70,7 +70,7 @@ async function syncReferralConversionCounters(
     }
 
     paid = (tickets ?? []).filter((ticket) => ticket.payment_status === "paid").length;
-    checkedIn = (tickets ?? []).filter((ticket) => ticket.checked_in || ticket.status === "used" || ticket.checked_in_at !== null).length;
+    checkedIn = (tickets ?? []).filter((ticket) => ticket.status === "used" || ticket.checked_in_at !== null).length;
   }
 
   const { error } = await supabase
