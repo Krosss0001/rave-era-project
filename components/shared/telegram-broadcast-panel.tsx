@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Send, UsersRound } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getTelegramBotDisplayName } from "@/lib/telegram";
 import type { BroadcastAudience } from "@/lib/supabase/types";
 import { StatusBadge } from "@/components/shared/status-badge";
 
@@ -91,6 +92,7 @@ export function TelegramBroadcastPanel({
   const eventRequired = requireEvent || isEventAudience(audience);
   const previewMessage = formatPreviewMessage({ message, event: eventRequired ? selectedEvent : null });
   const previewCount = preview?.estimatedRecipientCount ?? 0;
+  const botDisplayName = getTelegramBotDisplayName();
 
   useEffect(() => {
     if (eventRequired && !selectedEvent && events[0]) {
@@ -218,7 +220,7 @@ export function TelegramBroadcastPanel({
           <h2 className="mt-3 text-[clamp(1.85rem,9vw,3rem)] font-black uppercase leading-[0.98] text-white">{title}</h2>
           <p className="mt-5 max-w-xl text-sm leading-6 text-white/58">{description}</p>
           <p className="mt-4 max-w-xl border border-white/[0.06] bg-[#030303] px-4 py-3 text-xs leading-5 text-white/50">
-            Users must press /start in @Rave_era_group_bot before broadcasts can reach them.
+            Users must press /start in {botDisplayName} before broadcasts can reach them.
           </p>
           <div className="mt-8 border border-white/[0.06] bg-[#030303] p-4">
             <p className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-white/52 sm:tracking-[0.18em]">

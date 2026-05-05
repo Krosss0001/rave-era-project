@@ -198,7 +198,7 @@ export function OrganizerEventPortfolio() {
       const registrationError = "error" in registrationResult ? registrationResult.error : null;
       const ticketError = "error" in ticketResult ? ticketResult.error : null;
 
-      if (registrationError || ticketError) {
+      if ((registrationError || ticketError) && process.env.NODE_ENV !== "production") {
         console.warn("Organizer event stats query failed", {
           eventIds,
           registrationReason: registrationError?.message,
@@ -1326,7 +1326,7 @@ export function OrganizerEventPortfolio() {
                   <p className="font-mono text-sm uppercase tracking-[0.14em] text-primary sm:tracking-[0.18em]">{capacity}% capacity</p>
                   <div className="flex flex-wrap justify-start gap-2 sm:justify-end">
                     <Link
-                      href={`/check-in?event=${encodeURIComponent(event.id)}`}
+                      href="/check-in"
                       className="focus-ring inline-flex min-h-10 items-center gap-2 border border-white/[0.08] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-white/58 transition-colors hover:border-primary/50 hover:text-primary"
                     >
                       <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />

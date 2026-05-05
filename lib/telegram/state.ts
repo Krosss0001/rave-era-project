@@ -51,7 +51,9 @@ function logTelegramStateIssue(message: string, details: Record<string, unknown>
 }
 
 function logTelegramStateInfo(message: string, details: Record<string, unknown> = {}) {
-  console.info(message, details);
+  if (process.env.NODE_ENV !== "production") {
+    console.info(message, details);
+  }
 }
 
 export function getTelegramSupabaseClient() {

@@ -31,7 +31,13 @@ function isUuid(value: unknown) {
 }
 
 function logPublicEventIssue(message: string, details: Record<string, unknown> = {}) {
-  console.warn(message, details);
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(message, details);
+  }
+}
+
+function shouldUseMockEvents() {
+  return process.env.NODE_ENV !== "production";
 }
 
 function getSupabaseProjectRef() {
@@ -46,7 +52,7 @@ export async function getPublicEventsWithFallback(): Promise<RaveeraEvent[]> {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
-    return mockEvents;
+    return shouldUseMockEvents() ? mockEvents : [];
   }
 
   const { data, error } = await supabase
@@ -114,7 +120,7 @@ export async function getPublicEventBySlugWithFallback(slug: string): Promise<Ra
     return null;
   }
 
-  return mockEvents.find((event) => event.slug === slug) ?? null;
+  return shouldUseMockEvents() ? mockEvents.find((event) => event.slug === slug) ?? null : null;
 }
 
 async function enrichEventsWithStats(events: RaveeraEvent[]) {
@@ -193,12 +199,7 @@ async function getEventStatsFromServiceRole(event: RaveeraEvent, reason: string)
     return fallbackStats;
   }
 
-  logPublicEventIssue("RPC stats failed, using service fallback", {
-    eventId,
-    slug: event.slug,
-    reason,
-    supabaseProject: getSupabaseProjectRef()
-  });
+  logPublicEventIssue("RPC stats failed, using service fallback", { eventId, slug: event.slug, reason });
 
   const registrationResult = await supabase
     .from("registrations")
@@ -240,15 +241,6 @@ async function getEventStatsFromServiceRole(event: RaveeraEvent, reason: string)
 
   const fallbackStatsFromRows = calculateEventStatsFromRows(event, registrations as EventStatsRegistrationRow[], tickets);
 
-  logPublicEventIssue("Event stats service fallback response", {
-    eventId,
-    slug: event.slug,
-    registrationRows: registrations.length,
-    ticketRows: tickets.length,
-    totalRegistrations: fallbackStatsFromRows.total_registrations,
-    supabaseProject: getSupabaseProjectRef()
-  });
-
   return fallbackStatsFromRows;
 }
 
@@ -279,12 +271,6 @@ async function getPublicEventStatsByEventId(events: RaveeraEvent[]): Promise<Map
     return null;
   }
 
-  logPublicEventIssue("Public event stats RPC request", {
-    eventIds,
-    slugs: events.map((event) => event.slug),
-    supabaseProject: getSupabaseProjectRef()
-  });
-
   const { data, error } = await supabase.rpc("get_public_event_stats", { event_ids: eventIds });
 
   if (error || !data) {
@@ -296,13 +282,6 @@ async function getPublicEventStatsByEventId(events: RaveeraEvent[]): Promise<Map
   }
 
   const rows = data as RpcEventStatsRow[];
-  logPublicEventIssue("Public event stats RPC response", {
-    eventIds,
-    rowCount: rows.length,
-    firstRow: rows[0] ?? null,
-    supabaseProject: getSupabaseProjectRef()
-  });
-
   const eventById = new Map(events.map((event) => [normalizeEventIdKey(event.id), event]));
   const statsByEventId = new Map<string, EventDetailStats>();
 

@@ -7,7 +7,6 @@ import {
   ReferralPanel,
   RegistrationTable,
   SystemStatusRow,
-  SolanaReadinessPanel,
   TelegramStatusPanel
 } from "@/components/organizer/dashboard-panels";
 import { RoleGate } from "@/components/shared/role-gate";
@@ -29,7 +28,7 @@ export default function OrganizerPage() {
             <p className="org-reveal mt-6 max-w-2xl text-base font-light leading-7 text-white/[0.64] sm:mt-8 sm:text-lg sm:leading-8">
               <LocalizedText
                 ua="Преміальна панель для продажу квитків, реєстрацій, Telegram-підтверджень, рефералів і аналітики."
-                en="Premium growth control for ticket velocity, community signals, Telegram execution, and on-chain readiness."
+                en="Premium growth control for ticket velocity, community signals, Telegram execution, referrals, and analytics."
               />
             </p>
             <div className="mt-10 flex flex-wrap gap-x-10 gap-y-5 border-t border-white/[0.05] pt-6">
@@ -64,7 +63,6 @@ export default function OrganizerPage() {
           <div className="grid gap-8">
             <ReferralPanel />
             <TelegramStatusPanel />
-            <SolanaReadinessPanel />
           </div>
         </div>
         <style

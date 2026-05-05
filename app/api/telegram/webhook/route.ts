@@ -118,7 +118,9 @@ function logTelegramIssue(message: string, details: Record<string, unknown> = {}
 }
 
 function logTelegramInfo(message: string, details: Record<string, unknown> = {}) {
-  console.info(message, details);
+  if (process.env.NODE_ENV !== "production") {
+    console.info(message, details);
+  }
 }
 
 function normalizeInstagramNickname(value: string | undefined) {

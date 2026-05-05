@@ -8,7 +8,6 @@ import { buildTelegramUrl } from "@/lib/telegram";
 import { TelegramCta } from "@/components/events/telegram-cta";
 import { ReferralClickTracker } from "@/components/events/referral-click-tracker";
 import { ReferralBox } from "@/components/events/referral-box";
-import { WalletPlaceholder } from "@/components/events/wallet-placeholder";
 import { SafeEventImage } from "@/components/events/safe-event-image";
 import { LocalizedText } from "@/components/shared/localized-text";
 import { LocalizedEventDate } from "@/components/shared/localized-event-date";
@@ -303,7 +302,6 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
 
           <TelegramCta eventSlug={event.slug} referralCode={referralCode} />
           <ReferralBox path={`/events/${event.slug}`} activeReferral={referralCode} />
-          <WalletPlaceholder />
         </aside>
       </section>
 
