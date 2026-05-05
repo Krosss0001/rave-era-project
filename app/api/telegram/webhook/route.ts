@@ -109,6 +109,10 @@ function logTelegramIssue(message: string, details: Record<string, unknown> = {}
   }
 }
 
+function logTelegramInfo(message: string, details: Record<string, unknown> = {}) {
+  console.info(message, details);
+}
+
 function normalizeInstagramNickname(value: string | undefined) {
   const normalized = value?.trim();
 
@@ -352,6 +356,12 @@ async function handleStart(message: TelegramMessage, payload: string | undefined
   const eventSlug = payloadDetails?.slug ?? null;
   const referralCode = payloadDetails?.referralCode ?? null;
 
+  logTelegramInfo("Telegram parsed start payload", {
+    payload: payloadDetails?.payload ?? payload ?? null,
+    eventSlug,
+    referralCode
+  });
+
   if (!eventSlug) {
     await showMainMenu(user.chatId, language);
     return;
@@ -363,7 +373,13 @@ async function handleStart(message: TelegramMessage, payload: string | undefined
     const copy = getTelegramCopy(language);
     logTelegramIssue("Telegram start payload event not found", {
       telegramUserId: user.telegramUserId,
-      eventSlug
+      eventSlug,
+      referralCode
+    });
+    logTelegramInfo("Telegram event lookup result", {
+      eventSlug,
+      referralCode,
+      found: false
     });
     await sendTelegramMessage(user.chatId, copy.eventMissing, {
       inlineKeyboard: [[{ text: copy.openSite, url: `${getAppUrl()}/events` }]]
@@ -371,13 +387,21 @@ async function handleStart(message: TelegramMessage, payload: string | undefined
     return;
   }
 
+  logTelegramInfo("Telegram event lookup result", {
+    eventSlug,
+    referralCode,
+    eventId: event.id,
+    found: true
+  });
+
   const session = await startSession(supabase, { ...user, language }, eventSlug, referralCode);
 
   if (!session.event_id) {
     const copy = getTelegramCopy(language);
     logTelegramIssue("Telegram start payload session missing event", {
       telegramUserId: user.telegramUserId,
-      eventSlug
+      eventSlug,
+      referralCode
     });
     await sendTelegramMessage(user.chatId, copy.eventMissing, {
       inlineKeyboard: [[{ text: copy.openSite, url: `${getAppUrl()}/events` }]]

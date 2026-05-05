@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildQrPayload, generateTicketCode } from "@/lib/tickets";
-import { incrementReferralCounters } from "@/lib/referral-tracking";
+import { cleanReferralCode, incrementReferralCounters } from "@/lib/referral-tracking";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import type { BotLanguage } from "@/lib/telegram/messages";
 import type { Database } from "@/lib/supabase/types";
@@ -50,6 +50,10 @@ function logTelegramStateIssue(message: string, details: Record<string, unknown>
   }
 }
 
+function logTelegramStateInfo(message: string, details: Record<string, unknown> = {}) {
+  console.info(message, details);
+}
+
 export function getTelegramSupabaseClient() {
   const supabase = getSupabaseServiceRoleClient();
 
@@ -67,13 +71,17 @@ export function parseStartPayloadDetails(value: string | undefined) {
 
   const payload = value.trim();
   const eventPayload = payload.startsWith("event_") ? payload.slice("event_".length) : payload;
-  const [slug, referralCode] = eventPayload.split("_ref_");
+  const referralMarker = "_ref_";
+  const referralIndex = eventPayload.indexOf(referralMarker);
+  const slug = (referralIndex >= 0 ? eventPayload.slice(0, referralIndex) : eventPayload).trim();
+  const referralCode = referralIndex >= 0 ? eventPayload.slice(referralIndex + referralMarker.length) : null;
 
   if (!slug) {
     return null;
   }
 
   return {
+    payload,
     slug,
     referralCode: referralCode?.trim() || null
   };
@@ -207,6 +215,7 @@ export async function startSession(
 
   if (existing) {
     return updateSession(supabase, existing.id, {
+      event_id: event?.id ?? existing.event_id,
       event_slug: eventSlug,
       step: "started",
       telegram_username: user.telegramUsername,
@@ -231,7 +240,7 @@ export async function startSession(
     .single();
 
   if (error && isUndefinedColumn(error)) {
-    const fallback = await supabase
+    const { data: languageFallbackData, error: languageFallbackError } = await supabase
       .from("telegram_registration_sessions")
       .insert({
         telegram_user_id: user.telegramUserId,
@@ -239,13 +248,33 @@ export async function startSession(
         event_id: event?.id ?? null,
         event_slug: eventSlug,
         step: "started",
-        telegram_username: user.telegramUsername
+        telegram_username: user.telegramUsername,
+        referral_code: referralCode ?? null
       })
       .select("*")
       .single();
 
-    if (!fallback.error && fallback.data) {
-      return fallback.data;
+    if (!languageFallbackError && languageFallbackData) {
+      return languageFallbackData;
+    }
+
+    if (isUndefinedColumn(languageFallbackError)) {
+      const fallback = await supabase
+        .from("telegram_registration_sessions")
+        .insert({
+          telegram_user_id: user.telegramUserId,
+          chat_id: user.chatId,
+          event_id: event?.id ?? null,
+          event_slug: eventSlug,
+          step: "started",
+          telegram_username: user.telegramUsername
+        })
+        .select("*")
+        .single();
+
+      if (!fallback.error && fallback.data) {
+        return fallback.data;
+      }
     }
   }
 
@@ -293,19 +322,36 @@ export async function updateSession(
     .single();
 
   if (error && isUndefinedColumn(error)) {
-    const { language: _language, referral_code: _referralCode, ...fallbackValues } = values;
-    const fallback = await supabase
+    const { language: _language, ...languageFallbackValues } = values;
+    const languageFallback = await supabase
       .from("telegram_registration_sessions")
       .update({
-        ...fallbackValues,
+        ...languageFallbackValues,
         updated_at: new Date().toISOString()
       })
       .eq("id", sessionId)
       .select("*")
       .single();
 
-    if (!fallback.error && fallback.data) {
-      return fallback.data;
+    if (!languageFallback.error && languageFallback.data) {
+      return languageFallback.data;
+    }
+
+    if (isUndefinedColumn(languageFallback.error)) {
+      const { referral_code: _referralCode, ...fallbackValues } = languageFallbackValues;
+      const fallback = await supabase
+        .from("telegram_registration_sessions")
+        .update({
+          ...fallbackValues,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", sessionId)
+        .select("*")
+        .single();
+
+      if (!fallback.error && fallback.data) {
+        return fallback.data;
+      }
     }
   }
 
@@ -376,6 +422,63 @@ async function getTicketForRegistration(supabase: SupabaseClient<Database>, regi
   }
 
   return data;
+}
+
+type TelegramRegistration = Pick<
+  Database["public"]["Tables"]["registrations"]["Row"],
+  "id" | "event_id" | "user_id" | "status" | "referral_code"
+>;
+
+async function saveRegistrationReferralFromSession(
+  supabase: SupabaseClient<Database>,
+  registration: TelegramRegistration,
+  session: TelegramSession
+) {
+  const referralCode = cleanReferralCode(session.referral_code);
+
+  if (!session.event_id || !referralCode || registration.referral_code?.trim()) {
+    return { registration, saved: false };
+  }
+
+  const { data, error } = await supabase
+    .from("registrations")
+    .update({ referral_code: referralCode })
+    .eq("id", registration.id)
+    .or("referral_code.is.null,referral_code.eq.")
+    .select("id,event_id,user_id,status,referral_code")
+    .maybeSingle();
+
+  if (error) {
+    if (!isUndefinedColumn(error)) {
+      throw error;
+    }
+
+    logTelegramStateIssue("Telegram registration referral save skipped because column is missing", {
+      eventId: session.event_id,
+      referralCode,
+      code: error.code
+    });
+    return { registration, saved: false };
+  }
+
+  if (!data) {
+    logTelegramStateInfo("Telegram registration referral not overwritten", {
+      eventSlug: session.event_slug,
+      eventId: session.event_id,
+      referralCode,
+      registrationId: registration.id
+    });
+    return { registration, saved: false };
+  }
+
+  logTelegramStateInfo("Telegram registration referral saved", {
+    eventSlug: session.event_slug,
+    eventId: session.event_id,
+    referralCode,
+    registrationId: data.id
+  });
+
+  return { registration: data, saved: true };
 }
 
 async function createTicket(supabase: SupabaseClient<Database>, registrationId: string, eventId: string) {
@@ -452,10 +555,16 @@ export async function createPendingRegistrationAndTicket(
   }
 
   const existingRegistration = await getRegistrationForSession(supabase, session);
-  const registration = existingRegistration || (await insertRegistration(supabase, session));
+  const insertedRegistration = existingRegistration ? null : await insertRegistration(supabase, session);
+  const referralResult = await saveRegistrationReferralFromSession(
+    supabase,
+    (existingRegistration || insertedRegistration)!,
+    session
+  );
+  const registration = referralResult.registration;
   const ticket = await createTicket(supabase, registration.id, session.event_id);
 
-  if (!existingRegistration && session.referral_code) {
+  if ((!existingRegistration || referralResult.saved) && session.referral_code) {
     await incrementReferralCounters(supabase, session.event_id, session.referral_code, { registrations: 1 }, "telegram_registration");
   }
 
@@ -533,10 +642,19 @@ async function insertRegistration(supabase: SupabaseClient<Database>, session: T
       referral_code: session.referral_code ?? null,
       status: "pending"
     })
-    .select("id,event_id,user_id,status")
+    .select("id,event_id,user_id,status,referral_code")
     .single();
 
   if (!error && data) {
+    if (data.referral_code) {
+      logTelegramStateInfo("Telegram registration referral saved", {
+        eventSlug: session.event_slug,
+        eventId: session.event_id,
+        referralCode: data.referral_code,
+        registrationId: data.id
+      });
+    }
+
     return data;
   }
 
@@ -559,11 +677,40 @@ async function insertRegistration(supabase: SupabaseClient<Database>, session: T
         referral_code: session.referral_code ?? null,
         status: "pending"
       })
-      .select("id,event_id,user_id,status")
+      .select("id,event_id,user_id,status,referral_code")
       .single();
 
     if (!fallback.error && fallback.data) {
+      if (fallback.data.referral_code) {
+        logTelegramStateInfo("Telegram registration referral saved", {
+          eventSlug: session.event_slug,
+          eventId: session.event_id,
+          referralCode: fallback.data.referral_code,
+          registrationId: fallback.data.id
+        });
+      }
+
       return fallback.data;
+    }
+
+    if (isUndefinedColumn(fallback.error)) {
+      const referralFallback = await supabase
+        .from("registrations")
+        .insert({
+          event_id: session.event_id!,
+          user_id: null,
+          name: session.name,
+          email,
+          telegram_username: session.telegram_username,
+          telegram_user_id: session.telegram_user_id,
+          status: "pending"
+        })
+        .select("id,event_id,user_id,status")
+        .single();
+
+      if (!referralFallback.error && referralFallback.data) {
+        return { ...referralFallback.data, referral_code: null };
+      }
     }
 
     logTelegramStateIssue("Telegram registration fallback insert failed", {
