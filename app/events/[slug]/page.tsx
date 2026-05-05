@@ -6,6 +6,7 @@ import { organizer } from "@/data/organizers";
 import { getEventDetailStatsWithFallback, getPublicEventBySlugWithFallback } from "@/lib/supabase/events";
 import { buildTelegramUrl } from "@/lib/telegram";
 import { TelegramCta } from "@/components/events/telegram-cta";
+import { EventShareActions } from "@/components/events/event-share-actions";
 import { ReferralClickTracker } from "@/components/events/referral-click-tracker";
 import { ReferralBox } from "@/components/events/referral-box";
 import { SafeEventImage } from "@/components/events/safe-event-image";
@@ -162,6 +163,15 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/42">
                 <LocalizedText ua="Реєстрація проходить через Telegram-бот." en="Registration continues in the Telegram bot." />
               </p>
+            </div>
+            <div className="mt-4">
+              <EventShareActions
+                title={event.title}
+                path={`/events/${event.slug}`}
+                startsAt={event.date}
+                location={locationLabel}
+                referralCode={referralCode}
+              />
             </div>
           </div>
 

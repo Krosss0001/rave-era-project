@@ -62,7 +62,7 @@ export const TELEGRAM_COPY = {
   registerButton: "Зареєструватись",
   openOnSite: "Відкрити на сайті",
   openEvent: "Відкрити подію",
-  shareButton: "Поділитися",
+  shareButton: "Invite friends",
   showQr: "Показати QR",
   qrStatusLabel: "QR",
   qrAvailable: "доступний",

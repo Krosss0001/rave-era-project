@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Copy, Share2 } from "lucide-react";
 import { getCurrentRole, type AuthProfile } from "@/lib/auth/get-role";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { getPaymentPlaceholderCopy } from "@/lib/payment-placeholder";
+import { buildReferralUrl } from "@/lib/referral";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 import { TicketQr } from "@/components/shared/ticket-qr";
@@ -39,6 +41,7 @@ export function UserDashboard() {
   const [ticketEvents, setTicketEvents] = useState<Record<string, EventSummary>>({});
   const [referrals, setReferrals] = useState<ReferralRow[]>([]);
   const [visibleQrTicketId, setVisibleQrTicketId] = useState<string | null>(null);
+  const [copiedReferral, setCopiedReferral] = useState(false);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -164,6 +167,25 @@ export function UserDashboard() {
       : language === "ua"
         ? "Реферальне посилання ще не створено"
         : "No referral link yet";
+  const primaryReferralUrl =
+    primaryReferral?.code && primaryReferralEvent?.slug
+      ? buildReferralUrl(`/events/${primaryReferralEvent.slug}`, primaryReferral.code)
+      : "";
+  const invitedCount = referrals.reduce((total, referral) => total + Number(referral.registrations ?? 0), 0);
+
+  async function copyPrimaryReferral() {
+    if (!primaryReferralUrl) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(primaryReferralUrl);
+      setCopiedReferral(true);
+      window.setTimeout(() => setCopiedReferral(false), 1400);
+    } catch {
+      setCopiedReferral(false);
+    }
+  }
 
   return (
     <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.72fr)] lg:gap-10">
@@ -328,11 +350,25 @@ export function UserDashboard() {
 
         <section className="border-y border-white/[0.05] bg-[#020202] py-8">
           <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.dashboard.referralLink}</p>
-          <div className="mt-6 border border-white/[0.05] bg-[#030303] p-4">
-            <p className="break-all font-mono text-xs text-white/50">
-              {primaryReferralPath}
+          <div className="mt-4 border border-primary/25 bg-primary/[0.035] px-4 py-3">
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+              {language === "ua" ? `Ви запросили ${invitedCount} людей` : `You invited ${invitedCount} people`}
             </p>
           </div>
+          <div className="mt-6 border border-white/[0.05] bg-[#030303] p-4">
+            <p className="break-all font-mono text-xs text-white/50">
+              {primaryReferralUrl || primaryReferralPath}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={copyPrimaryReferral}
+            disabled={!primaryReferralUrl}
+            className="focus-ring mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 border border-primary/45 bg-primary/[0.025] px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-primary transition-[border-color,background-color,color,opacity] hover:bg-primary hover:text-black disabled:cursor-not-allowed disabled:border-white/[0.08] disabled:text-white/[0.28] disabled:hover:bg-transparent disabled:hover:text-white/[0.28]"
+          >
+            {copiedReferral ? <Copy className="h-4 w-4" aria-hidden="true" /> : <Share2 className="h-4 w-4" aria-hidden="true" />}
+            {copiedReferral ? (language === "ua" ? "Скопійовано" : "Copied") : (language === "ua" ? "Копіювати посилання" : "Copy referral link")}
+          </button>
           <p className="mt-4 text-sm leading-6 text-white/45">
             {dictionary.dashboard.referralCopy}
           </p>

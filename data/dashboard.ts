@@ -22,19 +22,19 @@ export const metrics = {
 
 export const aiSuggestions = [
   {
-    prompt: "How do I sell the last 100 tickets?",
+    prompt: "How to increase registrations?",
     response:
-      "Push a 6-hour referral sprint for Noir Signal. RAVE-ANNA has the strongest conversion, so give that source first access to a group bundle and send one Telegram reminder at 19:00."
+      "Push a 6-hour referral sprint around Noir Signal. RAVE-ANNA has the strongest conversion, so lead with that source, make Telegram the primary CTA, and repeat the capacity signal before 19:00."
   },
   {
-    prompt: "Draft a Telegram announcement",
+    prompt: "Write Telegram post",
     response:
       "Noir Signal is 74% filled. Final ticket wave is open now: premium production, limited capacity, confirmation in Telegram. Bring your referral link if you want your group on the list."
   },
   {
-    prompt: "Which referral source is strongest?",
+    prompt: "Best referral strategy?",
     response:
-      "RAVE-ANNA is strongest: 142 clicks, 38 registrations, and 31 confirmed. It is converting better than the general campaign and should be prioritized for the next event."
+      "Prioritize RAVE-ANNA first, then give Crew Drop a short second wave. RAVE-ANNA has 142 clicks, 38 registrations, and 31 confirmed, so it should carry the next invite push."
   },
   {
     prompt: "Summarize event performance",
