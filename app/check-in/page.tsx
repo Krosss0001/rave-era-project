@@ -6,7 +6,7 @@ import { BackgroundGrid, GlowField, ScanLine, VisualSystemStyles } from "@/compo
 export default function CheckInPage() {
   return (
     <RoleGate allowedRoles={["organizer", "admin", "superadmin"]}>
-      <div className="relative mx-auto max-w-7xl overflow-hidden bg-[#000000] px-3 py-8 sm:px-6 sm:py-20 md:px-10 lg:px-12 2xl:max-w-[1500px]">
+      <div className="mobile-safe-section relative mx-auto max-w-7xl overflow-hidden bg-[#000000] px-3 py-8 sm:px-6 sm:py-20 md:px-10 lg:px-12 2xl:max-w-[1500px]">
         <BackgroundGrid />
         <GlowField />
         <ScanLine className="opacity-40" />
@@ -14,7 +14,7 @@ export default function CheckInPage() {
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary sm:text-xs sm:tracking-[0.28em]">
             <LocalizedText ua="01. / Контроль входу" en="01. / Door system" />
           </p>
-          <h1 className="mobile-hero-title mt-5 text-[clamp(2.1rem,10vw,5rem)] font-black uppercase leading-[0.98] text-white sm:mt-7">
+          <h1 className="mobile-hero-title mt-5 text-[clamp(1.9rem,9vw,5rem)] font-black uppercase leading-[0.98] text-white sm:mt-7">
             Check-in
           </h1>
           <p className="mt-6 max-w-2xl text-base font-light leading-7 text-white/[0.64] sm:mt-8 sm:text-lg sm:leading-8">

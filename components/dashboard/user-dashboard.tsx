@@ -218,8 +218,8 @@ export function UserDashboard() {
 
   return (
     <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.72fr)] lg:gap-10">
-      <section className="order-2 border-y border-white/[0.05] bg-[#020202] py-6 lg:order-1 lg:py-8">
-        <div className="flex flex-col justify-between gap-5 px-1 sm:flex-row sm:items-end">
+      <section className="order-2 border-y border-white/[0.05] bg-[#020202] px-3 py-6 sm:px-5 lg:order-1 lg:py-8">
+        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.dashboard.profile}</p>
             <h2 className="mt-3 text-[clamp(2rem,10vw,3rem)] font-black uppercase leading-none text-white">
@@ -304,7 +304,7 @@ export function UserDashboard() {
       </section>
 
       <aside className="order-1 grid min-w-0 gap-6 lg:order-2">
-        <section className="border-y border-white/[0.05] bg-[#020202] py-6 lg:py-8">
+        <section className="border-y border-white/[0.05] bg-[#020202] px-3 py-6 sm:px-5 lg:py-8">
           <div className="flex items-center justify-between gap-3">
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">{dictionary.dashboard.myTickets}</p>
             <StatusBadge label={`${tickets.length}`} variant={tickets.length > 0 ? "success" : "neutral"} size="sm" />
@@ -414,7 +414,7 @@ export function UserDashboard() {
           </div>
         </section>
 
-        <section className="border-y border-white/[0.05] bg-[#020202] py-6 lg:py-8">
+        <section className="border-y border-white/[0.05] bg-[#020202] px-3 py-6 sm:px-5 lg:py-8">
           <p className="font-mono text-xs uppercase tracking-[0.26em] text-primary">{dictionary.dashboard.referralLink}</p>
           <div className="mt-4 border border-primary/25 bg-primary/[0.035] px-4 py-3">
             <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-primary">

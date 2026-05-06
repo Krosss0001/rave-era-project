@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 :root {
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --mobile-nav-height: 4.5rem;
   --background: 0 0% 0%;
   --foreground: 0 0% 96%;
   --muted: 0 0% 3%;
@@ -25,12 +28,13 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   text-size-adjust: 100%;
-  background: #000;
+  background: #020202;
   overflow-x: clip;
 }
 
 body {
   min-height: 100vh;
+  min-height: 100svh;
   background:
     radial-gradient(circle at 78% 6%, hsl(var(--primary) / 0.09), transparent 34rem),
     radial-gradient(circle at 12% 18%, hsl(var(--primary) / 0.045), transparent 30rem),
@@ -200,6 +204,7 @@ body::before {
 
 .mobile-page-shell {
   @apply px-3 py-10 sm:px-6 sm:py-16 md:px-10 md:py-20 lg:px-12;
+  padding-bottom: calc(2.5rem + var(--safe-bottom));
 }
 
 .mobile-hero-title {
@@ -229,8 +234,8 @@ body::before {
   }
 
   .mobile-page-shell {
-    padding-top: 2.5rem;
-    padding-bottom: 2.5rem;
+    padding-top: 2.75rem;
+    padding-bottom: calc(var(--mobile-nav-height) + var(--safe-bottom) + 2rem);
   }
 
   .mobile-hero-title {
@@ -240,6 +245,10 @@ body::before {
 
   .mobile-card {
     padding: 1rem;
+  }
+
+  .mobile-safe-section {
+    padding-bottom: calc(var(--mobile-nav-height) + var(--safe-bottom) + 1.5rem);
   }
 }
 

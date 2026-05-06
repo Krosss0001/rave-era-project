@@ -57,7 +57,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
         <LanguageProvider>
           <Header />
-          <main className="pb-20 md:pb-0">{children}</main>
+          <main className="pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+1.25rem)] md:pb-0">{children}</main>
           <Footer />
           <PwaInstallPrompt />
           <MobileBottomNav />

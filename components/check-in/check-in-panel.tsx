@@ -506,7 +506,7 @@ export function CheckInPanel() {
 
   return (
     <section className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,0.76fr)_minmax(0,1fr)] lg:gap-8">
-      <form onSubmit={validateTicket} className="border-y border-white/[0.05] bg-[#020202] py-6 sm:py-8">
+      <form onSubmit={validateTicket} className="border-y border-white/[0.05] bg-[#020202] px-3 py-6 sm:px-5 sm:py-8">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary sm:tracking-[0.22em]">{copy.lookup}</p>
@@ -583,7 +583,7 @@ export function CheckInPanel() {
         ) : null}
       </form>
 
-      <div className="border-y border-white/[0.05] bg-[#020202] py-6 sm:py-8">
+      <div className="border-y border-white/[0.05] bg-[#020202] px-3 py-6 sm:px-5 sm:py-8">
         {message ? (
           <div
             className={

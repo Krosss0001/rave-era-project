@@ -118,7 +118,7 @@ const partners = [
   "CRYPTO.KARATIST",
   "ZEEKR",
   "MAISON CASTEL",
-  "JACK DANIEL'S Old No. 7",
+  "JACK DANIELS Old No. 7",
   "HIKE",
   "SENOR CARTEL",
   "TOOSECCO",
@@ -192,19 +192,21 @@ function HeroVisualSystem() {
 }
 
 function PartnerMarquee() {
-  const repeatedPartners = [...partners, ...partners];
-
   return (
-    <div className="relative z-10 mt-8 overflow-hidden border-y border-white/[0.05] bg-black/40 py-3">
-      <div className="partner-marquee flex w-max gap-3 px-3 md:gap-4">
-        {repeatedPartners.map((partner, index) => (
-          <span
-            key={`${partner}-${index}`}
-            className="group inline-flex min-h-11 shrink-0 items-center gap-3 border border-white/[0.07] bg-[#020202] px-4 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38 transition duration-300 hover:border-[#00FF88]/30 hover:text-white hover:shadow-[0_0_28px_rgba(0,255,136,0.055)] sm:px-5 sm:text-xs sm:tracking-[0.22em]"
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-white/20 transition duration-300 group-hover:bg-[#00FF88] group-hover:shadow-[0_0_12px_rgba(0,255,136,0.65)]" aria-hidden="true" />
-            {partner}
-          </span>
+    <div className="relative z-10 mt-8 max-w-full overflow-hidden border-y border-white/[0.05] bg-black/60 py-3 [mask-image:linear-gradient(90deg,transparent,black_6%,black_94%,transparent)]">
+      <div className="partner-marquee-track flex w-max gap-3 px-3 md:gap-4">
+        {[0, 1].map((group) => (
+          <div key={group} className="partner-marquee-group flex shrink-0 gap-3 md:gap-4" aria-hidden={group === 1}>
+            {partners.map((partner) => (
+              <span
+                key={`${partner}-${group}`}
+                className="group inline-flex min-h-11 max-w-[82vw] shrink-0 items-center gap-3 border border-white/[0.07] bg-[#020202] px-4 font-mono text-[10px] font-semibold uppercase leading-4 tracking-[0.14em] text-white/48 transition duration-300 hover:border-[#00FF88]/30 hover:text-white hover:shadow-[0_0_28px_rgba(0,255,136,0.055)] sm:max-w-none sm:px-5 sm:text-xs sm:tracking-[0.22em]"
+              >
+                <span className="h-1.5 w-1.5 shrink-0 bg-[#00FF88]/65 transition duration-300 group-hover:bg-[#00FF88] group-hover:shadow-[0_0_12px_rgba(0,255,136,0.65)]" aria-hidden="true" />
+                <span className="whitespace-nowrap">{partner}</span>
+              </span>
+            ))}
+          </div>
         ))}
       </div>
     </div>
@@ -686,8 +688,9 @@ export default function HomePage() {
             .event-plane.rotate-\\[-7deg\\] { --plane-rotate: -7deg; }
             .event-plane.rotate-\\[6deg\\] { --plane-rotate: 6deg; }
             .event-plane.rotate-\\[4deg\\] { --plane-rotate: 4deg; }
-            .partner-marquee {
-              animation: marquee 34s linear infinite;
+            .partner-marquee-track {
+              animation: marquee 42s linear infinite;
+              will-change: transform;
             }
             @supports (animation-timeline: view()) {
               .scroll-reveal {
@@ -718,7 +721,7 @@ export default function HomePage() {
               .orbit-ring,
               .orbit-dot,
               .event-plane,
-              .partner-marquee,
+              .partner-marquee-track,
               .scroll-reveal,
               .scroll-card,
               .scroll-line {
@@ -726,18 +729,20 @@ export default function HomePage() {
                 transform: none;
                 animation: none;
               }
-              .partner-marquee {
+              .partner-marquee-track {
                 flex-wrap: wrap;
                 width: auto;
+                transform: none;
+              }
+              .partner-marquee-group {
+                flex-wrap: wrap;
+                justify-content: center;
+              }
+              .partner-marquee-group[aria-hidden="true"] {
+                display: none;
               }
             }
             @media (max-width: 767px) {
-              .partner-marquee {
-                width: auto;
-                flex-wrap: wrap;
-                justify-content: center;
-                animation: none;
-              }
               .hero-grid {
                 animation-duration: 38s;
                 opacity: 0.48;

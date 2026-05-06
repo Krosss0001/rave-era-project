@@ -31,7 +31,7 @@ export default async function EventsPage() {
         <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
           <div className="max-w-3xl">
             <SectionLabel index="00" label={<LocalizedText ua="Пошук подій" en="Event discovery" />} />
-            <h1 className="mobile-hero-title event-reveal mt-5 text-[clamp(2.1rem,10vw,6.75rem)] font-black uppercase leading-[0.98] text-white sm:leading-[0.86]">
+            <h1 className="mobile-hero-title event-reveal mt-5 text-[clamp(1.95rem,9vw,6.75rem)] font-black uppercase leading-[0.98] text-white sm:leading-[0.86]">
               <LocalizedText ua="Події Rave'era" en="Curated Rave'era events" />
             </h1>
             <p className="event-reveal mt-6 max-w-2xl text-base font-light leading-7 text-white/62 md:mt-7 md:text-lg">

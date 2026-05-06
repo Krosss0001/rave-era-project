@@ -104,7 +104,7 @@ export function EventBrowser({ events }: EventBrowserProps) {
               {copy.filters}
             </div>
 
-            <div className="-mx-1 flex flex-nowrap items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
+            <div className="-mx-3 flex flex-nowrap items-center gap-2 overflow-x-auto overscroll-x-contain px-3 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-1 sm:pb-0 [&::-webkit-scrollbar]:hidden">
               {categories.map((filter) => {
                 const active = category === filter.value;
 
@@ -126,7 +126,7 @@ export function EventBrowser({ events }: EventBrowserProps) {
               })}
             </div>
 
-            <div className="-mx-1 flex flex-nowrap items-center gap-2 overflow-x-auto border-t border-white/[0.05] px-1 pb-1 pt-4 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
+            <div className="-mx-3 flex flex-nowrap items-center gap-2 overflow-x-auto overscroll-x-contain border-t border-white/[0.05] px-3 pb-1 pt-4 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-1 sm:pb-0 [&::-webkit-scrollbar]:hidden">
               <button
                 type="button"
                 aria-pressed={city === "all"}
@@ -176,7 +176,7 @@ export function EventBrowser({ events }: EventBrowserProps) {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl border-t border-white/[0.05] px-3 py-12 sm:px-6 md:px-10 md:py-20 lg:px-12 2xl:max-w-[1500px]">
+      <section className="mobile-safe-section mx-auto max-w-7xl border-t border-white/[0.05] px-3 py-12 sm:px-6 md:px-10 md:py-20 lg:px-12 2xl:max-w-[1500px]">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <SectionLabel index="02" label={copy.upcoming} />

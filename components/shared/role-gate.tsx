@@ -71,12 +71,12 @@ export function RoleGate({ allowedRoles, children }: RoleGateProps) {
 
   if (loading || !state?.role || !stableAllowedRoles.includes(state.role)) {
     return (
-      <div className="min-h-[70vh] bg-[#000000] px-3 py-16 sm:px-6 sm:py-24 md:px-10 lg:px-12">
-        <div className="mx-auto max-w-7xl border-y border-white/[0.05] bg-[#020202] px-1 py-10 sm:py-12 2xl:max-w-[1500px]">
+      <div className="mobile-safe-section grid min-h-[calc(100svh-var(--mobile-nav-height))] place-items-center bg-[#000000] px-3 py-10 sm:px-6 sm:py-24 md:px-10 lg:px-12">
+        <div className="mx-auto w-full max-w-7xl border-y border-white/[0.05] bg-[#020202] px-3 py-8 sm:px-6 sm:py-12 2xl:max-w-[1500px]">
           <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-primary">
             {accessState === "checking" ? dictionary.access.check : dictionary.access.denied}
           </p>
-          <h1 className="mt-4 text-[clamp(2rem,12vw,3.75rem)] font-black uppercase leading-none text-white">
+          <h1 className="mobile-hero-title mt-4 text-[clamp(1.8rem,10vw,3.75rem)] font-black uppercase leading-[0.98] text-white sm:leading-none">
             {accessState === "checking" ? dictionary.access.verifying : dictionary.access.restricted}
           </h1>
           <p className="mt-5 max-w-xl text-sm leading-6 text-white/58">
@@ -87,7 +87,7 @@ export function RoleGate({ allowedRoles, children }: RoleGateProps) {
           {accessState !== "checking" ? (
             <Link
               href="/"
-              className="focus-ring mt-6 inline-flex min-h-11 items-center border border-primary px-5 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-primary hover:text-black active:scale-[0.98]"
+              className="focus-ring mt-6 inline-flex min-h-12 items-center justify-center border border-primary px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-primary motion-safe:transition-[background-color,color,transform] motion-safe:duration-500 hover:bg-primary hover:text-black active:scale-[0.98] sm:tracking-widest"
             >
               {dictionary.access.returnHome}
             </Link>
