@@ -55,7 +55,7 @@ export function MetricGrid() {
       {items.map(([label, value]) => (
         <div
           key={label}
-          className="group relative min-w-0 border border-white/[0.05] bg-[#020202] p-4 motion-safe:transition-[border-color,box-shadow,transform] motion-safe:duration-500 motion-safe:ease-out hover:border-primary/[0.35] hover:shadow-[0_0_28px_rgba(0,255,136,0.06)] motion-safe:hover:-translate-y-0.5 sm:p-5 lg:p-6"
+          className="app-native-panel group relative min-w-0 p-4 motion-safe:transition-[border-color,box-shadow,transform] motion-safe:duration-500 motion-safe:ease-out hover:border-primary/[0.35] hover:shadow-[0_0_28px_rgba(0,255,136,0.06)] motion-safe:hover:-translate-y-0.5 sm:p-5 lg:p-6"
         >
           <span className="absolute left-0 top-0 h-px w-0 bg-primary motion-safe:transition-[width] motion-safe:duration-500 motion-safe:ease-out group-hover:w-full" aria-hidden="true" />
           <p className="flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.14em] text-white/[0.45] sm:text-xs sm:tracking-[0.2em]">
@@ -94,7 +94,7 @@ export function SystemStatusRow() {
 export function RegistrationTable() {
   const { language } = useLanguage();
   return (
-    <section className="border-y border-white/[0.05] bg-[#020202] py-8">
+    <section className="app-native-panel px-3 py-6 sm:px-5 sm:py-8">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">{language === "ua" ? "Реєстрації" : "Registrations"}</p>
@@ -145,7 +145,7 @@ export function ReferralPanel() {
   const topReferral = referrals.reduce((top, referral) => (referral.confirmed > top.confirmed ? referral : top), referrals[0]);
 
   return (
-    <section className="border-y border-white/[0.05] bg-[#020202] py-8">
+    <section className="app-native-panel px-3 py-6 sm:px-5 sm:py-8">
       <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">{language === "ua" ? "Реферальний рушій" : "Referral engine"}</p>
       <h2 className="mt-3 text-[clamp(1.85rem,9vw,3rem)] font-black uppercase leading-[0.98] text-white">{language === "ua" ? "Топ джерела зростання" : "Top growth sources"}</h2>
       <div className="mt-8 border border-primary/25 bg-[#030303] p-5">
@@ -188,7 +188,7 @@ export function TelegramStatusPanel() {
     : ["Registration handoff active", "Payment status mocked", "Confirmation messages ready"];
 
   return (
-    <section className="border-y border-white/[0.05] bg-[#020202] py-8">
+    <section className="app-native-panel px-3 py-6 sm:px-5 sm:py-8">
       <div className="flex items-start gap-3">
         <span className="flex h-11 w-11 items-center justify-center border border-primary/30 bg-[#030303] text-primary">
           <RadioTower className="h-5 w-5" aria-hidden="true" />

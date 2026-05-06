@@ -40,7 +40,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
     <Link
       href={`/events/${event.slug}`}
       aria-label={`Open event ${event.title}`}
-      className={`focus-ring group relative grid min-w-0 overflow-hidden border border-white/[0.06] bg-[#020202] motion-safe:animate-[fadeUp_620ms_cubic-bezier(0.16,1,0.3,1)_both] motion-safe:transition-[transform,border-color,background-color,box-shadow] motion-safe:duration-300 motion-safe:ease-out hover:border-[#00FF88]/35 hover:bg-[#00FF88]/[0.025] hover:shadow-[0_0_42px_rgba(0,255,136,0.06)] motion-safe:hover:-translate-y-0.5 ${
+      className={`focus-ring app-native-panel group relative grid min-w-0 overflow-hidden motion-safe:animate-[fadeUp_620ms_cubic-bezier(0.16,1,0.3,1)_both] motion-safe:transition-[transform,border-color,background-color,box-shadow] motion-safe:duration-300 motion-safe:ease-out hover:border-[#00FF88]/35 hover:bg-[#00FF88]/[0.025] hover:shadow-[0_0_46px_rgba(0,255,136,0.08)] motion-safe:hover:-translate-y-0.5 ${
         featured ? "lg:grid-cols-[1.08fr_0.92fr]" : ""
       }`}
     >
@@ -48,7 +48,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
       <span className="pointer-events-none absolute left-3 top-3 z-20 h-4 w-4 border-l border-t border-[#00FF88]/45 opacity-0 motion-safe:transition-opacity motion-safe:duration-500 group-hover:opacity-100" aria-hidden="true" />
       <span className="pointer-events-none absolute bottom-3 right-3 z-20 h-4 w-4 border-b border-r border-[#00FF88]/45 opacity-0 motion-safe:transition-opacity motion-safe:duration-500 group-hover:opacity-100" aria-hidden="true" />
 
-      <div className={`relative overflow-hidden bg-black ${featured ? "aspect-[3/4] min-h-[300px] sm:aspect-[4/3] sm:min-h-[320px] lg:aspect-auto lg:min-h-[460px]" : "aspect-[3/4] min-h-[300px] sm:aspect-[4/3]"}`}>
+      <div className={`relative overflow-hidden bg-black ${featured ? "aspect-[3/4] min-h-[320px] sm:aspect-[4/3] sm:min-h-[320px] lg:aspect-auto lg:min-h-[460px]" : "aspect-[3/4] min-h-[320px] sm:aspect-[4/3]"}`}>
         <SafeEventImage
           src={event.image}
           alt={`${event.title} event poster`}
@@ -62,7 +62,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
           <LocalizedText ua={statusLabel.ua} en={statusLabel.en} />
         </p>
       </div>
-      <div className={`flex min-w-0 flex-col justify-between border-t border-white/[0.05] p-4 sm:p-5 ${featured ? "lg:border-l lg:border-t-0 lg:p-7" : ""}`}>
+      <div className={`flex min-w-0 flex-col justify-between border-t border-white/[0.05] p-5 ${featured ? "lg:border-l lg:border-t-0 lg:p-7" : ""}`}>
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">
@@ -109,8 +109,8 @@ export function EventCard({ event, featured = false }: EventCardProps) {
             />
           </div>
         </div>
-        <div className="mt-5 flex min-h-11 items-center justify-between gap-4 border-t border-white/[0.05] pt-4 font-mono text-[10px] font-bold uppercase tracking-[0.14em]">
-          <span className="text-white/45"><LocalizedText ua="Відкрити подію" en="Open event" /></span>
+        <div className="mt-5 flex min-h-12 items-center justify-between gap-4 border border-primary/25 bg-primary/[0.035] px-4 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.14em]">
+          <span className="text-primary"><LocalizedText ua="Відкрити подію" en="Open event" /></span>
           <span className="text-[#00FF88] motion-safe:transition-transform motion-safe:duration-300 group-hover:translate-x-1" aria-hidden="true">
             -&gt;
           </span>

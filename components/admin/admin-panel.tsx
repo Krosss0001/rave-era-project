@@ -68,8 +68,8 @@ export function AdminPanel() {
   }
 
   return (
-    <section className="border-y border-white/[0.05] bg-[#020202] py-8">
-      <div className="flex flex-col justify-between gap-5 px-1 sm:flex-row sm:items-end">
+    <section className="app-native-panel px-3 py-6 sm:px-5 sm:py-8">
+      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">{dictionary.admin.profiles}</p>
           <h2 className="mt-3 text-[clamp(1.85rem,9vw,3rem)] font-black uppercase leading-[0.98] text-white">

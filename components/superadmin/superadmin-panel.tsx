@@ -254,7 +254,7 @@ export function SuperadminPanel() {
         defaultAudience="all_telegram_users"
       />
 
-      <section className="border-y border-white/[0.05] bg-[#020202] py-8">
+      <section className="app-native-panel px-3 py-6 sm:px-5 sm:py-8">
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">Referral operations</p>
@@ -512,7 +512,7 @@ export function SuperadminPanel() {
       </section>
 
       <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-10">
-        <section className="border-y border-white/[0.05] bg-[#020202] py-8">
+        <section className="app-native-panel px-3 py-6 sm:px-5 sm:py-8">
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">{dictionary.superadmin.roleArchitecture}</p>
           <h2 className="mt-3 text-[clamp(1.85rem,9vw,3rem)] font-black uppercase leading-[0.98] text-white">
             {dictionary.superadmin.platformControl}
@@ -534,7 +534,7 @@ export function SuperadminPanel() {
           </div>
         </section>
 
-        <section className="border-y border-white/[0.05] bg-[#020202] py-8">
+        <section className="app-native-panel px-3 py-6 sm:px-5 sm:py-8">
           <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.26em]">Prepared actions</p>

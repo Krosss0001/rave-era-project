@@ -325,7 +325,7 @@ export function UserDashboard() {
                   !isFreeTicket;
 
                 return (
-                <div key={ticket.id} className="group relative min-w-0 overflow-hidden border border-white/[0.06] bg-[#030303] p-4 shadow-[0_0_44px_rgba(0,255,136,0.035)] transition-[border-color,background-color,transform] duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/[0.018]">
+                <div key={ticket.id} className="app-native-panel group relative min-w-0 overflow-hidden border-primary/15 p-4 shadow-[0_0_44px_rgba(0,255,136,0.04)] transition-[border-color,background-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-primary/[0.018] hover:shadow-[0_0_54px_rgba(0,255,136,0.08)]">
                   <span className="absolute left-0 top-0 h-px w-0 bg-primary transition-[width] duration-500 group-hover:w-full" aria-hidden="true" />
                   <div className="flex flex-col gap-3 border-b border-white/[0.05] pb-4 min-[390px]:flex-row min-[390px]:items-start min-[390px]:justify-between">
                     <div className="min-w-0">
@@ -355,7 +355,7 @@ export function UserDashboard() {
                       <StatusBadge label={paymentLabel} variant={getStatusBadgeVariant(ticket.payment_status)} size="sm" className="mt-1" />
                     </div>
                   </div>
-                  <div className="mt-4 border border-white/[0.05] bg-black px-3 py-2">
+                  <div className="mt-4 border border-primary/15 bg-black px-3 py-2">
                     <div className="flex flex-wrap items-center gap-2">
                       {hasConnectedWallet ? <StatusBadge label="On-chain ready" variant="success" size="sm" /> : null}
                       <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/42">NFT pass coming soon</span>
@@ -389,7 +389,7 @@ export function UserDashboard() {
                     </Link>
                   </div>
                   {isQrVisible ? (
-                    <div className="mt-4 border border-primary/20 bg-black p-3 shadow-[0_0_34px_rgba(0,255,136,0.045)]">
+                    <div className="mt-4 border border-primary/25 bg-black p-3 shadow-[0_0_40px_rgba(0,255,136,0.07)]">
                       <TicketQr
                         ticket={ticket}
                         locked={isQrLocked}

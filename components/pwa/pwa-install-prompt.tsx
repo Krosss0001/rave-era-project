@@ -88,11 +88,15 @@ export function PwaInstallPrompt() {
 
   return (
     <div className="fixed inset-x-3 bottom-[5.25rem] z-50 mx-auto max-w-md pb-[env(safe-area-inset-bottom)] md:bottom-5 md:left-auto md:right-5 md:mx-0">
-      <div className="border border-primary/30 bg-black/95 p-3 shadow-[0_0_48px_rgb(0_255_136/0.12)] backdrop-blur-xl">
+      <div className="app-native-panel border-primary/30 p-3 shadow-[0_0_48px_rgb(0_255_136/0.12)] backdrop-blur-xl">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+          <div className="flex min-w-0 gap-3">
+            <span className="app-logo-mark h-11 w-11 shrink-0">
+              <img src="/icons/icon-192.png" alt="" className="h-full w-full object-cover" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
             <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
-              Rave&apos;era PWA
+              Rave&apos;era App
             </p>
             <p className="mt-2 text-sm leading-5 text-white/68">
               {platform === "ios"
@@ -101,6 +105,7 @@ export function PwaInstallPrompt() {
                   ? "На Android: Install app / Встановити додаток"
                   : "Install Rave'era as a standalone app."}
             </p>
+            </div>
           </div>
           <button
             type="button"

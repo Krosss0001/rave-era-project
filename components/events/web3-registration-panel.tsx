@@ -285,7 +285,7 @@ export function Web3RegistrationPanel({ eventId, eventPrice, referralCode }: Web
   }
 
   return (
-    <section className="border border-white/[0.06] bg-[#020202] p-5">
+    <section className="app-native-panel border-primary/15 p-5">
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-primary/20 bg-primary/[0.035] text-primary">
           <Wallet className="h-4 w-4" aria-hidden="true" />
@@ -321,7 +321,7 @@ export function Web3RegistrationPanel({ eventId, eventPrice, referralCode }: Web
 
             {ticket ? (
               <div className="grid gap-4">
-                <div className="border border-white/[0.06] bg-black p-4">
+                <div className="border border-primary/20 bg-black p-4 shadow-[0_0_40px_rgba(0,255,136,0.055)]">
                   <div className="flex flex-col gap-3 min-[380px]:flex-row min-[380px]:items-start min-[380px]:justify-between">
                     <div>
                       <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{isQrUnlocked ? copy.confirmed : copy.reserved}</p>
@@ -341,11 +341,13 @@ export function Web3RegistrationPanel({ eventId, eventPrice, referralCode }: Web
                     <SolanaDevnetPayment ticketId={ticket.id} onConfirmed={handleSolanaPaymentConfirmed} title={copy.payTitle} />
                   </div>
                 ) : (
-                  <TicketQr
-                    ticket={ticket}
-                    locked={!isQrUnlocked}
-                    lockedMessage={copy.payNote}
-                  />
+                  <div className="border border-primary/20 bg-black p-3 shadow-[0_0_36px_rgba(0,255,136,0.055)]">
+                    <TicketQr
+                      ticket={ticket}
+                      locked={!isQrUnlocked}
+                      lockedMessage={copy.payNote}
+                    />
+                  </div>
                 )}
               </div>
             ) : (

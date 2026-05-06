@@ -96,7 +96,7 @@ export function EventBrowser({ events }: EventBrowserProps) {
 
   return (
     <>
-      <section className="mx-auto max-w-7xl px-3 pb-10 sm:px-6 md:px-10 lg:px-12 2xl:max-w-[1500px]">
+      <section className="sticky top-[calc(var(--safe-top)+3.5rem)] z-30 mx-auto max-w-7xl px-3 pb-6 sm:px-6 md:static md:px-10 lg:px-12 2xl:max-w-[1500px]">
         <div className="event-reveal border-y border-white/[0.05] bg-[#020202]/80 py-4 shadow-[0_0_70px_rgba(0,255,136,0.035)] backdrop-blur-sm">
           <div className="flex flex-col gap-4 px-1 sm:px-2">
             <div className="flex min-h-11 w-full items-center gap-3 font-mono text-[10px] uppercase tracking-[0.12em] text-white/58 sm:w-auto sm:tracking-[0.18em]">
@@ -116,7 +116,7 @@ export function EventBrowser({ events }: EventBrowserProps) {
                     onClick={() => setCategory(filter.value)}
                     className={`focus-ring min-h-11 shrink-0 border px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] motion-safe:transition-[border-color,color,background-color,transform,box-shadow] motion-safe:duration-200 active:scale-[0.98] sm:tracking-[0.16em] ${
                       active
-                        ? "border-[#00FF88] bg-[#00FF88]/10 text-[#00FF88] shadow-[0_0_22px_rgba(0,255,136,0.07)]"
+                        ? "border-[#00FF88] bg-[#00FF88]/14 text-[#00FF88] shadow-[0_0_24px_rgba(0,255,136,0.12)]"
                         : "border-white/[0.06] bg-black/35 text-white/52 hover:border-[#00FF88]/35 hover:text-white"
                     }`}
                   >
@@ -133,7 +133,7 @@ export function EventBrowser({ events }: EventBrowserProps) {
                 onClick={() => setCity("all")}
                 className={`focus-ring min-h-11 shrink-0 border px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] motion-safe:transition-[border-color,color,background-color,transform,box-shadow] motion-safe:duration-200 active:scale-[0.98] sm:tracking-[0.16em] ${
                   city === "all"
-                    ? "border-[#00FF88] bg-[#00FF88]/10 text-[#00FF88] shadow-[0_0_22px_rgba(0,255,136,0.07)]"
+                    ? "border-[#00FF88] bg-[#00FF88]/14 text-[#00FF88] shadow-[0_0_24px_rgba(0,255,136,0.12)]"
                     : "border-white/[0.06] bg-black/35 text-white/52 hover:border-[#00FF88]/35 hover:text-white"
                 }`}
               >
@@ -150,7 +150,7 @@ export function EventBrowser({ events }: EventBrowserProps) {
                     onClick={() => setCity(eventCity)}
                     className={`focus-ring min-h-11 shrink-0 border px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] motion-safe:transition-[border-color,color,background-color,transform,box-shadow] motion-safe:duration-200 active:scale-[0.98] sm:tracking-[0.16em] ${
                       active
-                        ? "border-[#00FF88] bg-[#00FF88]/10 text-[#00FF88] shadow-[0_0_22px_rgba(0,255,136,0.07)]"
+                        ? "border-[#00FF88] bg-[#00FF88]/14 text-[#00FF88] shadow-[0_0_24px_rgba(0,255,136,0.12)]"
                         : "border-white/[0.06] bg-black/35 text-white/52 hover:border-[#00FF88]/35 hover:text-white"
                     }`}
                   >

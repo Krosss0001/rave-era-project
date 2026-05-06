@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { LogIn, LogOut, Mail, ShieldCheck } from "lucide-react";
+import { LogIn, LogOut, Mail, MessageCircle, ShieldCheck, Wallet } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { useLanguage } from "@/lib/i18n/use-language";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -50,6 +50,16 @@ export function AuthControl({ onSessionChange }: AuthControlProps) {
           missingSupabase: "Supabase public env vars are not loaded.",
           sent: "Check your email for the login link."
         };
+  const appCopy = {
+    welcome: "Rave'era app access",
+    intro:
+      language === "ua"
+        ? "РћРґРЅРѕСЂР°Р·РѕРІРµ РїРѕСЃРёР»Р°РЅРЅСЏ РґР»СЏ РєРІРёС‚РєС–РІ, QR РґРѕСЃС‚СѓРїСѓ С– wallet-ready РїСЂРѕС„С–Р»СЋ."
+        : "Get a one-time link for tickets, QR access, and a wallet-ready profile.",
+    continueEmail: language === "ua" ? "Continue with Email" : "Continue with Email",
+    telegramSoon: language === "ua" ? "Continue with Telegram" : "Continue with Telegram",
+    walletLater: language === "ua" ? "Continue with Wallet" : "Continue with Wallet"
+  };
 
   useEffect(() => {
     if (!supabase) {
@@ -162,18 +172,49 @@ export function AuthControl({ onSessionChange }: AuthControlProps) {
       {open ? (
         <form
           onSubmit={sendMagicLink}
-          className="fixed left-3 right-3 top-[4.75rem] z-50 border border-white/[0.08] bg-[#020202] p-4 shadow-[0_0_50px_rgba(0,0,0,0.72)] sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[min(21rem,calc(100vw-1rem))]"
+          className="fixed inset-x-3 top-[calc(var(--safe-top)+4.75rem)] z-[120] border border-white/[0.08] bg-[#020202] p-4 shadow-[0_0_70px_rgba(0,0,0,0.86)] motion-safe:animate-[appPanelRise_180ms_cubic-bezier(0.16,1,0.3,1)_both] sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[min(23rem,calc(100vw-1rem))]"
         >
-          <div className="flex items-center justify-between gap-3">
-            <p className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
-              <Mail className="h-3.5 w-3.5" aria-hidden="true" />
-              {copy.emailLogin}
-            </p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="app-logo-mark h-11 w-11 shrink-0">
+                <img src="/icons/icon-192.png" alt="" className="h-full w-full object-cover" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">{appCopy.welcome}</p>
+                <h2 className="mt-2 text-xl font-black uppercase leading-none text-white">{copy.emailLogin}</h2>
+              </div>
+            </div>
             <StatusBadge label={configured ? "connected" : "env missing"} variant={configured ? "success" : "warning"} size="sm" />
           </div>
           <p className="mt-3 text-xs leading-5 text-white/48">
-            {copy.intro}
+            {appCopy.intro}
           </p>
+          <div className="mt-4 grid gap-2">
+            <button
+              type="button"
+              onClick={() => document.getElementById("auth-email")?.focus()}
+              className="focus-ring flex min-h-12 w-full items-center justify-between border border-primary/45 bg-primary/[0.06] px-3 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-primary"
+            >
+              <span className="inline-flex items-center gap-2"><Mail className="h-4 w-4" aria-hidden="true" />{appCopy.continueEmail}</span>
+              <span aria-hidden="true">-&gt;</span>
+            </button>
+            <button
+              type="button"
+              disabled
+              className="flex min-h-12 w-full cursor-not-allowed items-center justify-between border border-white/[0.06] bg-black px-3 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-white/30"
+            >
+              <span className="inline-flex items-center gap-2"><MessageCircle className="h-4 w-4" aria-hidden="true" />{appCopy.telegramSoon}</span>
+              <span>soon</span>
+            </button>
+            <button
+              type="button"
+              disabled
+              className="flex min-h-12 w-full cursor-not-allowed items-center justify-between border border-white/[0.06] bg-black px-3 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.13em] text-white/30"
+            >
+              <span className="inline-flex items-center gap-2"><Wallet className="h-4 w-4" aria-hidden="true" />{appCopy.walletLater}</span>
+              <span>after login</span>
+            </button>
+          </div>
           <label htmlFor="auth-email" className="mt-4 block font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">
             Email
           </label>

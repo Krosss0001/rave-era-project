@@ -28,13 +28,14 @@ export function MobileBottomNav() {
               key={`${href}-${label}`}
               href={href}
               aria-current={active ? "page" : undefined}
-              className={`focus-ring flex min-h-14 flex-col items-center justify-center gap-1 border px-1 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.08em] motion-safe:transition-[background-color,border-color,color,transform] motion-safe:duration-200 active:scale-[0.98] ${
+              className={`focus-ring relative flex min-h-14 flex-col items-center justify-center gap-1 overflow-hidden border px-1 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.08em] motion-safe:transition-[background-color,border-color,color,transform,box-shadow] motion-safe:duration-200 active:scale-[0.98] ${
                 active
-                  ? "border-primary/45 bg-primary/[0.1] text-primary"
+                  ? "border-primary/55 bg-primary/[0.12] text-primary shadow-[0_0_28px_rgba(0,255,136,0.11)]"
                   : "border-transparent text-white/50 hover:border-white/[0.08] hover:text-white"
               }`}
             >
-              <Icon className="h-4 w-4" aria-hidden="true" />
+              {active ? <span className="absolute inset-x-3 top-0 h-px bg-primary shadow-[0_0_14px_rgba(0,255,136,0.7)]" aria-hidden="true" /> : null}
+              <Icon className={`h-4 w-4 ${active ? "drop-shadow-[0_0_8px_rgba(0,255,136,0.55)]" : ""}`} aria-hidden="true" />
               <span>{label}</span>
             </Link>
           );
