@@ -163,8 +163,8 @@ export function SolanaDevnetPayment({ ticketId, onConfirmed, title = "Pay with S
   const busy = status === "creating" || status === "checking";
 
   return (
-    <div className="mt-4 border border-primary/20 bg-primary/[0.025] p-3">
-      <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:items-start min-[420px]:justify-between">
+    <div className="mt-4 border border-primary/20 bg-primary/[0.025] p-3 sm:p-4">
+      <div className="flex flex-col gap-4 min-[420px]:flex-row min-[420px]:items-start min-[420px]:justify-between">
         <div className="min-w-0">
           <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-primary">{title}</p>
           <div className="mt-2 grid gap-1 text-sm leading-6 text-white/58">
@@ -189,16 +189,16 @@ export function SolanaDevnetPayment({ ticketId, onConfirmed, title = "Pay with S
           <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
         ) : qrDataUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={qrDataUrl} alt="Solana Pay QR" className="h-24 w-24 shrink-0 bg-white p-1" />
+          <img src={qrDataUrl} alt="Solana Pay QR" className="h-28 w-28 shrink-0 self-center bg-white p-1 min-[420px]:h-24 min-[420px]:w-24" />
         ) : (
-          <div className="flex h-24 w-24 shrink-0 items-center justify-center border border-white/[0.06] bg-black">
+          <div className="flex h-28 w-28 shrink-0 self-center items-center justify-center border border-white/[0.06] bg-black min-[420px]:h-24 min-[420px]:w-24">
             <QrCode className="h-7 w-7 text-white/35" aria-hidden="true" />
           </div>
         )}
       </div>
 
       {intent?.payment_url ? (
-        <p className="mt-3 max-h-16 overflow-hidden break-all border border-white/[0.05] bg-black px-3 py-2 font-mono text-[10px] leading-5 text-white/38">
+        <p className="mt-3 max-h-24 overflow-y-auto break-all border border-white/[0.05] bg-black px-3 py-2 font-mono text-[10px] leading-5 text-white/38 [scrollbar-width:thin]">
           {intent.payment_url}
         </p>
       ) : null}
