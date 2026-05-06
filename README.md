@@ -1,6 +1,6 @@
 # Rave'era Platform
 
-Rave'era is a premium event platform for creating events, promoting events, managing registrations, Telegram confirmation, QR tickets, check-in, referrals, organizer analytics, and future payment flow.
+Rave'era is a premium event platform for creating events, promoting events, managing Telegram and on-site registrations, QR tickets, check-in, referrals, organizer analytics, and Solana Devnet demo payments.
 
 Deploy URL:
 
@@ -10,14 +10,15 @@ https://rave-era-project.vercel.app
 
 ## Current Features
 
-- Public event discovery with Supabase data and mock fallback
-- Event detail pages with responsive hero, safe image fallback, Telegram-only registration continuation, referrals, live Supabase stats, and organizer details
+- Public event discovery with Supabase data and safe empty states
+- Event detail pages with responsive hero, safe image fallback, Telegram primary registration, gated Phantom registration, referrals, live Supabase stats, and organizer details
 - UA/EN website language toggle with localStorage persistence
 - Ukrainian-only Telegram bot menu, event search, event deep links, registration flow, QR tickets, and My Tickets
 - Telegram broadcast preview and server-side sending for superadmins and organizer event campaigns
 - Ticket creation with QR payloads
 - Free-event path that confirms registration without payment
-- Paid-event path that reserves tickets with payment pending
+- Paid Telegram path that reserves tickets with payment pending
+- Paid Web3 path with Phantom registration and Solana Devnet payment verification
 - Role-gated organizer, admin, superadmin, dashboard, and check-in surfaces
 
 ## Stack
@@ -29,8 +30,8 @@ https://rave-era-project.vercel.app
 - Telegram Bot API webhook
 - Lightweight UA/EN website language foundation
 - Ukrainian-only Telegram bot flows
-- Mock fallback data for public pages
-- No real payment provider yet
+- Solana Devnet payment demo only
+- No mainnet or real-money payment provider yet
 
 ## Routes
 
@@ -55,6 +56,10 @@ NEXT_PUBLIC_APP_URL=https://rave-era-project.vercel.app
 NEXT_PUBLIC_TELEGRAM_BOT_URL=https://t.me/Rave_era_group_bot
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_public_anon_key
+NEXT_PUBLIC_SOLANA_NETWORK=devnet
+NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
+NEXT_PUBLIC_SOLANA_PAY_RECIPIENT=your_devnet_wallet
+NEXT_PUBLIC_SOLANA_DEVNET_UAH_PER_SOL=7000
 ```
 
 Server-only variables:
@@ -86,10 +91,13 @@ supabase/patches/012_referral_tracking.sql
 supabase/patches/013_referral_link_analytics.sql
 supabase/patches/013_superadmin_referral_links.sql
 supabase/patches/014_public_event_stats.sql
+supabase/patches/015_web3_profiles_and_wallets.sql
+supabase/patches/016_solana_payment_intents.sql
+supabase/patches/017_solana_payment_uah_conversion.sql
 ```
 
 Patch `006` creates server-managed Telegram registration sessions. Patch `007` adds Telegram identity linking plus `registrations.telegram_user_id`. Patch `008` keeps legacy language columns defaulted to `uk`. Patch `009` adds QR check-in support. Patch `010` adds Telegram broadcast tables, recipient tracking, and `telegram_users.is_subscribed`. Patch `011` adds `registrations.phone` and `registrations.instagram_nickname`. Patch `012` adds referral source/counter support and per-event referral code indexing.
-Patch `013_referral_link_analytics` adds referral link analytics columns. Patch `013_superadmin_referral_links` adds superadmin referral ownership metadata. Patch `014` adds public event stats RPC support for synchronized event cards and detail pages.
+Patch `013_referral_link_analytics` adds referral link analytics columns. Patch `013_superadmin_referral_links` adds superadmin referral ownership metadata. Patch `014` adds public event stats RPC support for synchronized event cards and detail pages. Patch `015` adds Web3 profile and wallet support. Patch `016` adds Solana Devnet payment intents. Patch `017` stores UAH-to-SOL payment conversion details.
 
 ## Telegram Webhook Setup
 
@@ -118,14 +126,16 @@ The bot is Ukrainian-only. `/start` opens the main menu:
 
 ## Telegram Registration Fields
 
-Registration starts from an event page deep link or an event card. Website event pages no longer show the fallback web registration form; registration and the future payment step continue through Telegram. The bot confirms the event, then collects:
+Registration starts from an event page deep link or an event card. Telegram remains the primary registration path for non-wallet users. The bot confirms the event, then collects:
 
 1. Mobile phone, required.
 2. Full name, required.
 3. Instagram nickname, optional.
 4. Email, required.
 
-The summary shows event, phone, name, Instagram, and email. Confirming creates or reuses a registration and creates or reuses a ticket. Free events immediately confirm the registration and activate the ticket. Paid events stay reserved until payment support is connected.
+The summary shows event, phone, name, Instagram, and email. Confirming creates or reuses a registration and creates or reuses a ticket. Free events immediately confirm the registration and activate the ticket. Paid Telegram registrations stay reserved with a payment placeholder.
+
+Signed-in users with a saved Phantom wallet can register on the website. Paid website registrations create a reserved ticket and show Solana Devnet payment; after verification the registration becomes confirmed and the ticket becomes active/paid.
 
 ## QR And Check-In
 
@@ -184,8 +194,8 @@ Broadcast safety:
 
 ## Known Limitations
 
-- Real payments are not connected yet.
-- Paid tickets remain pending until manually or future-provider confirmed.
+- Only Solana Devnet demo payments are connected; no mainnet or real-money provider is enabled.
+- Telegram paid tickets remain pending until manually confirmed or a future production provider is connected.
 - Telegram-to-web account linking is based on stored Telegram identity and optional profile linkage.
 - QR images are generated on demand and are not yet stored as files.
 
@@ -194,13 +204,13 @@ Broadcast safety:
 1. Open the website.
 2. Browse events.
 3. Create an event as organizer.
-4. Continue registration through Telegram from the event page.
+4. Continue registration through Telegram from the event page, or sign in and connect Phantom for website registration.
 5. Search events in the bot.
 6. View My Tickets.
 7. Use `Показати QR` for active paid/free tickets.
 8. Scan the QR on `/check-in` as organizer/admin/superadmin.
 9. Confirm the registration and ticket rows in Supabase.
-10. Explain that real payment provider integration is next-phase production work.
+10. Explain that mainnet and real-money provider integration are next-phase production work.
 
 ## Roadmap
 

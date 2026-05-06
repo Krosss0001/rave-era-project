@@ -472,16 +472,24 @@ export function CheckInPanel() {
         throw new Error("Не вдалося підтвердити вхід за квитком.");
       }
 
-      fetch("/api/referrals/track", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ticketId: updatedTicket.ticket_id,
-          source: "check_in",
-          action: "checked_in"
-        }),
-        keepalive: true
-      }).catch(() => undefined);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (accessToken) {
+        fetch("/api/referrals/track", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({
+            ticketId: updatedTicket.ticket_id,
+            source: "check_in",
+            action: "checked_in"
+          }),
+          keepalive: true
+        }).catch(() => undefined);
+      }
 
       setTicket(mapCheckInResult(updatedTicket));
       setMessage({ type: "success", text: "Вхід за квитком підтверджено." });

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
+import { canManageEvents, canManagePlatform } from "@/lib/auth/roles";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { requireApiUser } from "@/lib/supabase/api-auth";
 import { cleanReferralCode, incrementReferralCounters, incrementReferralCountersForTicket } from "@/lib/referral-tracking";
+import type { UserRole } from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -33,6 +36,44 @@ function isReferralAction(value: unknown): value is ReferralAction {
   return value === "click" || value === "registration" || value === "telegram_start" || value === "confirmed" || value === "paid" || value === "checked_in";
 }
 
+async function requireTicketCounterAccess(request: Request, ticketId: string) {
+  const { user, supabase } = await requireApiUser(request);
+
+  const [{ data: profile, error: profileError }, { data: ticket, error: ticketError }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id,role")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("tickets")
+      .select("id,event_id,events(id,organizer_id)")
+      .eq("id", ticketId)
+      .maybeSingle()
+  ]);
+
+  if (profileError) {
+    throw profileError;
+  }
+
+  if (ticketError) {
+    throw ticketError;
+  }
+
+  const role = profile?.role as UserRole | undefined;
+  const event = Array.isArray(ticket?.events) ? ticket?.events[0] : ticket?.events;
+
+  if (!ticket || !event || !canManageEvents(role)) {
+    throw new Error("forbidden");
+  }
+
+  if (!canManagePlatform(role) && event.organizer_id !== user.id) {
+    throw new Error("forbidden");
+  }
+
+  return supabase;
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as ReferralTrackBody;
@@ -44,11 +85,7 @@ export async function POST(request: Request) {
     const ticketId = isUuid(body.ticketId) ? body.ticketId : null;
 
     if ((action === "paid" || action === "checked_in") && ticketId) {
-      const supabase = getSupabaseServiceRoleClient();
-
-      if (!supabase) {
-        return NextResponse.json({ ok: false, error: "Supabase service role client is not configured." }, { status: 503 });
-      }
+      const supabase = await requireTicketCounterAccess(request, ticketId);
 
       await incrementReferralCountersForTicket(
         supabase,
@@ -102,6 +139,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Referral tracking failed.";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    const status = message === "unauthorized" ? 401 : message === "forbidden" ? 403 : 500;
+    return NextResponse.json({ ok: false, error: message }, { status });
   }
 }
