@@ -20,6 +20,12 @@ export default function SuperadminPage() {
               en="Platform role hierarchy, future audit controls, and highest-trust operational surfaces."
             />
           </p>
+          <div className="mt-8 border border-white/[0.05] bg-[#020202] px-4 py-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">Web3 readiness</p>
+            <p className="mt-2 text-sm leading-6 text-white/48">
+              Wallet-based loyalty and Solana Pay are prepared for next stage.
+            </p>
+          </div>
         </div>
         <div className="mt-12">
           <SuperadminPanel />

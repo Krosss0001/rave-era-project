@@ -11,6 +11,8 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 import { TicketQr } from "@/components/shared/ticket-qr";
 import { StatusBadge, getStatusBadgeVariant } from "@/components/shared/status-badge";
+import { formatShortWalletAddress } from "@/components/shared/web3-utils";
+import { WalletConnect } from "@/components/shared/wallet-connect";
 
 type RegistrationRow = Database["public"]["Tables"]["registrations"]["Row"];
 type TicketRow = Database["public"]["Tables"]["tickets"]["Row"];
@@ -172,6 +174,8 @@ export function UserDashboard() {
       ? buildReferralUrl(`/events/${primaryReferralEvent.slug}`, primaryReferral.code)
       : "";
   const invitedCount = referrals.reduce((total, referral) => total + Number(referral.registrations ?? 0), 0);
+  const walletAddress = profile?.wallet_address?.trim() ?? "";
+  const hasConnectedWallet = Boolean(walletAddress);
 
   async function copyPrimaryReferral() {
     if (!primaryReferralUrl) {
@@ -213,6 +217,25 @@ export function UserDashboard() {
               <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{label}</p>
             </div>
           ))}
+        </div>
+
+        <div className="mt-6 border border-white/[0.05] bg-[#030303] p-4">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div className="min-w-0">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">Web3 profile</p>
+              <p className="mt-2 text-sm leading-6 text-white/50">Connect Phantom to unlock Web3-ready access.</p>
+            </div>
+            {hasConnectedWallet ? (
+              <div className="shrink-0 border border-primary/25 bg-primary/[0.035] px-3 py-2">
+                <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-primary">Wallet connected</p>
+                <p className="mt-1 font-mono text-sm font-semibold text-white" title={walletAddress}>
+                  {formatShortWalletAddress(walletAddress)}
+                </p>
+              </div>
+            ) : (
+              <WalletConnect />
+            )}
+          </div>
         </div>
 
         {errorMessage ? (
@@ -299,6 +322,12 @@ export function UserDashboard() {
                     <div>
                       <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">{language === "ua" ? "Оплата" : "Payment"}</p>
                       <StatusBadge label={paymentLabel} variant={getStatusBadgeVariant(ticket.payment_status)} size="sm" className="mt-1" />
+                    </div>
+                  </div>
+                  <div className="mt-4 border border-white/[0.05] bg-black px-3 py-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {hasConnectedWallet ? <StatusBadge label="On-chain ready" variant="success" size="sm" /> : null}
+                      <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/42">NFT pass coming soon</span>
                     </div>
                   </div>
                   {ticket.payment_status === "pending" ? (

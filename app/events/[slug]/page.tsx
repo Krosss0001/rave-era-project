@@ -10,6 +10,7 @@ import { EventShareActions } from "@/components/events/event-share-actions";
 import { ReferralClickTracker } from "@/components/events/referral-click-tracker";
 import { ReferralBox } from "@/components/events/referral-box";
 import { SafeEventImage } from "@/components/events/safe-event-image";
+import { Web3ReadyAccess } from "@/components/events/web3-ready-access";
 import { LocalizedText } from "@/components/shared/localized-text";
 import { LocalizedEventDate } from "@/components/shared/localized-event-date";
 import { LocalizedPrice } from "@/components/shared/localized-price";
@@ -316,6 +317,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
 
           <TelegramCta eventSlug={event.slug} referralCode={referralCode} />
           <ReferralBox path={`/events/${event.slug}`} activeReferral={referralCode} />
+          <Web3ReadyAccess />
         </aside>
       </section>
 
