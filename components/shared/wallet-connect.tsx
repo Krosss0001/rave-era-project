@@ -13,6 +13,10 @@ type PhantomProvider = {
   removeListener?: (event: "accountChanged" | "disconnect", handler: (publicKey?: { toString(): string } | null) => void) => void;
 };
 
+type NavigatorWithStandalone = Navigator & {
+  standalone?: boolean;
+};
+
 declare global {
   interface Window {
     solana?: PhantomProvider;
@@ -32,6 +36,27 @@ function formatWalletAddress(address: string) {
   return address.length > 9 ? `${address.slice(0, 4)}...${address.slice(-4)}` : address;
 }
 
+function isMobileUserAgent() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return /android|iphone|ipad|ipod/i.test(window.navigator.userAgent);
+}
+
+function isStandalonePwa() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.matchMedia("(display-mode: standalone)").matches || Boolean((window.navigator as NavigatorWithStandalone).standalone);
+}
+
+function buildPhantomBrowseUrl(currentUrl: string) {
+  const ref = typeof window === "undefined" ? currentUrl : window.location.origin;
+  return `https://phantom.app/ul/browse/${encodeURIComponent(currentUrl)}?ref=${encodeURIComponent(ref)}`;
+}
+
 type WalletConnectProps = {
   onWalletSaved?: (address: string) => void;
 };
@@ -40,12 +65,18 @@ export function WalletConnect({ onWalletSaved }: WalletConnectProps) {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [walletAddress, setWalletAddress] = useState("");
   const [phantomReady, setPhantomReady] = useState(false);
+  const [mobileNoProvider, setMobileNoProvider] = useState(false);
+  const [phantomBrowseUrl, setPhantomBrowseUrl] = useState("https://phantom.app/");
   const [status, setStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     const provider = getPhantomProvider();
+    const mobile = isMobileUserAgent();
+    const standalone = isStandalonePwa();
     setPhantomReady(Boolean(provider));
+    setMobileNoProvider(!provider && (mobile || standalone));
+    setPhantomBrowseUrl(buildPhantomBrowseUrl(window.location.href));
 
     if (!provider) {
       return;
@@ -108,7 +139,7 @@ export function WalletConnect({ onWalletSaved }: WalletConnectProps) {
     const provider = getPhantomProvider();
 
     if (!provider) {
-      window.open("https://phantom.app/", "_blank", "noopener,noreferrer");
+      window.open(mobileNoProvider ? phantomBrowseUrl : "https://phantom.app/download", "_blank", "noopener,noreferrer");
       return;
     }
 
@@ -136,9 +167,38 @@ export function WalletConnect({ onWalletSaved }: WalletConnectProps) {
   }
 
   if (!phantomReady) {
+    if (mobileNoProvider) {
+      return (
+        <div className="grid min-w-0 gap-2">
+          <a
+            href={phantomBrowseUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="focus-ring inline-flex min-h-11 shrink-0 items-center justify-center gap-2 border border-primary/45 bg-primary/[0.045] px-3 py-2 text-center font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-primary transition duration-200 hover:bg-primary hover:text-black"
+            title="Open this app in Phantom"
+          >
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Open in Phantom</span>
+          </a>
+          <p className="max-w-xs text-xs leading-5 text-white/52">
+            Wallet connection works inside Phantom browser on mobile. Open this app in Phantom to connect your wallet.
+          </p>
+          <a
+            href="https://phantom.app/download"
+            target="_blank"
+            rel="noreferrer"
+            className="focus-ring inline-flex min-h-10 items-center justify-center gap-2 border border-white/[0.08] bg-[#050505] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-white/58 transition duration-200 hover:border-primary/35 hover:text-primary"
+          >
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            Install Phantom
+          </a>
+        </div>
+      );
+    }
+
     return (
       <a
-        href="https://phantom.app/"
+        href="https://phantom.app/download"
         target="_blank"
         rel="noreferrer"
         className="focus-ring inline-flex min-h-11 shrink-0 items-center justify-center gap-2 border border-white/[0.08] bg-[#050505] px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-white/62 transition duration-200 hover:border-primary/40 hover:bg-primary/[0.04] hover:text-primary"
