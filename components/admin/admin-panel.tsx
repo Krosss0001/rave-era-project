@@ -85,7 +85,54 @@ export function AdminPanel() {
         </p>
       ) : null}
 
-      <div className="-mx-3 mt-8 overflow-x-auto border-t border-white/[0.05] px-3 [scrollbar-width:thin] sm:mx-0 sm:mt-10 sm:px-0">
+      <div className="mt-6 grid gap-3 border-t border-white/[0.05] pt-4 md:hidden">
+        {loading ? (
+          [0, 1, 2].map((item) => (
+            <div key={item} className="mobile-card p-4">
+              <div className="h-4 w-32 bg-white/[0.04] motion-safe:animate-pulse" />
+              <div className="mt-3 h-8 w-full bg-white/[0.03] motion-safe:animate-pulse" />
+            </div>
+          ))
+        ) : profiles.length > 0 ? (
+          profiles.map((profile) => {
+            const upgradeRole = nextRole(profile.role);
+
+            return (
+              <article key={profile.id} className="mobile-card p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="break-all font-mono text-sm text-white/76">{profile.email ?? "No email"}</p>
+                    <p className="mt-2 text-sm text-white/48">{profile.full_name ?? "Not set"}</p>
+                  </div>
+                  <StatusBadge label={profile.role} variant={getStatusBadgeVariant(profile.role === "user" ? "pending" : "active")} size="sm" />
+                </div>
+                <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/[0.05] pt-3">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-white/35">
+                    {new Date(profile.created_at).toLocaleDateString("en-US")}
+                  </p>
+                  {upgradeRole ? (
+                    <button
+                      type="button"
+                      onClick={() => changeRole(profile, upgradeRole)}
+                      className="focus-ring min-h-11 border border-primary/35 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.11em] text-primary"
+                    >
+                      Make {upgradeRole}
+                    </button>
+                  ) : (
+                    <StatusBadge label="Locked" variant="neutral" size="sm" />
+                  )}
+                </div>
+              </article>
+            );
+          })
+        ) : (
+          <div className="mobile-card p-5 text-sm leading-6 text-white/48">
+            {dictionary.admin.noProfiles}
+          </div>
+        )}
+      </div>
+
+      <div className="mobile-table-wrap mt-8 hidden border-t border-white/[0.05] md:block sm:mt-10">
         <table className="w-full min-w-[680px] text-left text-sm">
           <thead className="font-mono text-xs uppercase tracking-[0.18em] text-white/[0.34]">
             <tr>

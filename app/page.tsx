@@ -234,13 +234,13 @@ export default function HomePage() {
       <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.045] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:4px_4px]" />
       <section className="relative isolate overflow-hidden">
         <HeroVisualSystem />
-        <div className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-center gap-8 px-3 py-12 sm:px-6 sm:py-20 md:px-10 md:py-24 lg:grid-cols-[1.08fr_0.92fr] lg:gap-10 lg:px-12 2xl:max-w-[1500px]">
+        <div className="mx-auto grid min-h-[calc(100svh-8.75rem)] max-w-7xl items-center gap-7 px-3 py-9 sm:px-6 sm:py-20 md:min-h-[calc(100svh-4rem)] md:px-10 md:py-24 lg:grid-cols-[1.08fr_0.92fr] lg:gap-10 lg:px-12 2xl:max-w-[1500px]">
           <div className="max-w-4xl">
             <p className="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 border border-white/[0.05] bg-[#020202] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/55 sm:px-4 sm:tracking-[0.24em]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#00FF88] shadow-[0_0_16px_rgba(0,255,136,0.75)]" aria-hidden="true" />
               <span className="whitespace-nowrap">Rave<span className="text-[#00FF88]">&apos;</span>era</span> Group <span className="text-[#00FF88]" aria-hidden="true">{"\u00B7"}</span> Concerts <span className="text-[#00FF88]">&amp;</span> Marketing Agency
             </p>
-            <h1 className="mt-7 max-w-[980px] whitespace-normal break-normal text-[clamp(2.15rem,10.8vw,8.25rem)] font-black uppercase leading-[0.92] tracking-normal text-white [hyphens:none] [overflow-wrap:normal] [text-wrap:balance] [word-break:normal] sm:mt-8 sm:text-[clamp(3.65rem,8vw,9rem)] sm:leading-[0.82]">
+            <h1 className="mobile-hero-title mt-6 max-w-[980px] whitespace-normal break-normal text-[clamp(2rem,10vw,8.25rem)] font-black uppercase leading-[0.98] tracking-normal text-white sm:mt-8 sm:text-[clamp(3.65rem,8vw,9rem)] sm:leading-[0.82]">
               {heroLines.map((line, index) => (
                 <span
                   key={line.en}
@@ -271,10 +271,10 @@ export default function HomePage() {
                 }
               />
             </p>
-            <div className="mt-8 flex flex-col gap-3 motion-safe:animate-[fadeUp_520ms_cubic-bezier(0.16,1,0.3,1)_460ms_both] min-[420px]:flex-row sm:mt-10">
+            <div className="mt-7 flex flex-col gap-3 motion-safe:animate-[fadeUp_520ms_cubic-bezier(0.16,1,0.3,1)_460ms_both] min-[420px]:flex-row sm:mt-10">
               <Link
                 href="/events"
-                className="focus-ring group relative inline-flex min-h-12 items-center justify-center overflow-hidden border border-[#00FF88] px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.13em] text-[#00FF88] transition duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:text-black hover:shadow-[0_0_30px_rgba(0,255,136,0.12)] active:scale-[0.98] sm:tracking-widest"
+                className="focus-ring group relative inline-flex min-h-12 items-center justify-center overflow-hidden border border-[#00FF88] px-5 py-3 text-center font-mono text-[11px] font-bold uppercase tracking-[0.11em] text-[#00FF88] transition duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:text-black hover:shadow-[0_0_30px_rgba(0,255,136,0.12)] active:scale-[0.98] sm:px-6 sm:tracking-widest"
               >
                 <span className="absolute inset-0 -translate-x-full bg-[#00FF88] transition-transform duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0" aria-hidden="true" />
                 <span className="relative z-10 inline-flex items-center">
@@ -284,7 +284,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/organizer"
-                className="focus-ring group relative inline-flex min-h-12 items-center justify-center overflow-hidden bg-[#00FF88] px-6 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.13em] text-black transition duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_0_30px_rgba(0,255,136,0.14)] active:scale-[0.98] sm:tracking-widest"
+                className="focus-ring group relative inline-flex min-h-12 items-center justify-center overflow-hidden bg-[#00FF88] px-5 py-3 text-center font-mono text-[11px] font-bold uppercase tracking-[0.11em] text-black transition duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_0_30px_rgba(0,255,136,0.14)] active:scale-[0.98] sm:px-6 sm:tracking-widest"
               >
                 <span className="absolute inset-0 -translate-x-full bg-white transition-transform duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0" aria-hidden="true" />
                 <span className="relative z-10"><LocalizedText ua="Панель організатора" en="Organizer OS" /></span>
@@ -394,11 +394,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#020202] px-4 py-16 sm:px-6 md:px-10 md:py-28 lg:px-12 2xl:max-w-[1500px]">
+      <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#020202] px-3 py-12 sm:px-6 md:px-10 md:py-28 lg:px-12 2xl:max-w-[1500px]">
         <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
           <div>
             <SectionLabel index="02" label={<LocalizedText ua="Подія у фокусі" en="Featured Event" />} />
-            <h2 className="scroll-reveal mt-4 text-[clamp(2.25rem,12vw,4.5rem)] font-black uppercase leading-[0.92] text-white md:leading-[0.88]">
+            <h2 className="mobile-hero-title scroll-reveal mt-4 text-[clamp(2rem,10vw,4.5rem)] font-black uppercase leading-[0.98] text-white md:leading-[0.88]">
               <LocalizedText ua="Сторінки подій як доказ продукту" en="Event pages as product proof" />
             </h2>
             <p className="mt-5 max-w-md text-sm leading-6 text-white/45">
@@ -461,11 +461,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#000000] px-4 py-16 sm:px-6 md:px-10 md:py-28 lg:px-12 2xl:max-w-[1500px]">
+      <section className="mx-auto max-w-7xl border-t border-white/[0.05] bg-[#000000] px-3 py-12 sm:px-6 md:px-10 md:py-28 lg:px-12 2xl:max-w-[1500px]">
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
           <div>
             <SectionLabel index="03" label={<LocalizedText ua="Двигун зростання" en="Growth Engine" />} />
-              <h2 className="scroll-reveal mt-4 text-[clamp(2.25rem,12vw,4rem)] font-black uppercase leading-[0.92] text-white md:leading-[0.88]">
+              <h2 className="mobile-hero-title scroll-reveal mt-4 text-[clamp(2rem,10vw,4rem)] font-black uppercase leading-[0.98] text-white md:leading-[0.88]">
               <LocalizedText ua="Більше, ніж квитки" en="Built beyond ticketing" />
             </h2>
             <p className="mt-5 max-w-lg text-sm leading-6 text-white/45">
@@ -501,11 +501,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto h-auto max-w-7xl overflow-visible border-t border-white/[0.05] bg-[#020202] px-4 pb-24 pt-16 sm:px-6 md:px-10 md:pb-32 md:pt-28 lg:px-12 2xl:max-w-[1500px]">
+      <section className="mx-auto h-auto max-w-7xl overflow-visible border-t border-white/[0.05] bg-[#020202] px-3 pb-16 pt-12 sm:px-6 md:px-10 md:pb-32 md:pt-28 lg:px-12 2xl:max-w-[1500px]">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <SectionLabel index="04" label={<LocalizedText ua="Демо-флоу" en="Demo Flow" />} />
-            <h2 className="scroll-reveal mt-4 max-w-4xl text-[clamp(2.25rem,12vw,4.5rem)] font-black uppercase leading-[0.92] text-white md:leading-[0.88]">
+            <h2 className="mobile-hero-title scroll-reveal mt-4 max-w-4xl text-[clamp(2rem,10vw,4.5rem)] font-black uppercase leading-[0.98] text-white md:leading-[0.88]">
               <LocalizedText ua="Від пошуку до доступу" en="From discovery to access" />
             </h2>
           </div>

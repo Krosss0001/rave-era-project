@@ -16,15 +16,15 @@ import { BackgroundGrid, GlowField, VisualSystemStyles } from "@/components/shar
 export default function OrganizerPage() {
   return (
     <RoleGate allowedRoles={["organizer", "admin", "superadmin"]}>
-      <div className="relative mx-auto max-w-7xl overflow-hidden bg-[#000] px-3 py-12 sm:px-6 sm:py-20 md:px-10 lg:px-12 2xl:max-w-[1500px]">
+      <div className="relative mx-auto max-w-7xl overflow-hidden bg-[#000] px-3 py-8 sm:px-6 sm:py-20 md:px-10 lg:px-12 2xl:max-w-[1500px]">
         <BackgroundGrid />
         <GlowField />
-        <div className="border-b border-white/[0.05] pb-10 sm:pb-14">
+        <div className="border-b border-white/[0.05] pb-8 sm:pb-14">
           <div className="max-w-5xl">
             <p className="org-reveal font-mono text-xs uppercase tracking-[0.18em] text-primary sm:tracking-[0.28em]">
               <LocalizedText ua="01. / Система організатора" en="01. / Organizer System" />
             </p>
-            <h1 className="org-reveal mt-6 max-w-full text-[clamp(2.4rem,13vw,7.5rem)] font-black uppercase leading-[0.94] text-white sm:mt-7 lg:leading-[0.86]">
+            <h1 className="mobile-hero-title org-reveal mt-5 max-w-full text-[clamp(2.05rem,10vw,7.5rem)] font-black uppercase leading-[0.98] text-white sm:mt-7 lg:leading-[0.86]">
               {organizer.name}
             </h1>
             <p className="org-reveal mt-6 max-w-2xl text-base font-light leading-7 text-white/[0.64] sm:mt-8 sm:text-lg sm:leading-8">
@@ -61,12 +61,12 @@ export default function OrganizerPage() {
           </p>
         </div>
 
-        <div className="mt-16 grid gap-12 lg:grid-cols-[1.08fr_0.92fr]">
+        <div className="mt-10 grid gap-8 lg:mt-16 lg:grid-cols-[1.08fr_0.92fr] lg:gap-12">
           <OrganizerEventPortfolio />
           <AiAssistant />
         </div>
 
-        <div className="mt-12 grid gap-12 lg:grid-cols-[1fr_0.85fr]">
+        <div className="mt-10 grid gap-8 lg:mt-12 lg:grid-cols-[1fr_0.85fr] lg:gap-12">
           <RegistrationTable />
           <div className="grid gap-8">
             <ReferralPanel />

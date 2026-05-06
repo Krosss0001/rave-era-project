@@ -198,6 +198,51 @@ body::before {
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
 }
 
+.mobile-page-shell {
+  @apply px-3 py-10 sm:px-6 sm:py-16 md:px-10 md:py-20 lg:px-12;
+}
+
+.mobile-hero-title {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+  text-wrap: balance;
+}
+
+.mobile-card {
+  @apply border border-white/[0.06] bg-[#020202];
+}
+
+.mobile-table-wrap {
+  @apply -mx-3 overflow-x-auto px-3 [scrollbar-width:thin] sm:mx-0 sm:px-0;
+}
+
+.mobile-action-bar {
+  @apply grid gap-2 min-[390px]:grid-cols-2;
+}
+
+@media (max-width: 767px) {
+  body {
+    background:
+      radial-gradient(circle at 82% 2%, hsl(var(--primary) / 0.065), transparent 22rem),
+      hsl(var(--background));
+  }
+
+  .mobile-page-shell {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .mobile-hero-title {
+    line-height: 0.98;
+    letter-spacing: 0;
+  }
+
+  .mobile-card {
+    padding: 1rem;
+  }
+}
+
 @media (max-width: 390px) {
   .tracking-widest,
   [class*="tracking-[0.28em]"],

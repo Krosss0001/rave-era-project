@@ -118,7 +118,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.014)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.014)_1px,transparent_1px)] bg-[size:80px_80px] opacity-45" />
 
-        <div className="relative mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl items-end gap-8 px-3 pb-10 pt-12 sm:px-6 sm:pt-20 md:min-h-[680px] md:px-10 md:pb-16 lg:grid-cols-[minmax(0,0.98fr)_minmax(320px,0.72fr)] lg:items-center lg:px-12 2xl:max-w-[1500px]">
+        <div className="relative mx-auto grid min-h-[calc(100svh-8.75rem)] max-w-7xl items-end gap-6 px-3 pb-8 pt-8 sm:px-6 sm:pt-20 md:min-h-[680px] md:px-10 md:pb-16 lg:grid-cols-[minmax(0,0.98fr)_minmax(320px,0.72fr)] lg:items-center lg:gap-8 lg:px-12 2xl:max-w-[1500px]">
           <div className="w-full max-w-[860px]">
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge label={eventStatusLabel.en} variant={event.status === "limited" ? "limited" : event.status === "soon" ? "soon" : "live"} />
@@ -129,7 +129,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
               ) : null}
             </div>
 
-            <h1 className="mt-6 max-w-[900px] whitespace-normal text-[clamp(2rem,11vw,4.25rem)] font-black uppercase leading-[1] tracking-normal text-white [hyphens:none] [overflow-wrap:anywhere] [text-wrap:balance] [word-break:normal] lg:leading-[0.96]">
+            <h1 className="mobile-hero-title mt-5 max-w-[900px] whitespace-normal text-[clamp(1.95rem,9.5vw,4.25rem)] font-black uppercase leading-[1] tracking-normal text-white [hyphens:none] [overflow-wrap:normal] [text-wrap:balance] [word-break:normal] lg:leading-[0.96]">
               {event.title}
             </h1>
 
@@ -185,7 +185,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           </div>
 
           <div className="order-first w-full lg:order-none">
-            <DepthFrame className="relative mx-auto aspect-[3/4] max-h-[68vh] min-h-[300px] max-w-[620px] shadow-[0_0_80px_rgba(0,255,136,0.08)] sm:aspect-[4/3] lg:ml-auto lg:max-h-[560px]">
+            <DepthFrame className="relative mx-auto aspect-[3/4] max-h-[48vh] min-h-[260px] max-w-[620px] shadow-[0_0_80px_rgba(0,255,136,0.08)] sm:aspect-[4/3] sm:max-h-[68vh] sm:min-h-[300px] lg:ml-auto lg:max-h-[560px]">
               <SafeEventImage
                 src={event.image}
                 alt={`${event.title} event poster`}
@@ -268,8 +268,11 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           </article>
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-          <section className="relative border border-[#00FF88]/20 bg-[#020202] p-5 shadow-[0_0_72px_rgba(0,255,136,0.06)]">
+        <aside className="grid gap-4 lg:sticky lg:top-24 lg:self-start">
+          <div className="order-1">
+            <TelegramCta eventSlug={event.slug} referralCode={referralCode} />
+          </div>
+          <section className="relative order-2 border border-[#00FF88]/20 bg-[#020202] p-4 shadow-[0_0_72px_rgba(0,255,136,0.06)] sm:p-5">
             <span className="absolute left-0 top-0 h-px w-full bg-[#00FF88]" aria-hidden="true" />
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/35"><LocalizedText ua="Квиток" en="Ticket" /></p>
             <p className="mt-3 font-mono text-[clamp(2rem,11vw,2.5rem)] font-semibold leading-none text-white">
@@ -323,9 +326,12 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
             </div>
           </section>
 
-          <TelegramCta eventSlug={event.slug} referralCode={referralCode} />
-          <Web3RegistrationPanel eventId={event.id} eventPrice={event.price} referralCode={referralCode} />
-          <ReferralBox path={`/events/${event.slug}`} activeReferral={referralCode} />
+          <div className="order-3">
+            <Web3RegistrationPanel eventId={event.id} eventPrice={event.price} referralCode={referralCode} />
+          </div>
+          <div className="order-4">
+            <ReferralBox path={`/events/${event.slug}`} activeReferral={referralCode} />
+          </div>
         </aside>
       </section>
 

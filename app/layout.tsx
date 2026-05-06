@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { LanguageProvider } from "@/lib/i18n/use-language";
 import { PwaInstallPrompt } from "@/components/pwa/pwa-install-prompt";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -56,9 +57,10 @@ export default function RootLayout({
       <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
         <LanguageProvider>
           <Header />
-          <main>{children}</main>
+          <main className="pb-20 md:pb-0">{children}</main>
           <Footer />
           <PwaInstallPrompt />
+          <MobileBottomNav />
         </LanguageProvider>
       </body>
     </html>

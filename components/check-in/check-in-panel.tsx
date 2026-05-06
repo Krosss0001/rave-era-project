@@ -523,7 +523,7 @@ export function CheckInPanel() {
             autoComplete="off"
             spellCheck={false}
             inputMode="text"
-            className="mt-2 min-h-12 w-full border border-white/[0.08] bg-black px-3 font-mono text-sm uppercase text-white outline-none motion-safe:transition-colors motion-safe:duration-300 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="mt-2 min-h-14 w-full border border-white/[0.08] bg-black px-3 font-mono text-base uppercase text-white outline-none motion-safe:transition-colors motion-safe:duration-300 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:text-sm"
           />
         </label>
         <div className="mt-4 grid gap-2 min-[380px]:grid-cols-2">
@@ -556,7 +556,7 @@ export function CheckInPanel() {
           <div className="relative mt-4 overflow-hidden border border-primary/25 bg-black shadow-[0_0_54px_rgba(0,255,136,0.075)]">
             <span className="visual-scan-line pointer-events-none absolute inset-x-0 top-0 z-10 h-20 opacity-70" aria-hidden="true" />
             <span className="pointer-events-none absolute inset-3 z-10 border border-primary/10" aria-hidden="true" />
-            <div className="aspect-[3/4] max-h-[70vh] w-full bg-[#030303] min-[390px]:aspect-square sm:aspect-[4/3]">
+            <div className="aspect-square max-h-[58vh] w-full bg-[#030303] sm:aspect-[4/3] sm:max-h-[70vh]">
               <video ref={videoRef} className="h-full w-full object-cover" muted playsInline aria-label="QR scanner camera preview" />
               <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
             </div>
@@ -583,7 +583,7 @@ export function CheckInPanel() {
         ) : null}
       </form>
 
-      <div className="border-y border-white/[0.05] bg-[#020202] py-8">
+      <div className="border-y border-white/[0.05] bg-[#020202] py-6 sm:py-8">
         {message ? (
           <div
             className={
@@ -610,7 +610,7 @@ export function CheckInPanel() {
           <div className="grid gap-4">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">{copy.eventTitle}</p>
-              <p className="mt-2 text-2xl font-black uppercase text-white">{ticket.event_title}</p>
+              <p className="mt-2 break-words text-2xl font-black uppercase leading-tight text-white">{ticket.event_title}</p>
             </div>
             <div className="grid gap-3 min-[380px]:grid-cols-2">
               {[
