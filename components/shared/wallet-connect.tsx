@@ -32,7 +32,11 @@ function formatWalletAddress(address: string) {
   return address.length > 9 ? `${address.slice(0, 4)}...${address.slice(-4)}` : address;
 }
 
-export function WalletConnect() {
+type WalletConnectProps = {
+  onWalletSaved?: (address: string) => void;
+};
+
+export function WalletConnect({ onWalletSaved }: WalletConnectProps) {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [walletAddress, setWalletAddress] = useState("");
   const [phantomReady, setPhantomReady] = useState(false);
@@ -91,7 +95,13 @@ export function WalletConnect() {
       .update({ wallet_address: address })
       .eq("id", user.id);
 
-    setMessage(error ? "Connected, but profile save failed." : "Wallet saved to profile.");
+    if (error) {
+      setMessage("Connected, but profile save failed.");
+      return;
+    }
+
+    setMessage("Wallet saved to profile.");
+    onWalletSaved?.(address);
   }
 
   async function connectWallet() {

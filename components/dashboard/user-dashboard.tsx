@@ -252,7 +252,7 @@ export function UserDashboard() {
                 </p>
               </div>
             ) : (
-              <WalletConnect />
+              <WalletConnect onWalletSaved={(address) => setProfile((current) => current ? { ...current, wallet_address: address } : current)} />
             )}
           </div>
         </div>

@@ -18,6 +18,7 @@ type SolanaIntent = {
 type SolanaDevnetPaymentProps = {
   ticketId: string;
   onConfirmed: (input: { ticketId: string; signature: string | null }) => void;
+  title?: string;
 };
 
 function getErrorMessage(error: unknown) {
@@ -34,7 +35,7 @@ async function parseApiResponse(response: Response) {
   return data;
 }
 
-export function SolanaDevnetPayment({ ticketId, onConfirmed }: SolanaDevnetPaymentProps) {
+export function SolanaDevnetPayment({ ticketId, onConfirmed, title = "Pay with Solana Devnet" }: SolanaDevnetPaymentProps) {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [intent, setIntent] = useState<SolanaIntent | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -152,7 +153,7 @@ export function SolanaDevnetPayment({ ticketId, onConfirmed }: SolanaDevnetPayme
     <div className="mt-4 border border-primary/20 bg-primary/[0.025] p-3">
       <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:items-start min-[420px]:justify-between">
         <div className="min-w-0">
-          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-primary">Pay with Solana Devnet</p>
+          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-primary">{title}</p>
           <p className="mt-2 text-sm leading-6 text-white/58">
             {intent ? `${intent.amount_sol} SOL Devnet` : "Devnet test payment creates an activation intent."}
           </p>
