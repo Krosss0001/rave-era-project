@@ -80,6 +80,7 @@ export const TELEGRAM_COPY = {
   correctButton: "Все правильно",
   restartButton: "🔁 Почати спочатку",
   registrationCreated: "Реєстрацію створено. Квиток збережено у розділі «Мої квитки».",
+  dashboardPayment: "Payment can be completed in your dashboard.",
   freeConfirmed: "Реєстрацію підтверджено. Квиток активний.",
   cancelled: "Реєстрацію скасовано. Можете почати знову зі сторінки події або меню бота.",
   eventMissing: "Не вдалося знайти подію. Перевірте посилання або відкрийте список подій на сайті.",

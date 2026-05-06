@@ -335,7 +335,7 @@ async function finishRegistration(chatId: string, session: TelegramSession, lang
       `${copy.qrStatusLabel}: ${isFreeEvent ? copy.qrAvailable : copy.qrUnavailable}`,
       "",
       `${copy.referralLinkLabel}: ${escapeHtml(eventUrl)}`,
-      ...(isFreeEvent ? [] : ["", copy.qrLocked])
+      ...(isFreeEvent ? [] : ["", copy.dashboardPayment, copy.qrLocked])
     ].join("\n"),
     {
       inlineKeyboard: isFreeEvent

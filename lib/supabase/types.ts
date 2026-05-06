@@ -5,6 +5,7 @@ export type EventStatus = "draft" | "published" | "live" | "limited" | "soon" | 
 export type RegistrationStatus = "pending" | "confirmed" | "cancelled";
 export type TicketStatus = "reserved" | "active" | "used";
 export type PaymentStatus = "pending" | "paid" | "failed";
+export type SolanaPaymentIntentStatus = "pending" | "confirmed" | "failed";
 export type BroadcastAudience =
   | "all_telegram_users"
   | "event_registered"
@@ -274,6 +275,84 @@ export type Database = {
           },
           {
             foreignKeyName: "tickets_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      solana_payment_intents: {
+        Row: {
+          id: string;
+          ticket_id: string | null;
+          registration_id: string | null;
+          event_id: string | null;
+          user_id: string | null;
+          wallet_address: string | null;
+          reference: string;
+          recipient: string;
+          amount_sol: number;
+          network: "devnet";
+          status: SolanaPaymentIntentStatus;
+          signature: string | null;
+          created_at: string;
+          confirmed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          ticket_id?: string | null;
+          registration_id?: string | null;
+          event_id?: string | null;
+          user_id?: string | null;
+          wallet_address?: string | null;
+          reference: string;
+          recipient: string;
+          amount_sol: number;
+          network?: "devnet";
+          status?: SolanaPaymentIntentStatus;
+          signature?: string | null;
+          created_at?: string;
+          confirmed_at?: string | null;
+        };
+        Update: {
+          ticket_id?: string | null;
+          registration_id?: string | null;
+          event_id?: string | null;
+          user_id?: string | null;
+          wallet_address?: string | null;
+          reference?: string;
+          recipient?: string;
+          amount_sol?: number;
+          network?: "devnet";
+          status?: SolanaPaymentIntentStatus;
+          signature?: string | null;
+          confirmed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "solana_payment_intents_ticket_id_fkey";
+            columns: ["ticket_id"];
+            isOneToOne: false;
+            referencedRelation: "tickets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "solana_payment_intents_registration_id_fkey";
+            columns: ["registration_id"];
+            isOneToOne: false;
+            referencedRelation: "registrations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "solana_payment_intents_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "solana_payment_intents_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";

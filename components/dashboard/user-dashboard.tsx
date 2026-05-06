@@ -10,6 +10,7 @@ import { buildReferralUrl } from "@/lib/referral";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/types";
 import { TicketQr } from "@/components/shared/ticket-qr";
+import { SolanaDevnetPayment } from "@/components/payments/solana-devnet-payment";
 import { StatusBadge, getStatusBadgeVariant } from "@/components/shared/status-badge";
 import { formatShortWalletAddress } from "@/components/shared/web3-utils";
 import { WalletConnect } from "@/components/shared/wallet-connect";
@@ -191,6 +192,24 @@ export function UserDashboard() {
     }
   }
 
+  function handleSolanaPaymentConfirmed(input: { ticketId: string; signature: string | null }) {
+    setTickets((currentTickets) =>
+      currentTickets.map((ticket) =>
+        ticket.id === input.ticketId
+          ? { ...ticket, payment_status: "paid", status: "active" }
+          : ticket
+      )
+    );
+    setRegistrations((currentRegistrations) =>
+      currentRegistrations.map((registration) =>
+        tickets.find((ticket) => ticket.id === input.ticketId)?.registration_id === registration.id
+          ? { ...registration, status: "confirmed" }
+          : registration
+      )
+    );
+    setVisibleQrTicketId(input.ticketId);
+  }
+
   return (
     <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.72fr)] lg:gap-10">
       <section className="border-y border-white/[0.05] bg-[#020202] py-8">
@@ -292,6 +311,12 @@ export function UserDashboard() {
                 const isQrLocked = ticket.status !== "active" || ticket.payment_status !== "paid" || ticket.checked_in || Boolean(ticket.checked_in_at);
                 const isFreeTicket = Number(event?.price ?? 1) <= 0;
                 const paymentLabel = isFreeTicket && ticket.payment_status === "paid" ? "paid/free" : ticket.payment_status;
+                const canPayWithSolanaDevnet =
+                  ticket.payment_status === "pending" &&
+                  ticket.status === "reserved" &&
+                  hasConnectedWallet &&
+                  Boolean(event) &&
+                  !isFreeTicket;
 
                 return (
                 <div key={ticket.id} className="group relative min-w-0 overflow-hidden border border-white/[0.06] bg-[#030303] p-4 shadow-[0_0_44px_rgba(0,255,136,0.035)] transition-[border-color,background-color,transform] duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/[0.018]">
@@ -334,6 +359,12 @@ export function UserDashboard() {
                     <p className="mt-4 border border-white/[0.05] bg-black px-3 py-2 text-sm leading-6 text-white/58">
                       {getPaymentPlaceholderCopy(language)}
                     </p>
+                  ) : null}
+                  {canPayWithSolanaDevnet ? (
+                    <SolanaDevnetPayment
+                      ticketId={ticket.id}
+                      onConfirmed={handleSolanaPaymentConfirmed}
+                    />
                   ) : null}
                   <div className="mt-4 grid gap-2 min-[380px]:grid-cols-2">
                     <button
