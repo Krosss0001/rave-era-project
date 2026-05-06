@@ -47,21 +47,23 @@ export function Header() {
   }, [menuOpen]);
 
   useEffect(() => {
+    document.documentElement.style.overflow = menuOpen ? "hidden" : "";
     document.body.style.overflow = menuOpen ? "hidden" : "";
     return () => {
+      document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
     };
   }, [menuOpen]);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#020202]/95 pt-[var(--safe-top)] backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#020202] pt-[var(--safe-top)] shadow-[0_12px_42px_rgba(0,0,0,0.62)]">
       <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-between gap-2 px-3 py-2 sm:px-6 md:min-h-16 md:px-10 lg:px-12 2xl:max-w-[1500px]">
-        <Link href="/" onClick={() => setMenuOpen(false)} className="focus-ring group flex min-h-11 min-w-0 max-w-[calc(100vw-5rem)] shrink-0 items-center gap-2 sm:max-w-[64vw] md:max-w-[48vw] lg:max-w-none">
+        <Link href="/" onClick={() => setMenuOpen(false)} className="focus-ring group flex min-h-11 min-w-0 max-w-[calc(100vw-4.25rem)] shrink-0 items-center gap-2 sm:max-w-[64vw] md:max-w-[48vw] lg:max-w-none">
           <span className="app-logo-mark h-8 w-8 shrink-0">
-            <img src="/icons/icon-192.png" alt="" className="h-full w-full object-cover" aria-hidden="true" />
+            <img src="/branding/logo.png" alt="" className="h-full w-full object-cover" aria-hidden="true" />
           </span>
-          <span className="block whitespace-nowrap font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-white/76 motion-safe:transition-colors motion-safe:duration-300 group-hover:text-white sm:tracking-[0.13em] md:max-w-none md:text-[11px]">
-            RAVE<span className="text-primary">&apos;</span>ERA <span className="hidden text-white/50 min-[390px]:inline md:inline">EVENTS</span><span className="hidden md:inline"> ASSISTANT</span>
+          <span className="block whitespace-nowrap font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-white/82 motion-safe:transition-colors motion-safe:duration-300 group-hover:text-white sm:tracking-[0.13em] md:max-w-none md:text-[11px]">
+            RAVE<span className="text-primary">&apos;</span>ERA <span className="hidden text-white/50 min-[430px]:inline md:inline">EVENTS</span><span className="hidden lg:inline"> ASSISTANT</span>
           </span>
         </Link>
         <div className="hidden min-w-0 flex-1 items-center justify-end gap-2 md:flex">
@@ -88,35 +90,36 @@ export function Header() {
           aria-expanded={menuOpen}
           aria-controls="mobile-menu"
           onClick={() => setMenuOpen((open) => !open)}
-          className="focus-ring inline-flex min-h-11 min-w-11 items-center justify-center border border-white/[0.08] bg-[#020202] text-white/72 motion-safe:transition-colors motion-safe:duration-200 hover:border-primary/45 hover:text-primary md:hidden"
+          className="focus-ring inline-flex h-11 min-h-11 w-11 min-w-11 shrink-0 items-center justify-center border border-white/[0.12] bg-[#050505] text-white/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] motion-safe:transition-colors motion-safe:duration-200 hover:border-primary/45 hover:text-primary md:hidden"
         >
           {menuOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
         </button>
       </div>
       {menuOpen ? (
-        <div id="mobile-menu" className="fixed inset-0 isolate z-[100] bg-black/[0.86] backdrop-blur-xl motion-safe:animate-[appOverlayFade_180ms_ease-out_both] md:hidden">
-          <div className="absolute inset-0 bg-[#020202]" aria-hidden="true" />
-          <div className="relative min-h-svh overflow-y-auto border-b border-primary/20 bg-[#020202] px-3 pb-[calc(var(--safe-bottom)+1.5rem)] pt-[calc(var(--safe-top)+4.75rem)] shadow-[0_30px_100px_rgba(0,0,0,0.86)] motion-safe:animate-[appPanelRise_220ms_cubic-bezier(0.16,1,0.3,1)_both]">
-            <div className="fixed inset-x-0 top-0 z-[101] border-b border-white/[0.06] bg-[#020202] px-3 pb-2 pt-[calc(var(--safe-top)+0.5rem)] shadow-[0_18px_60px_rgba(0,0,0,0.7)]">
+        <div id="mobile-menu" className="fixed inset-0 isolate z-[220] h-svh w-screen overflow-hidden bg-black text-white motion-safe:animate-[appOverlayFade_160ms_ease-out_both] md:hidden">
+          <div className="absolute inset-0 z-0 bg-black" aria-hidden="true" />
+          <div className="absolute inset-0 z-0 bg-[linear-gradient(rgba(255,255,255,0.018)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.018)_1px,transparent_1px)] bg-[size:56px_56px] opacity-30" aria-hidden="true" />
+          <div className="relative z-10 h-svh overflow-y-auto bg-black px-3 pb-[calc(var(--safe-bottom)+1.25rem)] pt-[calc(var(--safe-top)+4.75rem)] motion-safe:animate-[appPanelRise_180ms_cubic-bezier(0.16,1,0.3,1)_both]">
+            <div className="fixed inset-x-0 top-0 z-[230] border-b border-white/[0.08] bg-black px-3 pb-2 pt-[calc(var(--safe-top)+0.5rem)] shadow-[0_18px_60px_rgba(0,0,0,0.86)]">
               <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-                <Link href="/" onClick={() => setMenuOpen(false)} className="focus-ring flex min-h-11 items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-white/76">
+                <Link href="/" onClick={() => setMenuOpen(false)} className="focus-ring flex min-h-11 min-w-0 items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-white/82">
                   <span className="app-logo-mark h-8 w-8 shrink-0">
-                    <img src="/icons/icon-192.png" alt="" className="h-full w-full object-cover" aria-hidden="true" />
+                    <img src="/branding/logo.png" alt="" className="h-full w-full object-cover" aria-hidden="true" />
                   </span>
-                  RAVE<span className="text-primary">&apos;</span>ERA EVENTS
+                  <span className="truncate">RAVE<span className="text-primary">&apos;</span>ERA</span>
                 </Link>
                 <button
                   type="button"
                   aria-label="Close navigation menu"
                   onClick={() => setMenuOpen(false)}
-                  className="focus-ring inline-flex min-h-11 min-w-11 items-center justify-center border border-white/[0.08] bg-black text-white/72 hover:border-primary/45 hover:text-primary"
+                  className="focus-ring inline-flex h-11 min-h-11 w-11 min-w-11 items-center justify-center border border-white/[0.12] bg-[#050505] text-white/78 hover:border-primary/45 hover:text-primary"
                 >
                   <X className="h-5 w-5" aria-hidden="true" />
                 </button>
               </div>
             </div>
 
-            <nav className="grid gap-2" aria-label="Mobile navigation">
+            <nav className="grid gap-2 border border-white/[0.08] bg-[#030303] p-2 shadow-[0_18px_70px_rgba(0,0,0,0.55)]" aria-label="Mobile navigation">
               {mobileNavItems.map((item) => {
                 const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 
@@ -126,10 +129,10 @@ export function Header() {
                     href={item.href}
                     onClick={() => setMenuOpen(false)}
                     aria-current={active ? "page" : undefined}
-                    className={`focus-ring flex min-h-12 items-center justify-between border px-4 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.12em] shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] motion-safe:transition-[background-color,border-color,color,transform] motion-safe:duration-200 active:scale-[0.99] ${
+                    className={`focus-ring flex min-h-12 items-center justify-between border px-4 py-3 font-mono text-[11px] font-bold uppercase tracking-[0.12em] shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] motion-safe:transition-[background-color,border-color,color,transform] motion-safe:duration-200 active:scale-[0.99] ${
                       active
-                        ? "border-primary/70 bg-primary/[0.14] text-primary shadow-[0_0_34px_rgba(0,255,136,0.08)]"
-                        : "border-white/[0.08] bg-[#070707] text-white/72 hover:border-primary/35 hover:bg-[#0a0a0a] hover:text-white"
+                        ? "border-primary/80 bg-primary/[0.16] text-primary shadow-[0_0_34px_rgba(0,255,136,0.1)]"
+                        : "border-white/[0.1] bg-black text-white/78 hover:border-primary/35 hover:bg-[#07120d] hover:text-white"
                     }`}
                   >
                     {item.label}
@@ -138,9 +141,11 @@ export function Header() {
                 );
               })}
             </nav>
-            <div className="mt-5 grid gap-4 border-t border-white/[0.08] pt-5">
-              <LanguageToggle mobile />
-              <div className="grid gap-3">
+            <div className="mt-4 grid gap-3">
+              <div className="border border-white/[0.08] bg-[#030303] p-3 shadow-[0_18px_70px_rgba(0,0,0,0.45)]">
+                <LanguageToggle mobile />
+              </div>
+              <div className="grid gap-3 border border-white/[0.08] bg-[#030303] p-3 shadow-[0_18px_70px_rgba(0,0,0,0.45)]">
                 <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white/42">Account</p>
                 <AuthControl onSessionChange={handleSessionChange} />
                 {signedIn ? <WalletConnect /> : null}

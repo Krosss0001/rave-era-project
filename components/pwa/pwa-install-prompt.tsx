@@ -92,7 +92,7 @@ export function PwaInstallPrompt() {
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 gap-3">
             <span className="app-logo-mark h-11 w-11 shrink-0">
-              <img src="/icons/icon-192.png" alt="" className="h-full w-full object-cover" aria-hidden="true" />
+              <img src="/branding/logo.png" alt="" className="h-full w-full object-cover" aria-hidden="true" />
             </span>
             <div className="min-w-0">
             <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-primary">

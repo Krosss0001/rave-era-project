@@ -5,7 +5,7 @@
 :root {
   --safe-top: env(safe-area-inset-top);
   --safe-bottom: env(safe-area-inset-bottom);
-  --mobile-nav-height: 4.5rem;
+  --mobile-nav-height: 5rem;
   --background: 0 0% 0%;
   --foreground: 0 0% 96%;
   --muted: 0 0% 3%;
@@ -241,7 +241,12 @@ body::before {
 }
 
 .mobile-table-wrap {
-  @apply -mx-3 overflow-x-auto px-3 [scrollbar-width:thin] sm:mx-0 sm:px-0;
+  @apply -mx-3 max-w-[calc(100%+1.5rem)] overflow-x-auto overscroll-x-contain px-3 [scrollbar-width:thin] sm:mx-0 sm:max-w-full sm:px-0;
+}
+
+.mobile-table-wrap table {
+  width: max-content;
+  min-width: 100%;
 }
 
 .mobile-action-bar {
@@ -257,7 +262,7 @@ body::before {
 
   .mobile-page-shell {
     padding-top: 2.75rem;
-    padding-bottom: calc(var(--mobile-nav-height) + var(--safe-bottom) + 2rem);
+    padding-bottom: calc(var(--mobile-nav-height) + var(--safe-bottom) + 2.75rem);
   }
 
   .mobile-hero-title {
@@ -275,7 +280,11 @@ body::before {
   }
 
   .mobile-safe-section {
-    padding-bottom: calc(var(--mobile-nav-height) + var(--safe-bottom) + 1.5rem);
+    padding-bottom: calc(var(--mobile-nav-height) + var(--safe-bottom) + 2.25rem);
+  }
+
+  .app-native-panel {
+    box-shadow: 0 18px 60px rgb(0 0 0 / 0.32);
   }
 }
 

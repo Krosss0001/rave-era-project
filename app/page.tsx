@@ -193,14 +193,14 @@ function HeroVisualSystem() {
 
 function PartnerMarquee() {
   return (
-    <div className="relative z-10 mt-8 max-w-full overflow-hidden border-y border-white/[0.05] bg-black/60 py-3 [mask-image:linear-gradient(90deg,transparent,black_6%,black_94%,transparent)]">
+    <div className="relative z-10 mt-8 w-full max-w-full overflow-hidden border-y border-white/[0.05] bg-black/60 py-3 [contain:paint] [mask-image:linear-gradient(90deg,transparent,black_6%,black_94%,transparent)]">
       <div className="partner-marquee-track flex w-max gap-3 px-3 md:gap-4">
         {[0, 1].map((group) => (
           <div key={group} className="partner-marquee-group flex shrink-0 gap-3 md:gap-4" aria-hidden={group === 1}>
             {partners.map((partner) => (
               <span
                 key={`${partner}-${group}`}
-                className="group inline-flex min-h-11 max-w-[82vw] shrink-0 items-center gap-3 border border-white/[0.07] bg-[#020202] px-4 font-mono text-[10px] font-semibold uppercase leading-4 tracking-[0.14em] text-white/48 transition duration-300 hover:border-[#00FF88]/30 hover:text-white hover:shadow-[0_0_28px_rgba(0,255,136,0.055)] sm:max-w-none sm:px-5 sm:text-xs sm:tracking-[0.22em]"
+                className="group inline-flex min-h-11 max-w-[78vw] shrink-0 items-center gap-3 border border-white/[0.09] bg-[#020202] px-4 font-mono text-[10px] font-semibold uppercase leading-4 tracking-[0.12em] text-white/58 transition duration-300 hover:border-[#00FF88]/30 hover:text-white hover:shadow-[0_0_28px_rgba(0,255,136,0.055)] sm:max-w-none sm:px-5 sm:text-xs sm:tracking-[0.22em]"
               >
                 <span className="h-1.5 w-1.5 shrink-0 bg-[#00FF88]/65 transition duration-300 group-hover:bg-[#00FF88] group-hover:shadow-[0_0_12px_rgba(0,255,136,0.65)]" aria-hidden="true" />
                 <span className="whitespace-nowrap">{partner}</span>

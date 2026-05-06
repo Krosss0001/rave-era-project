@@ -424,7 +424,7 @@ export function SuperadminPanel() {
           ))}
         </div>
 
-        <div className="mt-6 overflow-x-auto border border-white/[0.05] bg-[#030303] [scrollbar-width:thin]">
+        <div className="mobile-table-wrap mt-6 border border-white/[0.05] bg-[#030303]">
           {loading ? (
             <div className="grid gap-3 p-4 md:grid-cols-4">
               {[0, 1, 2, 3].map((item) => (
