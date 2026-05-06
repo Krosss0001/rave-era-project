@@ -11,6 +11,8 @@ type SolanaIntent = {
   reference: string;
   payment_url: string;
   amount_sol: number;
+  original_price_uah: number | null;
+  rate_uah_per_sol: number | null;
   recipient: string;
   network: "devnet";
 };
@@ -23,6 +25,17 @@ type SolanaDevnetPaymentProps = {
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Solana payment request failed.";
+}
+
+function formatAmount(value: number | null | undefined, maximumFractionDigits = 9) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return "-";
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits,
+    minimumFractionDigits: 0
+  }).format(value);
 }
 
 async function parseApiResponse(response: Response) {
@@ -154,9 +167,18 @@ export function SolanaDevnetPayment({ ticketId, onConfirmed, title = "Pay with S
       <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:items-start min-[420px]:justify-between">
         <div className="min-w-0">
           <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-primary">{title}</p>
-          <p className="mt-2 text-sm leading-6 text-white/58">
-            {intent ? `${intent.amount_sol} SOL Devnet` : "Devnet test payment creates an activation intent."}
-          </p>
+          <div className="mt-2 grid gap-1 text-sm leading-6 text-white/58">
+            <p>Devnet payment is for demo/testing only.</p>
+            {intent ? (
+              <>
+                <p>Event price: {formatAmount(intent.original_price_uah, 2)} UAH</p>
+                <p>Devnet conversion rate: {formatAmount(intent.rate_uah_per_sol, 2)} UAH / SOL</p>
+                <p className="font-semibold text-white/78">Amount to pay: {formatAmount(intent.amount_sol)} SOL</p>
+              </>
+            ) : (
+              <p>Open Phantom to create a Devnet payment intent and conversion.</p>
+            )}
+          </div>
           {intent ? (
             <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-white/36" title={intent.recipient}>
               Recipient {formatShortWalletAddress(intent.recipient)}

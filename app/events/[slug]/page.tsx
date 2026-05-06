@@ -169,7 +169,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
               <p className="mt-3 max-w-xl font-mono text-[10px] uppercase leading-5 tracking-[0.12em] text-white/42">
                 <LocalizedText
                   ua="РџС–СЃР»СЏ СЂРµС”СЃС‚СЂР°С†С–С— РїР»Р°С‚РЅС– РєРІРёС‚РєРё РјРѕР¶РЅР° Р°РєС‚РёРІСѓРІР°С‚Рё С‡РµСЂРµР· Solana Devnet РѕРїР»Р°С‚Сѓ РІ РєР°Р±С–РЅРµС‚С–."
-                  en="After registration, paid tickets can be activated with Solana Devnet payment from dashboard."
+                  en="After website registration, paid tickets can be activated with Solana Devnet payment on this page or from dashboard."
                 />
               </p>
             ) : null}

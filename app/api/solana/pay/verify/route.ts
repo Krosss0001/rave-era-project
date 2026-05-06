@@ -1,5 +1,6 @@
 import { Connection, PublicKey, type ParsedTransactionWithMeta } from "@solana/web3.js";
 import { NextResponse } from "next/server";
+import BigNumber from "bignumber.js";
 import { incrementReferralCounters } from "@/lib/referral-tracking";
 import { getInstructionMemo, getSolanaRpcUrl, isParsedInstruction, solToLamports } from "@/lib/solana-pay-devnet";
 import { requireApiUser, apiErrorResponse } from "@/lib/supabase/api-auth";
@@ -53,6 +54,7 @@ async function findValidPayment(input: {
   const referencePublicKey = new PublicKey(input.reference);
   const signatures = await input.connection.getSignaturesForAddress(referencePublicKey, { limit: 10 }, "confirmed");
   const expectedLamports = solToLamports(input.amountSol);
+  const minimumLamports = BigNumber.maximum(expectedLamports.minus(1), 0);
 
   for (const item of signatures) {
     if (item.err) {
@@ -72,9 +74,9 @@ async function findValidPayment(input: {
       continue;
     }
 
-    const transferredLamports = solToLamports(getTransferredLamports(transaction, input.recipient) / 1_000_000_000);
+    const transferredLamports = new BigNumber(getTransferredLamports(transaction, input.recipient));
 
-    if (transferredLamports.lt(expectedLamports)) {
+    if (transferredLamports.lt(minimumLamports)) {
       continue;
     }
 

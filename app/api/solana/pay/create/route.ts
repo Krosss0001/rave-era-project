@@ -92,7 +92,8 @@ export async function POST(request: Request) {
       throw new Error("Connect and save a wallet before paying.");
     }
 
-    const amountSol = resolveDevnetAmountSol(Number(event.price));
+    const conversion = resolveDevnetAmountSol(Number(event.price));
+    const amountSol = conversion.amountSol;
 
     if (amountSol <= 0) {
       throw new Error("Invalid Devnet payment amount.");
@@ -108,22 +109,44 @@ export async function POST(request: Request) {
       ticketCode: ticket.ticket_code
     });
 
-    const { data: intent, error: intentError } = await supabase
+    const intentInsert = {
+      ticket_id: ticket.id,
+      registration_id: registration.id,
+      event_id: event.id,
+      user_id: user.id,
+      wallet_address: walletAddress,
+      reference,
+      recipient,
+      amount_sol: amountSol,
+      price_uah: conversion.originalPriceUah,
+      rate_uah_per_sol: conversion.rateUahPerSol,
+      network: SOLANA_PAY_NETWORK,
+      status: "pending" as const
+    };
+    const intentResult = await supabase
       .from("solana_payment_intents")
-      .insert({
-        ticket_id: ticket.id,
-        registration_id: registration.id,
-        event_id: event.id,
-        user_id: user.id,
-        wallet_address: walletAddress,
-        reference,
-        recipient,
-        amount_sol: amountSol,
-        network: SOLANA_PAY_NETWORK,
-        status: "pending"
-      })
-      .select("id,reference,recipient,amount_sol,network")
+      .insert(intentInsert)
+      .select("id,reference,recipient,amount_sol,network,price_uah,rate_uah_per_sol")
       .single();
+    const { data: intent, error: intentError } =
+      intentResult.error?.code === "42703"
+        ? await supabase
+            .from("solana_payment_intents")
+            .insert({
+              ticket_id: intentInsert.ticket_id,
+              registration_id: intentInsert.registration_id,
+              event_id: intentInsert.event_id,
+              user_id: intentInsert.user_id,
+              wallet_address: intentInsert.wallet_address,
+              reference: intentInsert.reference,
+              recipient: intentInsert.recipient,
+              amount_sol: intentInsert.amount_sol,
+              network: intentInsert.network,
+              status: intentInsert.status
+            })
+            .select("id,reference,recipient,amount_sol,network")
+            .single()
+        : intentResult;
 
     if (intentError) {
       throw intentError;
@@ -135,6 +158,8 @@ export async function POST(request: Request) {
       reference: intent.reference,
       payment_url: paymentUrl,
       amount_sol: intent.amount_sol,
+      original_price_uah: "price_uah" in intent ? intent.price_uah : conversion.originalPriceUah,
+      rate_uah_per_sol: "rate_uah_per_sol" in intent ? intent.rate_uah_per_sol : conversion.rateUahPerSol,
       recipient: intent.recipient,
       network: intent.network
     });

@@ -58,7 +58,6 @@ export function Web3RegistrationPanel({ eventId, eventPrice, referralCode }: Web
   const [submitting, setSubmitting] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [profile, setProfile] = useState<AuthProfile | null>(null);
-  const [userId, setUserId] = useState("");
   const [registration, setRegistration] = useState<RegistrationRow | null>(null);
   const [ticket, setTicket] = useState<TicketRow | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -86,7 +85,6 @@ export function Web3RegistrationPanel({ eventId, eventPrice, referralCode }: Web
           submitting: "Створення",
           reserved: "Reserved ticket",
           confirmed: "Квиток активний",
-          ticketCode: "Код квитка",
           payTitle: "Оплатити через Solana Devnet",
           payNote: "Після підтвердження оплати QR стане активним.",
           paymentConfirmed: "Оплату підтверджено. QR активний.",
@@ -113,7 +111,6 @@ export function Web3RegistrationPanel({ eventId, eventPrice, referralCode }: Web
           submitting: "Creating",
           reserved: "Reserved ticket",
           confirmed: "Ticket active",
-          ticketCode: "Ticket code",
           payTitle: "Pay with Solana Devnet",
           payNote: "After payment confirmation, QR will become active.",
           paymentConfirmed: "Payment confirmed. QR is active.",
@@ -140,7 +137,6 @@ export function Web3RegistrationPanel({ eventId, eventPrice, referralCode }: Web
 
       setSignedIn(Boolean(roleState.user));
       setProfile(roleState.profile);
-      setUserId(roleState.user?.id ?? "");
       setForm((current) => ({
         ...current,
         name: current.name || roleState.profile?.full_name || "",

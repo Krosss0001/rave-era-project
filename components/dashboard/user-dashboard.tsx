@@ -34,6 +34,12 @@ function getQrLockedMessage(ticket: TicketRow, language: "ua" | "en") {
   return getPaymentPlaceholderCopy(language);
 }
 
+function getSolanaQrUnlockCopy(language: "ua" | "en") {
+  return language === "ua"
+    ? "Оплатіть через Solana Devnet, щоб активувати QR. Devnet оплата лише для демо/тестування."
+    : "Pay with Solana Devnet to activate QR. Devnet payment is for demo/testing only.";
+}
+
 export function UserDashboard() {
   const { dictionary, language } = useLanguage();
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
@@ -357,7 +363,7 @@ export function UserDashboard() {
                   </div>
                   {ticket.payment_status === "pending" ? (
                     <p className="mt-4 border border-white/[0.05] bg-black px-3 py-2 text-sm leading-6 text-white/58">
-                      {getPaymentPlaceholderCopy(language)}
+                      {canPayWithSolanaDevnet ? getSolanaQrUnlockCopy(language) : getPaymentPlaceholderCopy(language)}
                     </p>
                   ) : null}
                   {canPayWithSolanaDevnet ? (

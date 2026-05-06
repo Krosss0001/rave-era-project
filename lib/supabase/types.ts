@@ -293,6 +293,8 @@ export type Database = {
           reference: string;
           recipient: string;
           amount_sol: number;
+          price_uah: number | null;
+          rate_uah_per_sol: number | null;
           network: "devnet";
           status: SolanaPaymentIntentStatus;
           signature: string | null;
@@ -309,6 +311,8 @@ export type Database = {
           reference: string;
           recipient: string;
           amount_sol: number;
+          price_uah?: number | null;
+          rate_uah_per_sol?: number | null;
           network?: "devnet";
           status?: SolanaPaymentIntentStatus;
           signature?: string | null;
@@ -324,6 +328,8 @@ export type Database = {
           reference?: string;
           recipient?: string;
           amount_sol?: number;
+          price_uah?: number | null;
+          rate_uah_per_sol?: number | null;
           network?: "devnet";
           status?: SolanaPaymentIntentStatus;
           signature?: string | null;
