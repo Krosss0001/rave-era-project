@@ -58,12 +58,9 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#020202] pt-[var(--safe-top)] shadow-[0_12px_42px_rgba(0,0,0,0.62)]">
       <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-between gap-2 px-3 py-2 sm:px-6 md:min-h-16 md:px-10 lg:px-12 2xl:max-w-[1500px]">
-        <Link href="/" onClick={() => setMenuOpen(false)} className="focus-ring group flex min-h-11 min-w-0 max-w-[calc(100vw-4.25rem)] shrink-0 items-center gap-2 sm:max-w-[64vw] md:max-w-[48vw] lg:max-w-none">
-          <span className="app-logo-mark h-8 w-8 shrink-0">
-            <img src="/branding/logo.png" alt="" className="h-full w-full object-cover" aria-hidden="true" />
-          </span>
+        <Link href="/" onClick={() => setMenuOpen(false)} className="focus-ring group flex min-h-11 min-w-0 max-w-[calc(100vw-4.25rem)] shrink-0 items-center sm:max-w-[64vw] md:max-w-[48vw] lg:max-w-none">
           <span className="block whitespace-nowrap font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-white/82 motion-safe:transition-colors motion-safe:duration-300 group-hover:text-white sm:tracking-[0.13em] md:max-w-none md:text-[11px]">
-            RAVE<span className="text-primary">&apos;</span>ERA <span className="hidden text-white/50 min-[430px]:inline md:inline">EVENTS</span><span className="hidden lg:inline"> ASSISTANT</span>
+            RAVEERA <span className="hidden text-white/50 min-[430px]:inline md:inline">GROUP</span><span className="hidden lg:inline"> EVENTS ASSISTANT</span>
           </span>
         </Link>
         <div className="hidden min-w-0 flex-1 items-center justify-end gap-2 md:flex">
@@ -102,11 +99,8 @@ export function Header() {
           <div className="relative z-10 h-svh overflow-y-auto bg-black px-3 pb-[calc(var(--safe-bottom)+1.25rem)] pt-[calc(var(--safe-top)+4.75rem)] motion-safe:animate-[appPanelRise_180ms_cubic-bezier(0.16,1,0.3,1)_both]">
             <div className="fixed inset-x-0 top-0 z-[230] border-b border-white/[0.08] bg-black px-3 pb-2 pt-[calc(var(--safe-top)+0.5rem)] shadow-[0_18px_60px_rgba(0,0,0,0.86)]">
               <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-                <Link href="/" onClick={() => setMenuOpen(false)} className="focus-ring flex min-h-11 min-w-0 items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-white/82">
-                  <span className="app-logo-mark h-8 w-8 shrink-0">
-                    <img src="/branding/logo.png" alt="" className="h-full w-full object-cover" aria-hidden="true" />
-                  </span>
-                  <span className="truncate">RAVE<span className="text-primary">&apos;</span>ERA</span>
+                <Link href="/" onClick={() => setMenuOpen(false)} className="focus-ring flex min-h-11 min-w-0 items-center font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-white/82">
+                  <span className="truncate">RAVEERA</span>
                 </Link>
                 <button
                   type="button"

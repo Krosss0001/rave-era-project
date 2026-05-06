@@ -102,16 +102,6 @@ table {
   background: rgb(2 2 2 / 0.96);
 }
 
-.app-logo-mark {
-  display: inline-flex;
-  overflow: hidden;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgb(0 255 136 / 0.22);
-  background: #020202;
-  box-shadow: 0 0 24px rgb(0 255 136 / 0.08);
-}
-
 .app-native-panel {
   border: 1px solid rgb(255 255 255 / 0.06);
   background:

@@ -90,22 +90,17 @@ export function PwaInstallPrompt() {
     <div className="fixed inset-x-3 bottom-[5.25rem] z-50 mx-auto max-w-md pb-[env(safe-area-inset-bottom)] md:bottom-5 md:left-auto md:right-5 md:mx-0">
       <div className="app-native-panel border-primary/30 p-3 shadow-[0_0_48px_rgb(0_255_136/0.12)] backdrop-blur-xl">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 gap-3">
-            <span className="app-logo-mark h-11 w-11 shrink-0">
-              <img src="/branding/logo.png" alt="" className="h-full w-full object-cover" aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
+          <div className="min-w-0">
             <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
-              Rave&apos;era App
+              Raveera App
             </p>
             <p className="mt-2 text-sm leading-5 text-white/68">
               {platform === "ios"
-                ? "На iPhone: Поділитися -> На екран Додому"
+                ? "On iPhone: Share -> Add to Home Screen"
                 : platform === "android"
-                  ? "На Android: Install app / Встановити додаток"
-                  : "Install Rave'era as a standalone app."}
+                  ? "On Android: Install app"
+                  : "Install Raveera as a standalone app."}
             </p>
-            </div>
           </div>
           <button
             type="button"
@@ -122,7 +117,7 @@ export function PwaInstallPrompt() {
             onClick={handleInstall}
             className="focus-ring mt-3 inline-flex min-h-11 w-full items-center justify-center border border-primary/70 bg-primary px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-black motion-safe:transition-[filter,transform] motion-safe:duration-200 hover:brightness-110 active:scale-[0.98] sm:text-[11px]"
           >
-            Install app / Встановити додаток
+            Install app
           </button>
         ) : null}
       </div>
