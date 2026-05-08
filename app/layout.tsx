@@ -18,6 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  applicationName: "Rave'era Group",
   title: "Rave'era Group · Concerts & Marketing Agency",
   description:
     "Event OS for discovery, registration, tickets, QR check-in, Telegram and Web3 access.",

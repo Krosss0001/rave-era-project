@@ -6,12 +6,14 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Rave'era",
     description:
       "Event OS for discovery, registration, tickets, QR check-in, Telegram and Web3 access.",
+    id: "/",
     start_url: "/",
     scope: "/",
     display: "standalone",
     background_color: "#020202",
     theme_color: "#00FF88",
     orientation: "portrait",
+    categories: ["events", "entertainment", "utilities"],
     icons: [
       {
         src: "/icons/icon-192.png",

@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --safe-top: env(safe-area-inset-top);
-  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
   --mobile-nav-height: 5rem;
   --background: 0 0% 0%;
   --foreground: 0 0% 96%;

@@ -87,7 +87,7 @@ export function PwaInstallPrompt() {
   }
 
   return (
-    <div className="fixed inset-x-3 bottom-[5.25rem] z-50 mx-auto max-w-md pb-[env(safe-area-inset-bottom)] md:bottom-5 md:left-auto md:right-5 md:mx-0">
+    <div className="fixed inset-x-3 bottom-[5.25rem] z-50 mx-auto max-w-md pb-[var(--safe-bottom)] md:bottom-5 md:left-auto md:right-5 md:mx-0">
       <div className="app-native-panel border-primary/30 p-3 shadow-[0_0_48px_rgb(0_255_136/0.12)] backdrop-blur-xl">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
