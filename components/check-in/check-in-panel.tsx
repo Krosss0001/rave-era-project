@@ -186,6 +186,10 @@ export function CheckInPanel() {
         };
 
   const canCheckIn = ticket?.status === "active" && ticket.payment_status === "paid" && !ticket.checked_in && !ticket.checked_in_at;
+  const mobileCameraHint =
+    language === "ua"
+      ? "На телефоні дозвольте доступ до камери в браузері. Якщо дозвіл заблоковано, відкрийте налаштування сайту або введіть код вручну."
+      : "On mobile, allow camera access in the browser. If permission is blocked, open site settings or enter the ticket code manually.";
 
   const stopScanner = useCallback((preserveStatus = false) => {
     scanActiveRef.current = false;
@@ -511,6 +515,7 @@ export function CheckInPanel() {
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary sm:tracking-[0.22em]">{copy.lookup}</p>
             <p className="mt-2 text-sm leading-6 text-white/62">{copy.lookupCopy}</p>
+            <p className="mt-2 text-xs leading-5 text-white/42">{mobileCameraHint}</p>
           </div>
           <StatusBadge label={scannerStatus} variant={scannerStatus === "error" ? "danger" : scannerStatus === "scanning" ? "success" : "neutral"} size="sm" />
         </div>

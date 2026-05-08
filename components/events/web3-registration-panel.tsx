@@ -73,7 +73,7 @@ export function Web3RegistrationPanel({ eventId, eventPrice, referralCode }: Web
           signedOutHint: "Sign in and connect Phantom to register with crypto on the website.",
           connectHint: "Connect Phantom to unlock on-site crypto registration.",
           connectBody: "Реєстрація через сайт доступна після входу та підключення Phantom.",
-          readyTitle: "Register on website with Phantom",
+          readyTitle: "Register on website",
           readyBody: "Заповніть дані для квитка. Telegram залишається альтернативним шляхом.",
           walletConnected: "Phantom підключено",
           name: "Повне ім'я",
@@ -99,7 +99,10 @@ export function Web3RegistrationPanel({ eventId, eventPrice, referralCode }: Web
           signedOutHint: "Sign in and connect Phantom to register with crypto on the website.",
           connectHint: "Connect Phantom to unlock on-site crypto registration.",
           connectBody: "On-site registration is available after sign-in and Phantom connection.",
-          readyTitle: "Register on website with Phantom",
+          signInPrompt: "Sign in or create an account to register on the website. Telegram remains available.",
+          freeRule: "Free event: on-site registration is available after sign-in. Phantom is optional.",
+          paidRule: "Paid event: connect Phantom to pay with Solana Devnet.",
+          readyTitle: "Register on website",
           readyBody: "Fill in ticket details. Telegram remains the alternative path.",
           walletConnected: "Phantom connected",
           name: "Full name",
@@ -214,6 +217,20 @@ export function Web3RegistrationPanel({ eventId, eventPrice, referralCode }: Web
 
   const walletAddress = profile?.wallet_address?.trim() ?? "";
   const isPaidEvent = Number(eventPrice) > 0;
+  const canShowRegistrationFlow = signedIn && (!isPaidEvent || Boolean(walletAddress));
+  const signInPrompt =
+    language === "ua"
+      ? "Увійдіть або створіть акаунт, щоб зареєструватися на сайті. Telegram залишається доступним."
+      : "Sign in or create an account to register on the website. Telegram remains available.";
+  const freeRule =
+    language === "ua"
+      ? "Безкоштовна подія: реєстрація на сайті доступна після входу. Phantom не обовʼязковий."
+      : "Free event: on-site registration is available after sign-in. Phantom is optional.";
+  const paidRule =
+    language === "ua"
+      ? "Платна подія: підключіть Phantom для оплати через Solana Devnet."
+      : "Paid event: connect Phantom to pay with Solana Devnet.";
+  const registrationRule = isPaidEvent ? paidRule : freeRule;
   const isQrUnlocked = ticket?.status === "active" && ticket.payment_status === "paid" && !ticket.checked_in && !ticket.checked_in_at;
 
   async function getAccessToken() {
@@ -292,9 +309,9 @@ export function Web3RegistrationPanel({ eventId, eventPrice, referralCode }: Web
         </div>
         <div className="min-w-0">
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">{copy.kicker}</p>
-          <h2 className="mt-2 text-xl font-black uppercase leading-tight text-white">{signedIn && walletAddress ? copy.readyTitle : copy.lockedTitle}</h2>
+          <h2 className="mt-2 text-xl font-black uppercase leading-tight text-white">{canShowRegistrationFlow ? copy.readyTitle : copy.lockedTitle}</h2>
           <p className="mt-2 text-sm leading-6 text-white/58">
-            {!signedIn ? copy.signedOut : walletAddress ? copy.readyBody : copy.connectBody}
+            {canShowRegistrationFlow ? copy.readyBody : !signedIn ? signInPrompt : registrationRule}
           </p>
         </div>
       </div>
@@ -306,18 +323,22 @@ export function Web3RegistrationPanel({ eventId, eventPrice, referralCode }: Web
             <div className="h-10 bg-white/[0.025] motion-safe:animate-pulse" />
           </div>
         ) : !signedIn ? (
-          <p className="border border-white/[0.06] bg-black px-3 py-2 text-sm leading-6 text-white/58">{copy.signedOutHint}</p>
-        ) : !walletAddress ? (
+          <p className="border border-white/[0.06] bg-black px-3 py-2 text-sm leading-6 text-white/58">{signInPrompt}</p>
+        ) : isPaidEvent && !walletAddress ? (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm leading-6 text-white/58">{copy.connectHint}</p>
+            <p className="text-sm leading-6 text-white/58">{paidRule}</p>
             <WalletConnect onWalletSaved={(address) => setProfile((current) => current ? { ...current, wallet_address: address } : current)} />
           </div>
         ) : (
           <div>
-            <div className="mb-4 border border-primary/25 bg-primary/[0.03] px-3 py-2">
-              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">{copy.walletConnected}</p>
-              <p className="mt-1 break-all font-mono text-sm text-white" title={walletAddress}>{formatShortWalletAddress(walletAddress)}</p>
-            </div>
+            {walletAddress ? (
+              <div className="mb-4 border border-primary/25 bg-primary/[0.03] px-3 py-2">
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">{copy.walletConnected}</p>
+                <p className="mt-1 break-all font-mono text-sm text-white" title={walletAddress}>{formatShortWalletAddress(walletAddress)}</p>
+              </div>
+            ) : (
+              <p className="mb-4 border border-primary/20 bg-primary/[0.025] px-3 py-2 text-sm leading-6 text-white/62">{freeRule}</p>
+            )}
 
             {ticket ? (
               <div className="grid gap-4">

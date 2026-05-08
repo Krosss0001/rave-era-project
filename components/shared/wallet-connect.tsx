@@ -181,7 +181,7 @@ export function WalletConnect({ onWalletSaved }: WalletConnectProps) {
             <span>Open in Phantom</span>
           </a>
           <p className="max-w-xs text-xs leading-5 text-white/52">
-            Wallet connection works inside Phantom browser on mobile. Open this app in Phantom to connect your wallet.
+            For Solana Mobile, open in compatible wallet browser or future native app. Today, wallet connection works inside Phantom browser on mobile.
           </p>
           <a
             href="https://phantom.app/download"

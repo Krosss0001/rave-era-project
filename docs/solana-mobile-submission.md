@@ -1,50 +1,32 @@
 # Solana Mobile Submission Notes
 
-## App Store Metadata
+## App Name
 
-**App name:** Rave'era Group
+Rave'era Group
 
-**Short description:** Mobile-first event discovery, ticket access, wallet connection, and QR check-in for Rave'era events.
+## Short Description
 
-**Full description:** Rave'era Group is an event operating system for concerts and cultural events. The app supports event discovery, registration, authenticated ticket access, wallet connection, Solana Devnet payment testing, QR ticket display, staff check-in, organizer analytics, Telegram-assisted operations, and referral analytics. This submission track is for a PWA packaged for future Solana Mobile / dApp Store Android distribution. Mainnet payments and real-money settlement are intentionally out of scope.
+Mobile-first event discovery, ticket access, wallet connection, Devnet payment testing, and QR check-in for Rave'era events.
 
-**Category recommendation:** Events / Entertainment. If the Solana dApp Store requires a Web3 category, use Utility / dApp as the secondary classification.
+## Full Description
 
-## Feature List
+Rave'era Group is a PWA event operating system for concerts and cultural events. It supports event discovery, account-based registration, ticket QR access, staff check-in, organizer analytics, referral analytics, Telegram-assisted operations, wallet connection, and Solana Devnet payment testing for paid website registrations.
 
-- Browse events from a mobile-first interface.
-- View event details, venue, price, and availability.
-- Create an account or sign in.
-- Connect a Solana wallet for Web3-ready access.
-- Test Solana Devnet payment flow where enabled.
-- View personal tickets and ticket QR codes.
-- Run QR check-in for authorized staff.
+This submission path prepares the hosted PWA for future Android TWA packaging and Solana dApp Store review. Mainnet payments, Seed Vault, Mobile Wallet Adapter, and native Android code are not implemented yet.
+
+## Features
+
+- Browse events and event details.
+- Register on the website for free events after sign-in.
+- Register for paid events with Phantom/wallet connection and Solana Devnet payment.
+- View ticket status and QR codes.
+- Validate tickets through mobile-first check-in.
+- Restrict check-in to organizer, admin, and superadmin roles.
 - Review organizer analytics.
 - Review superadmin referral analytics.
-- Use standalone PWA display, install prompt support, and offline fallback.
+- Use PWA install, standalone mode, mobile safe-area layout, and offline fallback.
 
-## Devnet Payment Test Flow
-
-1. Open `https://rave-era-project.vercel.app` or the packaged Android build.
-2. Sign in with the reviewer attendee account.
-3. Open an event with the Solana Devnet payment panel enabled.
-4. Connect a supported Solana wallet configured for Devnet.
-5. Start the Devnet payment flow.
-6. Approve the transaction with Devnet SOL only.
-7. Return to Rave'era and verify the registration or ticket status.
-8. Confirm that no mainnet payment prompt, mainnet SOL transfer, or real-money settlement path is exposed.
-
-## Test Account Instructions Placeholder
-
-Provide reviewer accounts out of band before submission. Do not commit credentials to this repository.
-
-- Attendee reviewer: `attendee-reviewer@example.com` / password shared privately.
-- Organizer reviewer: `organizer-reviewer@example.com` / password shared privately.
-- Check-in reviewer: `checkin-reviewer@example.com` / password shared privately.
-- Superadmin reviewer: `superadmin-reviewer@example.com` / password shared privately.
-- Wallet requirement: Devnet wallet only, funded with Devnet SOL.
-
-## Required Screenshots
+## Screenshots Needed
 
 - Home
 - Events
@@ -53,31 +35,45 @@ Provide reviewer accounts out of band before submission. Do not commit credentia
 - Wallet connect
 - Solana Devnet payment
 - Ticket QR
-- Check-in
+- Check-in scanner
 - Organizer analytics
 - Superadmin referral analytics
 
-## Required URLs
+## APK / TWA Plan
 
-- Privacy policy URL placeholder: `https://rave-era-project.vercel.app/privacy`
-- Support URL placeholder: `https://rave-era-project.vercel.app/support`
-
-Replace placeholders with final public pages before submission.
+- Recommended path: TWA/Bubblewrap first.
+- Production URL: `https://rave-era-project.vercel.app`.
+- Manifest URL: `https://rave-era-project.vercel.app/manifest.webmanifest`.
+- Suggested package name: `com.raveera.app`.
+- Configure Digital Asset Links after the Android signing certificate is finalized.
+- Keep the signing keystore and passwords out of git.
+- Capacitor remains a later option only if native Android APIs become necessary.
 
 ## Publisher Portal Notes
 
-- Use the production URL: `https://rave-era-project.vercel.app`.
-- Use package name `com.raveera.app` unless a final publisher namespace changes.
-- Mark payment testing as Devnet-only in reviewer notes.
-- State that no seed phrases, private keys, or mainnet payments are collected by the app.
-- Provide reviewer credentials privately through the portal fields, not in source control.
-- Upload screenshots captured from the production PWA or packaged Android build.
+- Category recommendation: Events / Entertainment, with Utility / dApp as secondary if required.
+- Privacy policy URL placeholder: `https://rave-era-project.vercel.app/privacy`.
+- Support URL placeholder: `https://rave-era-project.vercel.app/support`.
+- Provide reviewer credentials only through private publisher portal fields.
+- State clearly that payments are Devnet-only and no mainnet payments are available.
+- State clearly that Seed Vault and Mobile Wallet Adapter are not implemented in this PWA build.
 
-## APK / TWA Next Steps
+## Devnet Testing Instructions
 
-1. Confirm the production PWA URL, manifest, service worker, HTTPS certificate, and icons.
-2. Generate a TWA project with Bubblewrap using package name `com.raveera.app`.
-3. Configure Digital Asset Links at `https://rave-era-project.vercel.app/.well-known/assetlinks.json`.
-4. Build an internal APK/AAB and install it on Android hardware.
-5. Verify login, wallet connect, Devnet payment, ticket QR, check-in, organizer analytics, superadmin referral analytics, offline fallback, and safe-area behavior.
-6. Sign release artifacts only after the signing key, `versionCode`, `versionName`, and production URL are finalized.
+1. Open `https://rave-era-project.vercel.app` or the packaged TWA.
+2. Sign in with the attendee reviewer account.
+3. Open a paid event.
+4. Connect Phantom or open the app in a compatible wallet browser.
+5. Complete website registration.
+6. Start the Solana Devnet payment panel.
+7. Pay with Devnet SOL only.
+8. Confirm the ticket becomes active/paid and QR is available.
+9. Sign in as an organizer/admin/superadmin reviewer and validate the QR on `/check-in`.
+
+## Test Account Placeholder
+
+- Attendee reviewer: provide privately.
+- Organizer reviewer: provide privately.
+- Check-in reviewer: provide privately.
+- Superadmin reviewer: provide privately if superadmin analytics must be reviewed.
+- Devnet wallet: provide funding instructions, not private keys.

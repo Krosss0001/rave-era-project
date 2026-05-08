@@ -121,11 +121,12 @@ export async function POST(request: Request) {
       throw new Error("Event not found.");
     }
 
-    if (!profile?.wallet_address?.trim()) {
-      throw new Error("Connect and save Phantom before on-site registration.");
+    const isFreeEvent = Number(event.price) <= 0;
+
+    if (!isFreeEvent && !profile?.wallet_address?.trim()) {
+      throw new Error("Connect and save Phantom before paid on-site registration.");
     }
 
-    const isFreeEvent = Number(event.price) <= 0;
     let createdRegistration = false;
 
     const existingRegistrationResult = await supabase

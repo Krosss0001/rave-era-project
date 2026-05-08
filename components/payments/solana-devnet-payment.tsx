@@ -320,7 +320,7 @@ export function SolanaDevnetPayment({ ticketId, onConfirmed, title = "Pay with S
                 <p className="font-semibold text-white/78">Amount to pay: {formatAmount(intent.amount_sol)} SOL</p>
               </>
             ) : (
-              <p>On desktop, use connected Phantom. On mobile, scan QR with Phantom.</p>
+              <p>For Solana Mobile, open in compatible wallet browser or future native app. Today, use connected Phantom on desktop or scan the QR with Phantom mobile.</p>
             )}
           </div>
           {intent ? (

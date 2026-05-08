@@ -23,6 +23,12 @@ export default function CheckInPage() {
               en="Scan the QR shown in Telegram, validate the event and ticket state, then mark active paid tickets as used at the door."
             />
           </p>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/48">
+            <LocalizedText
+              ua="Доступ до сканера мають лише organizer, admin і superadmin. Увійдіть з операторським акаунтом і дозвольте камеру на телефоні."
+              en="Scanner access is limited to organizer, admin, and superadmin roles. Sign in with an operator account and allow camera access on mobile."
+            />
+          </p>
           <div className="mt-7 grid gap-2 min-[360px]:grid-cols-3">
             {[
               ["01", <LocalizedText key="scan" ua="Сканер" en="Scanner" />],
