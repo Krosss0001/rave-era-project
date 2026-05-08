@@ -185,7 +185,7 @@ export function TelegramStatusPanel() {
   const { language } = useLanguage();
   const items = language === "ua"
     ? ["Telegram handoff активний", "Оплата в demo-режимі", "Підтвердження готові"]
-    : ["Registration handoff active", "Payment status mocked", "Confirmation messages ready"];
+    : ["Registration handoff active", "Devnet payment status", "Confirmation messages ready"];
 
   return (
     <section className="border-y border-white/[0.05] bg-[#020202] py-8">

@@ -190,7 +190,6 @@ export function formatBroadcastMessage(input: {
   event: BroadcastEvent | null;
 }) {
   const title = "Повідомлення від Rave'era Group";
-  const footer = "/stop щоб відписатися";
   const eventUrl = getEventUrl(input.event);
   const eventLines = input.event
     ? [`<b>${escapeHtml(input.event.title)}</b>`, eventUrl]
@@ -201,9 +200,7 @@ export function formatBroadcastMessage(input: {
     "",
     ...eventLines,
     "",
-    escapeHtml(input.message),
-    "",
-    footer
+    escapeHtml(input.message)
   ].join("\n");
 }
 

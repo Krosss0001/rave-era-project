@@ -196,7 +196,7 @@ function PartnerMarquee() {
 
   return (
     <div className="relative z-10 mt-8 overflow-hidden border-y border-white/[0.05] bg-black/40 py-3">
-      <div className="partner-marquee flex w-max gap-3 px-3 md:gap-4">
+      <div className="partner-marquee flex w-max max-w-none gap-3 px-3 md:gap-4">
         {repeatedPartners.map((partner, index) => (
           <span
             key={`${partner}-${index}`}
@@ -733,10 +733,7 @@ export default function HomePage() {
             }
             @media (max-width: 767px) {
               .partner-marquee {
-                width: auto;
-                flex-wrap: wrap;
-                justify-content: center;
-                animation: none;
+                animation-duration: 28s;
               }
               .hero-grid {
                 animation-duration: 38s;
